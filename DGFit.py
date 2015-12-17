@@ -94,6 +94,8 @@ if __name__ == "__main__":
                         help="Read size distribution from disk")
     parser.add_argument("-t", "--tag", default='dgfit_test',
                         help="basename to use for output files")
+    parser.add_argument("-c", "--cpus", metavar=int, default=4,
+                        help="number of cpus to use")
     args = parser.parse_args()
 
     # set the basename of the output
@@ -217,7 +219,7 @@ if __name__ == "__main__":
             pc *= 1.9/max_violation        
             
     # setup the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprobsed, args=(obsdata, dustmodel), threads=4)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprobsed, args=(obsdata, dustmodel), threads=int(args.cpus))
 
     # burn in the walkers
     pos, prob, state = sampler.run_mcmc(p, burn)
