@@ -62,9 +62,9 @@ class DustGrains():
                 # get the grain size
                 f = open(file, 'r')
                 firstline = f.readline()
-                space_pos = string.find(firstline,' ',5)
+                space_pos = firstline.find(' ',5)
                 secondline = f.readline()
-                colon_pos = string.find(secondline, ':')
+                colon_pos = secondline.find( ':')
                 f.close()
 
                 if secondline[colon_pos+2:colon_pos+5] == 'Yes':
@@ -74,8 +74,8 @@ class DustGrains():
                 
                 filelist.append((file,int(sizenum),float(firstline[1:space_pos]),stochastic_heating))
 
-        # temp code to just pick every 10th size
-        tindxs = np.arange(0,len(filelist),10)
+        # temp code to just pick every 4th size
+        tindxs = np.arange(0,len(filelist),4)
         sfilelist = sorted(filelist, key=lambda file: file[1])
         filelist = []
         for k in tindxs:

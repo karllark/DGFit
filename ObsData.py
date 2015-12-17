@@ -28,6 +28,9 @@ class ObsData():
         self.depletions = {'C': (83.41, 0.05*83.41), 'O': (109.26, 0.05*109.26), 'Mg': (31.90, 0.05*31.90),
                            'Si': (31.24, 0.05*31.24), 'Fe': (33.34, 0.05*33.34)}
 
+        self.total_abundance = {'C': (2*83.41, 0.05*2*83.41), 'O': (2*109.26, 0.05*2*109.26), 'Mg': (2*31.90, 0.05*2*31.90),
+                                'Si': (2*31.24, 0.05*2*31.24), 'Fe': (2*33.34, 0.05*2*33.34)}
+
         # diffuse IR emission spectrum (Gordon et al. 2014)
         self.ir_emission_waves = np.array([100., 160., 250., 350., 500.])
         self.ir_emission = np.array([0.71, 1.53, 1.08, 0.56, 0.25])/1e20
@@ -84,6 +87,9 @@ class ObsData():
             sindxs = np.argsort(np.abs(self.ir_emission_waves[i] - wavelengths_emission))
             self.ir_emission_indxs[i] = sindxs[0]
 
+        self.fit_depletions = True
+        self.fit_ir_emission = True
+        self.fit_scat_param = True
         
 if __name__ == "__main__":
     
