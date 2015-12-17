@@ -90,16 +90,14 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument("-s", "--slow", help="Use lots of walkers, n_steps, n_burn",
                         action="store_true")
-    parser.add_argument("-r", "--read", help="Read size distribution from disk",
-                        action="store_true")
-    parser.add_argument("-t", "--triangle", help="Plot the 'triangle' plot showing the 1D and 2D likelihood functions",
-                        action="store_true")
-    parser.add_argument("-w", "--walkers", help="Plot the walker values",
-                        action="store_true")
+    parser.add_argument("-r", "--read", default="",
+                        help="Read size distribution from disk")
+    parser.add_argument("-t", "--tag", default='dgfit_test',
+                        help="basename to use for output files")
     args = parser.parse_args()
 
     # set the basename of the output
-    basename = 'dgfit_test'
+    basename = args.tag
 
     # save the start time 
     start_time = time.clock()
@@ -116,54 +114,38 @@ if __name__ == "__main__":
     # get the observed data to fit
     obsdata = ObsData.ObsData(dustmodel.components[0].wavelengths, dustmodel.components[0].wavelengths_emission)
 
-    # check that the default size distributions give approximately the right level of the A(lambda)/N(HI) curve
-    #  if not, adjust the overall level of the size distributions to get them close
-    cabs, csca, natoms, emission = dustmodel.eff_grain_props()
-    dust_alnhi = 1.086*(cabs + csca)
-    ave_model = np.average(dust_alnhi)
-    ave_data = np.average(obsdata.alnhi)
-    ave_ratio = ave_data/ave_model
-    if (ave_ratio < 0.5) | (ave_ratio > 2):
-        for component in dustmodel.components:
-            component.size_dist *= ave_ratio
-            
-    cabs, csca, natoms, emission = dustmodel.eff_grain_props()
-    max_violation = 0.0
-    for atomname in natoms.keys():
-        cur_violation = natoms[atomname]/obsdata.depletions[atomname][0]
-        if cur_violation > max_violation:
-            max_violation = cur_violation
-
-    print('max_violation ', max_violation)
-
-    if max_violation > 2:
-        for component in dustmodel.components:
-            component.size_dist *= 1.9/max_violation        
-
-        # inital guesses at parameters
-        p0_start = dustmodel.components[0].size_dist
-        for k in range(1,dustmodel.n_components):
-            p0_start = np.concatenate([p0_start,dustmodel.components[k].size_dist])
-
     # replace the default size distribution with one from a file
-    if args.read:
+    if args.read != "":
         for k, component in enumerate(dustmodel.components):
-            fitsdata = fits.getdata('dgfit_test_sizedist.fits',k+1)
+            fitsdata = fits.getdata(args.read,k+1)
             if len(component.size_dist) != len(fitsdata[:][1]):
-                #print(component.sizes)
-                #print(fitsdata['SIZE'])
-                #disk_size_dist = interp1d(fitsdata['SIZE'], fitsdata['DIST'])
-                #print(fitsdata['DIST'])
-                #component.size_dist = disk_size_dist(component.sizes)
                 component.size_dist = 10.**np.interp(np.log10(component.sizes),np.log10(fitsdata['SIZE']), np.log10(fitsdata['DIST']))
-                #print(component.size_dist)
-                #print(fitsdata['DIST'])
-                #print('different sizes')
-                #exit()
             else:
                 component.size_dist = fitsdata['DIST']
                 #if component.sizes[i] > 0.5e-4:
                 #    component.size_dist[i] *= 1e-4
+    else:
+        # check that the default size distributions give approximately the right level of the A(lambda)/N(HI) curve
+        #  if not, adjust the overall level of the size distributions to get them close
+        cabs, csca, natoms, emission = dustmodel.eff_grain_props()
+        dust_alnhi = 1.086*(cabs + csca)
+        ave_model = np.average(dust_alnhi)
+        ave_data = np.average(obsdata.alnhi)
+        ave_ratio = ave_data/ave_model
+        if (ave_ratio < 0.5) | (ave_ratio > 2):
+            for component in dustmodel.components:
+                component.size_dist *= ave_ratio
+            
+        cabs, csca, natoms, emission = dustmodel.eff_grain_props()
+        max_violation = 0.0
+        for atomname in natoms.keys():
+            cur_violation = natoms[atomname]/obsdata.depletions[atomname][0]
+            if cur_violation > max_violation:
+                max_violation = cur_violation
+
+        #if max_violation > 2:
+        #    for component in dustmodel.components:
+        #        component.size_dist *= 1.9/max_violation        
 
     # save the starting model
     dustmodel.save(basename + '_sizedist_start.fits')
@@ -270,9 +252,10 @@ if __name__ == "__main__":
             fit_params_best = sampler.chain[k,indxs[0],:]
 
     dustmodel.set_size_dist(fit_params_best)
-    fin_size_dist_best = fit_params_best
     cabs_best, csca_best, natoms_best, emission_best = dustmodel.eff_grain_props()
-    dust_alnhi_best = 1.086*(cabs_best + csca_best)
+
+    # save the best fit size distributions
+    dustmodel.save(basename + '_sizedist_best.fits')
 
     # get the 50p values and uncertainties
     samples = sampler.chain.reshape((-1, ndim))

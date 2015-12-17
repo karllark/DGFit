@@ -74,8 +74,8 @@ class DustGrains():
                 
                 filelist.append((file,int(sizenum),float(firstline[1:space_pos]),stochastic_heating))
 
-        # temp code to just pick every 4th size
-        tindxs = np.arange(0,len(filelist),4)
+        # temp code to just pick every 10th size
+        tindxs = np.arange(0,len(filelist),10)
         sfilelist = sorted(filelist, key=lambda file: file[1])
         filelist = []
         for k in tindxs:

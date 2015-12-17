@@ -67,7 +67,7 @@ def plot_dgfit_sizedist(ax, hdulist, colors=['b','g'],
 
         yrange = get_krange(yvals,logaxis=True,in_range=yrange)
         if plot_uncs:
-            yrange = get_krange(yvals-yvals_punc,logaxis=True,in_range=yrange)
+            yrange = get_krange(yvals-yvals_munc,logaxis=True,in_range=yrange)
             yrange = get_krange(yvals+yvals_punc,logaxis=True,in_range=yrange)
 
         ax.plot(xvals, yvals, colors[i]+'-', label=hdu.header['EXTNAME'])
@@ -87,7 +87,6 @@ def plot_dgfit_sizedist(ax, hdulist, colors=['b','g'],
     ax.set_ylabel(ylabel, fontsize=fontsize)
     if plegend:
         ax.legend()
-
 
 # plot the atomic abundances
 def plot_dgfit_abundances(ax, hdu, obsdata, colors=['r','b','g'],
