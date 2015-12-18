@@ -63,7 +63,7 @@ def plot_dgfit_sizedist(ax, hdulist, colors=['b','g'],
             yvals = yvals*xvals4
             if plot_uncs:
                 yvals_punc = yvals_punc*xvals4
-                yvals_munc = yvals_punc*xvals4
+                yvals_munc = yvals_munc*xvals4
 
         yrange = get_krange(yvals,logaxis=True,in_range=yrange)
         if plot_uncs:
@@ -72,7 +72,7 @@ def plot_dgfit_sizedist(ax, hdulist, colors=['b','g'],
 
         ax.plot(xvals, yvals, colors[i]+'-', label=hdu.header['EXTNAME'])
         if plot_uncs:
-            ax.errorbar(xvals, yvals, fmt=colors[i]+'o', yerr=[yvals_punc, yvals_munc])
+            ax.errorbar(xvals, yvals, fmt=colors[i]+'o', yerr=[yvals_munc, yvals_punc])
 
     if multa4:
         ylabel = r'$a^4 N_d(a)/N(HI)$'
