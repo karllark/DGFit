@@ -72,7 +72,8 @@ def plot_dgfit_sizedist(ax, hdulist, colors=['b','g'],
 
         ax.plot(xvals, yvals, colors[i]+'-', label=hdu.header['EXTNAME'])
         if plot_uncs:
-            ax.errorbar(xvals, yvals, fmt=colors[i]+'o', yerr=[yvals_munc, yvals_punc])
+            ax.errorbar(xvals, yvals, fmt=colors[i]+'o', 
+                        yerr=[yvals_munc, yvals_punc])
 
     if multa4:
         ylabel = r'$a^4 N_d(a)/N(HI)$'
@@ -100,8 +101,9 @@ def plot_dgfit_abundances(ax, hdu, obsdata, colors=['r','b','g'],
     width = 0.5
     ax.bar(aindxs+0.25*width, atomabund, width, color=colors[0])
 
-    ax.errorbar(aindxs+0.75*width, [obsdata.depletions[x][0] for x in atomnames],
-                  yerr=[obsdata.depletions[x][1] for x in atomnames], fmt='ko')
+    ax.errorbar(aindxs+0.75*width, [obsdata.depletions[x][0] 
+                                    for x in atomnames],
+                yerr=[obsdata.depletions[x][1] for x in atomnames], fmt='ko')
 
     ax.set_ylabel(r'$N(X)/[10^6 N(HI)]$', fontsize=fontsize)
     ax.set_xticks(aindxs+(0.75*width))
@@ -119,8 +121,10 @@ def plot_dgfit_extinction(ax, hdu, obsdata, colors=['r','b','g'],
         #linetypes = ['--', ':', '-.']
         linetypes = ['-','-','-','-','-']
         for i in range(len(hdu.data.names)-2):
-            ax.plot(hdu.data['WAVE'], hdu.data['EXT'+str(i+1)], colors[i+1]+linetypes[i])
-            yrange = get_krange(hdu.data['EXT'+str(i+1)], logaxis=True, in_range=yrange)
+            ax.plot(hdu.data['WAVE'], hdu.data['EXT'+str(i+1)], 
+                    colors[i+1]+linetypes[i])
+            yrange = get_krange(hdu.data['EXT'+str(i+1)], logaxis=True, 
+                                in_range=yrange)
 
     ax.plot(obsdata.wavelengths, obsdata.alnhi, 'k-', label='Observed')
     yrange = get_krange(obsdata.alnhi, logaxis=True, in_range=yrange)
@@ -144,10 +148,13 @@ def plot_dgfit_emission(ax, hdu, obsdata, colors=['r','b','g'],
     if comps:
         linetypes = ['-','-','-','-','-']
         for i in range(len(hdu.data.names)-2):
-            ax.plot(hdu.data['WAVE'], hdu.data['EMIS'+str(i+1)], colors[i+1]+linetypes[i])
-            yrange = get_krange(hdu.data['EMIS'+str(i+1)], logaxis=True, in_range=yrange)
+            ax.plot(hdu.data['WAVE'], hdu.data['EMIS'+str(i+1)], 
+                    colors[i+1]+linetypes[i])
+            yrange = get_krange(hdu.data['EMIS'+str(i+1)], logaxis=True, 
+                                in_range=yrange)
 
-    ax.errorbar(obsdata.ir_emission_waves, obsdata.ir_emission, yerr=obsdata.ir_emission_uncs, fmt='ko', label='Observed')
+    ax.errorbar(obsdata.ir_emission_waves, obsdata.ir_emission, 
+                yerr=obsdata.ir_emission_uncs, fmt='ko', label='Observed')
     yrange = get_krange(obsdata.ir_emission, logaxis=True, in_range=yrange)
 
     ax.set_xscale('log')
@@ -169,10 +176,12 @@ def plot_dgfit_albedo(ax, hdu, obsdata, colors=['r','b','g'],
     if comps:
         linetypes = ['-','-','-','-','-']
         for i in range(len(hdu.data.names)-2):
-            ax.plot(hdu.data['WAVE'], hdu.data['ALBEDO'+str(i+1)], colors[i+1]+linetypes[i])
+            ax.plot(hdu.data['WAVE'], hdu.data['ALBEDO'+str(i+1)], 
+                    colors[i+1]+linetypes[i])
             yrange = get_krange(hdu.data['ALBEDO'+str(i+1)], in_range=yrange)
 
-    ax.errorbar(obsdata.scat_waves, obsdata.scat_albedo, yerr=obsdata.scat_albedo_unc, fmt='ko', label='Observed')
+    ax.errorbar(obsdata.scat_waves, obsdata.scat_albedo, 
+                yerr=obsdata.scat_albedo_unc, fmt='ko', label='Observed')
     yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
 
     ax.set_xscale('log')
@@ -210,7 +219,8 @@ if __name__ == "__main__":
     hdulist = fits.open(args.filename)
 
     # get the observed data to fit
-    obsdata = ObsData(hdulist['EXTINCTION'].data['WAVE'],hdulist['EMISSION'].data['WAVE'])
+    obsdata = ObsData(hdulist['EXTINCTION'].data['WAVE'],
+                      hdulist['EMISSION'].data['WAVE'])
 
     # plot the dust size distributions
     colors = ['b','g']
@@ -218,18 +228,32 @@ if __name__ == "__main__":
     plot_dgfit_sizedist(ax[1,0], hdulist, fontsize=fontsize, plegend=False)
 
     # plot the abundances
-    plot_dgfit_abundances(ax[0,1], hdulist['ABUNDANCES'], obsdata, fontsize=fontsize)
+    plot_dgfit_abundances(ax[0,1], hdulist['ABUNDANCES'], obsdata, 
+                          fontsize=fontsize)
 
     # plot the resulting total and component extinction curves
-    plot_dgfit_extinction(ax[1,1], hdulist['EXTINCTION'], obsdata, fontsize=fontsize)
+    plot_dgfit_extinction(ax[1,1], hdulist['EXTINCTION'], obsdata, 
+                          fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    plot_dgfit_emission(ax[0,2], hdulist['EMISSION'], obsdata, fontsize=fontsize)
+    plot_dgfit_emission(ax[0,2], hdulist['EMISSION'], obsdata, 
+                        fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
     plot_dgfit_albedo(ax[1,2], hdulist['ALBEDO'], obsdata, fontsize=fontsize)
 
     pyplot.tight_layout()    
 
-    pyplot.show()
+    # show or save
+    basename = args.filename
+    basename.replace('.fits','')
+    if args.png:
+        fig.savefig(basename+'.png')
+    elif args.eps:
+        fig.savefig(basename+'.eps')
+    elif args.pdf:
+        fig.savefig(basename+'.pdf')
+    else:
+        pyplot.show()
+    
     
