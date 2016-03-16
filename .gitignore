@@ -1,0 +1,5 @@
+*.fits
+*.png
+*.dat
+*~
+*.pyc

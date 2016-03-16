@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #
-# DGFit - program to determine dust grain size & composition from fitting dust grain observables
-#  dust observables = extinction, scattering properties, depletions, emission, etc.
+# DGFit - program to determine dust grain size & composition from
+#         fitting dust grain observables
+#  dust observables = extinction, scattering properties, depletions,
+#                     emission, etc.
 #
 # Started: Jan 2015 (KDG)
 #  added IR emission: Feb 2015 (KDG)
@@ -20,11 +22,13 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 
+#from lmfit import minimize, Parameters
+
 import emcee
 import triangle
 
-import DustModel
-import ObsData
+from DustModel import DustModel
+from ObsData import ObsData
 #import ObsData_Azv18 as ObsData
 
 # compute the ln(prob) for an input set of model parameters
@@ -41,35 +45,44 @@ def lnprobsed(params, ObsData, DustModel):
 
     # get the integrated dust properties
     cabs, csca, natoms, emission = DustModel.eff_grain_props()
-    #print(natoms)
     cext = cabs + csca
     dust_alnhi = 1.086*cext
     
     # compute the ln(prob) for A(l)/N(HI)
-    lnp_alnhi = -0.5*np.sum((((obsdata.alnhi - dust_alnhi)/(0.10*obsdata.alnhi))**2))
+    lnp_alnhi = -0.5*np.sum((((obsdata.alnhi - dust_alnhi)/
+                              (0.10*obsdata.alnhi))**2))
     #lnp_alnhi /= obsdata.n_wavelengths
 
     # compute the ln(prob) for the depletions
     lnp_dep = 0.0
     if obsdata.fit_depletions:
         for atomname in natoms.keys():
-            if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]: # hard limit at 1.5x the total possible abundaces (all atoms in dust)
+            # hard limit at 1.5x the total possible abundaces
+            #      (all atoms in dust)
+            if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]: 
                 #print('boundary issue')
                 return -np.inf
-            elif natoms[atomname] > obsdata.depletions[atomname][0]: # only add if natoms > depletions
-                lnp_dep = ((natoms[atomname] - obsdata.depletions[atomname][0])/obsdata.depletions[atomname][1])**2
+            # only add if natoms > depletions
+            elif natoms[atomname] > obsdata.depletions[atomname][0]: 
+                lnp_dep = ((natoms[atomname] -
+                            obsdata.depletions[atomname][0])/
+                           obsdata.depletions[atomname][1])**2
         lnp_dep *= -0.5
 
     # compute the ln(prob) for IR emission
     lnp_emission = 0.0
     if obsdata.fit_ir_emission:
-        lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission[obsdata.ir_emission_indxs])/(obsdata.ir_emission_uncs))**2))
+        lnp_emission = -0.5*np.sum((((obsdata.ir_emission -
+                                      emission[obsdata.ir_emission_indxs])/
+                                     (obsdata.ir_emission_uncs))**2))
 
     # compute the ln(prob) for the dust albedo
     lnp_albedo = 0.0
     if obsdata.fit_scat_param:
         albedo = csca/cext
-        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo[obsdata.scat_indxs])/(obsdata.scat_albedo_unc))**2))
+        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo -
+                                    albedo[obsdata.scat_indxs])/
+                                   (obsdata.scat_albedo_unc))**2))
 
     # combine the lnps
     lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo
@@ -86,9 +99,11 @@ if __name__ == "__main__":
     
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--fast", help="Use minimal walkers, n_steps, n_burn to debug code",
+    parser.add_argument("-f", "--fast",
+                    help="Use minimal walkers, n_steps, n_burn to debug code",
                         action="store_true")
-    parser.add_argument("-s", "--slow", help="Use lots of walkers, n_steps, n_burn",
+    parser.add_argument("-s", "--slow",
+                        help="Use lots of walkers, n_steps, n_burn",
                         action="store_true")
     parser.add_argument("-r", "--read", default="",
                         help="Read size distribution from disk")
@@ -104,32 +119,44 @@ if __name__ == "__main__":
     # save the start time 
     start_time = time.clock()
 
-    # get the dust model 
-    min_wave = 0.09
-    max_wave = 3.0
-    min_wave_emission = 1.0
-    max_wave_emission = 1000.0
-    dustmodel = DustModel.DustModel(['astro-silicates','astro-carbonaceous'], path='/home/kgordon/Dirty_v2/write_grain/indiv_grain/',
-                                    min_wave=min_wave,max_wave=max_wave,
-                                    min_wave_emission=min_wave_emission,max_wave_emission=max_wave_emission)
+    # get the observed data
+    obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                       'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                       'data`_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                      'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                      'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+                      'dust_scat.dat',
+                      ext_tags=['band','iue','fuse'])
 
-    # get the observed data to fit
-    obsdata = ObsData.ObsData(dustmodel.components[0].wavelengths, dustmodel.components[0].wavelengths_emission)
+    # get the dust model on the full wavelength grid
+    dustmodel_full = DustModel()
+    dustmodel_full.predict_full_grid(['astro-silicates','astro-carbonaceous'],
+                                     path='./indiv_grain/')
+
+    # get the dust model predicted on the observed data grids
+    dustmodel = DustModel()
+    dustmodel.predict_observed_data(dustmodel_full, obsdata)
 
     # replace the default size distribution with one from a file
     if args.read != "":
         for k, component in enumerate(dustmodel.components):
             fitsdata = fits.getdata(args.read,k+1)
             if len(component.size_dist) != len(fitsdata[:][1]):
-                component.size_dist = 10.**np.interp(np.log10(component.sizes),np.log10(fitsdata['SIZE']), np.log10(fitsdata['DIST']))
+                component.size_dist = 10.**np.interp(np.log10(component.sizes),
+                                                     np.log10(fitsdata['SIZE']),
+                                                     np.log10(fitsdata['DIST']))
             else:
                 component.size_dist = fitsdata['DIST']
                 #if component.sizes[i] > 0.5e-4:
                 #    component.size_dist[i] *= 1e-4
     else:
-        # check that the default size distributions give approximately the right level of the A(lambda)/N(HI) curve
-        #  if not, adjust the overall level of the size distributions to get them close
-        cabs, csca, natoms, emission = dustmodel.eff_grain_props()
+        # check that the default size distributions give approximately
+        #     the right level of the A(lambda)/N(HI) curve
+        # if not, adjust the overall level of the size distributions to
+        #     get them close
+        results = dustmodel.eff_grain_props()
+        cabs = results[0]
+        csca = results[1]
         dust_alnhi = 1.086*(cabs + csca)
         ave_model = np.average(dust_alnhi)
         ave_data = np.average(obsdata.alnhi)
@@ -138,7 +165,8 @@ if __name__ == "__main__":
             for component in dustmodel.components:
                 component.size_dist *= ave_ratio
             
-        cabs, csca, natoms, emission = dustmodel.eff_grain_props()
+        results = dustmodel.eff_grain_props()
+        natoms = results[2]
         max_violation = 0.0
         for atomname in natoms.keys():
             cur_violation = natoms[atomname]/obsdata.depletions[atomname][0]
@@ -212,14 +240,17 @@ if __name__ == "__main__":
         cabs, csca, natoms, emission = dustmodel.eff_grain_props()
         max_violation = 0.0
         for atomname in natoms.keys():
-            cur_violation = natoms[atomname]/(obsdata.depletions[atomname][0] + obsdata.depletions[atomname][1])
+            cur_violation = natoms[atomname]/(obsdata.depletions[atomname][0] +
+                                              obsdata.depletions[atomname][1])
             if cur_violation > max_violation:
                 max_violation = cur_violation
         if max_violation > 2:
             pc *= 1.9/max_violation        
             
     # setup the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprobsed, args=(obsdata, dustmodel), threads=int(args.cpus))
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprobsed,
+                                    args=(obsdata, dustmodel),
+                                    threads=int(args.cpus))
 
     # burn in the walkers
     pos, prob, state = sampler.run_mcmc(p, burn)
@@ -233,7 +264,8 @@ if __name__ == "__main__":
     # untested code from emcee webpages for incrementally saving the chains
     #f = open("chain.dat", "w")
     #f.close()
-    #for k, result in enumerate(sampler.sample(pos0, iterations=500, storechain=False)):
+    #for k, result in enumerate(sampler.sample(pos0, iterations=500,
+    #                           storechain=False)):
     #    print(k)
     #    position = result[0]
     #    f = open("chain.dat", "a")
@@ -254,8 +286,12 @@ if __name__ == "__main__":
             fit_params_best = sampler.chain[k,indxs[0],:]
 
     dustmodel.set_size_dist(fit_params_best)
-    cabs_best, csca_best, natoms_best, emission_best = dustmodel.eff_grain_props()
-
+    results = dustmodel.eff_grain_props()
+    cabs_best = results[0]
+    csca_best = results[1]
+    natoms_best = results[2]
+    emission_best = results[3]
+    
     # save the best fit size distributions
     dustmodel.save(basename + '_sizedist_best.fits')
 
@@ -272,5 +308,6 @@ if __name__ == "__main__":
     dust_alnhi = 1.086*(cabs + csca)
 
     # save the final size distributions
-    dustmodel.save(basename + '_sizedist.fits', size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
+    dustmodel.save(basename + '_sizedist.fits',
+                   size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
     

@@ -1,51 +1,86 @@
 #!/usr/bin/env python
 #
-# Observed Data Object
+# DGFit Observed Data Object
 #
 # Started: Jan 2015 (KDG)
+#    Revised to read in all the data from files: Mar 2016 (KDG)
+#       observed data defines the wavelength grids to fit on
 # 
 from __future__ import print_function
 
 import string
+import argparse
 
 import numpy as np
 import matplotlib.pyplot as pyplot
+import matplotlib
 from astropy.table import Table
 
 from Ext import f99
 
 # Object for the observed dust data
 class ObsData():
-    def __init__(self, wavelengths, wavelengths_emission):
-        # compute the dust extintion curve one the supplied wavelength grid
-        self.n_wavelengths = len(wavelengths)
-        self.wavelengths = wavelengths
+
+    # read in the data from files
+    def __init__(self, ext_filenames, dep_filename, ir_emis_filename,
+                 dust_scat_filename, ext_tags=None):
+
+        # extinction curve
+        self.ext_waves = np.empty((0))
+        self.ext_alav = np.empty((0))
+        self.ext_alav_unc = np.empty((0))
+        self.ext_tags = []
+        for i, filename in enumerate(ext_filenames):
+            t = Table.read(filename, format='ascii.commented_header')
+            self.ext_waves = np.concatenate([self.ext_waves, 1.0/t['wave']])
+            self.ext_alav = np.concatenate([self.ext_alav, t['A(l)/A(V)']])
+            self.ext_alav_unc = np.concatenate([self.ext_alav_unc, t['unc']])
+            if ext_tags is not None:
+                cur_tag = ext_tags[i]
+            else:
+                cur_tag = 'Tag' + str(i+1)
+            self.ext_tags = self.ext_tags + len(t['wave'])*[cur_tag]
+                                            
+        # normalization from A(V) to N(HI)
+        #   need to include this as input so that it can change
+        #   current values from average of 40 curves
+        #       with R(V)~3.1 in Gordon et al. (2009)
         self.Rv = 3.1
-        self.avnhi = self.Rv/5.8e21   # number is N(HI)/E(B-V) from Bohlin, Savage, & Drake (1978)
-        self.alnhi = self.avnhi*f99.f99(self.Rv, 1.0/wavelengths)
-
-        # depletions from Jenkins (2009) for F* = 0.36 in N(X) per 1e6 N(HI)
-        self.depletions = {'C': (83.41, 0.05*83.41), 'O': (109.26, 0.05*109.26), 'Mg': (31.90, 0.05*31.90),
-                           'Si': (31.24, 0.05*31.24), 'Fe': (33.34, 0.05*33.34)}
-
-        self.total_abundance = {'C': (2*83.41, 0.05*2*83.41), 'O': (2*109.26, 0.05*2*109.26), 'Mg': (2*31.90, 0.05*2*31.90),
-                                'Si': (2*31.24, 0.05*2*31.24), 'Fe': (2*33.34, 0.05*2*33.34)}
+        self.avnhi = 5.7e-22
+        self.avnhi_unc = 0.2e-22
+        
+        # change the extinction normalization from A(V) to N(HI)
+        self.ext_alnhi = self.ext_alav*self.avnhi
+        self.ext_alnhi_unc = np.square(self.ext_alav_unc/self.ext_alav) + \
+                             np.square(self.avnhi_unc/self.avnhi)
+        self.ext_alnhi_unc = self.ext_alnhi*np.sqrt(self.ext_alnhi_unc)
+        
+        # dust abundances
+        t = Table.read(dep_filename,format='ascii.commented_header')
+        self.abundance = {}
+        self.total_abundance = {}
+        for i in range(len(t)):
+            self.abundance[t['atom'][i]] = (t['abund'][i], t['abund_unc'][i])
+            self.total_abundance[t['atom'][i]] = (t['total_abund'][i],
+                                                  t['total_abund_unc'][i])
 
         # diffuse IR emission spectrum (Gordon et al. 2014)
-        self.ir_emission_waves = np.array([100., 160., 250., 350., 500.])
-        self.ir_emission = np.array([0.71, 1.53, 1.08, 0.56, 0.25])/1e20
-        self.ir_emission_uncs = np.array([0.71, 1.53, 1.08, 0.56, 0.25])*0.05/1e20
-        # get the indxs to the nearest wavelenths in the model emission spectra
-        self.n_ir_emission_waves = len(self.ir_emission_waves)
-        self.ir_emission_indxs = np.empty(self.n_ir_emission_waves, np.int)
-        for i in range(self.n_ir_emission_waves):
-            sindxs = np.argsort(np.abs(self.ir_emission_waves[i] - wavelengths_emission))
-            self.ir_emission_indxs[i] = sindxs[0]
+        #t = Table.read(ir_emis_filename,format='ascii.commented_header')
+        #self.ir_emission_waves = np.array(t['wave'])
+        #self.ir_emission = np.array(t['emission'])
+        #self.ir_emission_unc = np.array(t['emission_unc'])
+
+        #diffuse IR emission spectrum
+        t = Table.read(ir_emis_filename,format='ascii.commented_header')
+        self.ir_emission_waves = np.array(t['WAVE'])
+        self.ir_emission = np.array(t['SPEC'])/1e20
+        self.ir_emission_unc = np.array(t['ERROR'])/1e20
 
         # dust albedo (Gordon et al. AoD proceedings)
         files_dgl = ["mathis73","morgan76","lillie76","toller81", 
                      "murthy93","murthy95","petersohn97","witt97", 
-                     "schiminovich01","shalima04","sujatha05","sujatha07","sujatha10"]
+                     "schiminovich01","shalima04","sujatha05","sujatha07",
+                     "sujatha10"]
         scat_path = "/home/kgordon/Pro/Dust/Scat_Data/"
 
         scat_waves = []
@@ -54,7 +89,6 @@ class ObsData():
         scat_g = []
         scat_g_unc = []
         scat_ref = []
-        scat_indxs = []
         for sfile in files_dgl:
             f = open(scat_path + sfile + '.dat', 'r')
             ref = f.readline().rstrip()
@@ -68,29 +102,137 @@ class ObsData():
                 scat_g.append(t['g,'][k])
                 scat_g_unc.append(t['delta'][k])
                 scat_ref.append(ref)
-                # get the index of the nearest wavelength in the model grid
-                sindxs = np.argsort(np.abs(scat_waves[-1] - wavelengths))
-                scat_indxs.append(sindxs[0])
 
-        self.scat_waves = np.array(scat_waves)*1e-4
-        self.scat_albedo = np.array(scat_albedo)
-        self.scat_albedo_unc = np.array(scat_albedo_unc)
-        self.scat_g = np.array(scat_g)
-        self.scat_g_unc = np.array(scat_g_unc)
-        self.scat_ref = scat_ref
-        self.scat_indxs = np.array(scat_indxs, np.int)
+        # remove all the measurements with zero uncertainty
+        gindxs, = np.where(np.array(scat_g_unc) > 0.0)
+        self.scat_a_waves = np.array(scat_waves)[gindxs]*1e-4
+        self.scat_albedo = np.array(scat_albedo)[gindxs]
+        self.scat_albedo_unc = np.array(scat_albedo_unc)[gindxs]
+        self.scat_a_ref = np.array(scat_ref)[gindxs]
 
-        # get the indxs to the nearest wavelenths in the model emission spectra
-        self.n_ir_emission_waves = len(self.ir_emission_waves)
-        self.ir_emission_indxs = np.empty(self.n_ir_emission_waves, np.int)
-        for i in range(self.n_ir_emission_waves):
-            sindxs = np.argsort(np.abs(self.ir_emission_waves[i] - wavelengths_emission))
-            self.ir_emission_indxs[i] = sindxs[0]
+        # remove all the measurements with zero uncertainty
+        gindxs, = np.where(np.array(scat_g_unc) > 0.0)
+        self.scat_g_waves = np.array(scat_waves)[gindxs]*1e-4
+        self.scat_g = np.array(scat_g)[gindxs]
+        self.scat_g_unc = np.array(scat_g_unc)[gindxs]
+        self.scat_g_ref = np.array(scat_ref)[gindxs]
 
+        self.fit_extinction = True
         self.fit_depletions = True
         self.fit_ir_emission = True
-        self.fit_scat_param = True
+        self.fit_scat_a = True
+        self.fit_scat_g = True
         
 if __name__ == "__main__":
     
-    print('No test code')
+    # commandline parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--png", help="save figure as a png file",
+                        action="store_true")
+    parser.add_argument("--eps", help="save figure as an eps file",
+                        action="store_true")
+    parser.add_argument("--pdf", help="save figure as a pdf file",
+                        action="store_true")
+    args = parser.parse_args()
+
+    OD = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                  'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                  'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                 'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                 'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+                 'dust_scat.dat',
+                 ext_tags=['band','iue','fuse'])
+
+    # setup the plots
+    fontsize = 12
+    font = {'size'   : fontsize}
+
+    matplotlib.rc('font', **font)
+
+    matplotlib.rc('lines', linewidth=2)
+    matplotlib.rc('axes', linewidth=2)
+    matplotlib.rc('xtick.major', width=2)
+    matplotlib.rc('ytick.major', width=2)
+
+    fig, ax = pyplot.subplots(ncols=3, nrows=2, figsize=(15,10))
+
+    ax[0,0].errorbar(OD.ext_waves, OD.ext_alnhi, yerr=OD.ext_alnhi_unc, fmt='o',
+                     label='Extinction')
+    ax[0,0].set_xlabel(r'$\lambda [\mu m]$')
+    ax[0,0].set_ylabel(r'$A(\lambda)/N(HI)$')
+    ax[0,0].set_xscale('log')
+    ax[0,0].set_xlim(0.085,3.0)
+    ax[0,0].legend()
+
+    n_atoms = len(OD.abundance)
+    aindxs = np.arange(n_atoms)
+    width = 0.5
+    atomnames = sorted(list(OD.abundance.keys()))
+
+    ax[1,0].bar(aindxs+0.25*width, 
+                [OD.total_abundance[x][0] for x in atomnames], 
+                width, color='g', alpha=0.25,label='gas+dust')
+
+    ax[1,0].errorbar(aindxs+0.75*width, 
+                [OD.abundance[x][0] for x in atomnames],
+                yerr=[OD.abundance[x][1] for x in atomnames],
+                fmt='o', label='dust')
+
+    ax[1,0].set_ylabel(r'$N(X)/[10^6 N(HI)]$', fontsize=fontsize)
+    ax[1,0].set_xticks(aindxs+(0.75*width))
+    ax[1,0].set_xticklabels(atomnames)
+    ax[1,0].legend(loc=2)
+
+    ax[0,1].errorbar(OD.ir_emission_waves, OD.ir_emission,
+                     yerr=OD.ir_emission_unc, fmt='o',label="Emission")
+    ax[0,1].set_xlabel(r'$\lambda [\mu m]$')
+    ax[0,1].set_ylabel(r'$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$')
+    ax[0,1].set_xscale('log')
+    ax[0,1].set_xlim(1.0,1.5e4)
+    ax[0,1].set_yscale('log')
+    ax[0,1].legend(loc=2)
+
+    t = Table.read('data_mw_rv31/MW_diffuse_Mathis83_ISRF.dat',
+                   format='ascii.commented_header')
+    ax[1,1].plot(t['wave'],t['ISRF'],'-', label="ISRF")
+    ax[1,1].set_xlabel(r'$\lambda [\mu m]$')
+    ax[1,1].set_ylabel(r'ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]')
+    ax[1,1].set_xscale('log')
+    ax[1,1].set_yscale('log')
+    ax[1,1].set_xlim(0.09,1e1)
+    ax[1,1].set_ylim(1e-2,1e2)
+    ax[1,1].legend()
+
+    ax[0,2].errorbar(OD.scat_a_waves, OD.scat_albedo,
+                     yerr=OD.scat_albedo_unc, fmt='o', label='albedo')
+    ax[0,2].set_xlabel(r'$\lambda [\mu m]$')
+    ax[0,2].set_ylabel(r'$a$')
+    ax[0,2].set_xscale('log')
+    ax[0,2].set_xlim(0.085,3.0)
+    ax[0,2].set_ylim(0.0,1.0)
+    ax[0,2].legend()
+
+    ax[1,2].errorbar(OD.scat_g_waves, OD.scat_g,
+                     yerr=OD.scat_g_unc, fmt='o', 
+                     label=r'$g = < \mathrm{cos} (\theta) >$')
+    ax[1,2].set_xlabel(r'$\lambda [\mu m]$')
+    ax[1,2].set_ylabel(r'$g$')
+    ax[1,2].set_xscale('log')
+    ax[1,2].set_xlim(0.085,3.0)
+    ax[1,2].set_ylim(0.0,1.0)
+    ax[1,2].legend()
+
+    pyplot.tight_layout()    
+
+    # show or save
+    basename = 'ObsData_MW_Diffuse'
+    if args.png:
+        fig.savefig(basename+'.png')
+    elif args.eps:
+        fig.savefig(basename+'.eps')
+    elif args.pdf:
+        fig.savefig(basename+'.pdf')
+    else:
+        pyplot.show()
+    
+    

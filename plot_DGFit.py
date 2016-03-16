@@ -195,7 +195,7 @@ if __name__ == "__main__":
     
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", help="file with the dust model details (size distribution, extinction, etc.)")
+    parser.add_argument("filename",help="file with the dust model details (size distribution, extinction, etc.)")
     parser.add_argument("-p", "--png", help="save figure as a png file",
                         action="store_true")
     parser.add_argument("-e", "--eps", help="save figure as an eps file",
