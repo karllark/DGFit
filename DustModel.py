@@ -155,7 +155,13 @@ class DustModel():
             hdulist.append(tbhdu)
 
         # output the resulting observable parameters
-        cabs, csca, natoms, emission = self.eff_grain_props()
+        results = self.eff_grain_props()
+        cabs = results[0]
+        csca = results[1]
+        natoms = results[2]
+        emission = results[3]
+        albedo = results[4]
+        g = results[5]
 
         # natoms
         col1 = fits.Column(name='NAME', format='A2',
@@ -183,19 +189,21 @@ class DustModel():
         all_cols_emis = [col1, col2]
 
         # albedo
-        if self.origin == 'obsdata':
-            tvals = self.components[0].wavelengths_scat_a
-        else:
-            tvals = self.components[0].wavelengths
+        tvals = self.components[0].wavelengths_scat_a
         col1 = fits.Column(name='WAVE', format='E',
                            array=tvals)
         col2 = fits.Column(name='ALBEDO', format='E',
-                           array=csca/(cabs+csca))
+                           array=albedo)
         all_cols_albedo = [col1, col2]
 
         for k, component in enumerate(self.components):
             results = component.eff_grain_props()
-            tcabs, tcsca, tnatoms, temission
+            tcabs = results[0]
+            tcsca = results[1]
+            tnatoms = results[2]
+            temission = results[3]
+            talbedo = results[4]
+            tg = results[5]
             
             tcol = fits.Column(name='EXT'+str(k+1), format='E',
                                array=1.086*(tcabs+tcsca))
@@ -206,7 +214,7 @@ class DustModel():
             all_cols_emis.append(tcol)
 
             tcol = fits.Column(name='ALBEDO'+str(k+1), format='E',
-                               array=tcsca/(tcsca+tcabs))
+                               array=talbedo)
             all_cols_albedo.append(tcol)
 
         # now output the results

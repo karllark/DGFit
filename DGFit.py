@@ -32,7 +32,7 @@ from ObsData import ObsData
 #import ObsData_Azv18 as ObsData
 
 # compute the ln(prob) for an input set of model parameters
-def lnprobsed(params, ObsData, DustModel):
+def lnprobsed(params, obsdata, dustmodel):
 
     # make sure the size distributions are all positve
     for param in params:
@@ -41,21 +41,30 @@ def lnprobsed(params, ObsData, DustModel):
 
     # update the size distributions
     #  the input params are the concatenated size distributions
-    DustModel.set_size_dist(params)
+    dustmodel.set_size_dist(params)
 
     # get the integrated dust properties
-    cabs, csca, natoms, emission = DustModel.eff_grain_props()
+    results = dustmodel.eff_grain_props()
+    cabs = results[0]
+    csca = results[1]
+    natoms = results[2]
+    emission = results[3]
+    albedo = results[4]
+    g = results[5]
+
     cext = cabs + csca
     dust_alnhi = 1.086*cext
     
     # compute the ln(prob) for A(l)/N(HI)
-    lnp_alnhi = -0.5*np.sum((((obsdata.alnhi - dust_alnhi)/
-                              (0.10*obsdata.alnhi))**2))
+    lnp_alnhi = 0.0
+    if obsdata.fit_extinction:
+        lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)/
+                                 obsdata.ext_alnhi_unc)**2)
     #lnp_alnhi /= obsdata.n_wavelengths
 
     # compute the ln(prob) for the depletions
     lnp_dep = 0.0
-    if obsdata.fit_depletions:
+    if obsdata.fit_abundance:
         for atomname in natoms.keys():
             # hard limit at 1.5x the total possible abundaces
             #      (all atoms in dust)
@@ -63,31 +72,35 @@ def lnprobsed(params, ObsData, DustModel):
                 #print('boundary issue')
                 return -np.inf
             # only add if natoms > depletions
-            elif natoms[atomname] > obsdata.depletions[atomname][0]: 
+            elif natoms[atomname] > obsdata.abundance[atomname][0]: 
                 lnp_dep = ((natoms[atomname] -
-                            obsdata.depletions[atomname][0])/
-                           obsdata.depletions[atomname][1])**2
+                            obsdata.abundance[atomname][0])/
+                           obsdata.abundance[atomname][1])**2
         lnp_dep *= -0.5
 
     # compute the ln(prob) for IR emission
     lnp_emission = 0.0
     if obsdata.fit_ir_emission:
-        lnp_emission = -0.5*np.sum((((obsdata.ir_emission -
-                                      emission[obsdata.ir_emission_indxs])/
-                                     (obsdata.ir_emission_uncs))**2))
+        lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)/
+                                     (obsdata.ir_emission_unc))**2))
 
     # compute the ln(prob) for the dust albedo
     lnp_albedo = 0.0
-    if obsdata.fit_scat_param:
-        albedo = csca/cext
-        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo -
-                                    albedo[obsdata.scat_indxs])/
+    if obsdata.fit_scat_a:
+        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)/
                                    (obsdata.scat_albedo_unc))**2))
 
+    # compute the ln(prob) for the dust g
+    lnp_g = 0.0
+    if obsdata.fit_scat_g:
+        lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)/
+                                   (obsdata.scat_g_unc))**2))
+
     # combine the lnps
-    lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo
+    lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
     
     if math.isinf(lnp) | math.isnan(lnp):
+        print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
         print(lnp)
         print(params)
         exit()
@@ -122,7 +135,7 @@ if __name__ == "__main__":
     # get the observed data
     obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
                        'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                       'data`_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                       'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
                       'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
                       'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
                       'dust_scat.dat',
@@ -159,7 +172,7 @@ if __name__ == "__main__":
         csca = results[1]
         dust_alnhi = 1.086*(cabs + csca)
         ave_model = np.average(dust_alnhi)
-        ave_data = np.average(obsdata.alnhi)
+        ave_data = np.average(obsdata.ext_alnhi)
         ave_ratio = ave_data/ave_model
         if (ave_ratio < 0.5) | (ave_ratio > 2):
             for component in dustmodel.components:
@@ -169,7 +182,7 @@ if __name__ == "__main__":
         natoms = results[2]
         max_violation = 0.0
         for atomname in natoms.keys():
-            cur_violation = natoms[atomname]/obsdata.depletions[atomname][0]
+            cur_violation = natoms[atomname]/obsdata.abundance[atomname][0]
             if cur_violation > max_violation:
                 max_violation = cur_violation
 
@@ -237,11 +250,15 @@ if __name__ == "__main__":
     # make sure each walker starts with allowed abundances
     for pc in p:
         dustmodel.set_size_dist(pc)
-        cabs, csca, natoms, emission = dustmodel.eff_grain_props()
+        results = dustmodel.eff_grain_props()
+        cabs = results[0]
+        csca = results[1]
+        natoms = results[2]
+        emission = results[3]
         max_violation = 0.0
         for atomname in natoms.keys():
-            cur_violation = natoms[atomname]/(obsdata.depletions[atomname][0] +
-                                              obsdata.depletions[atomname][1])
+            cur_violation = natoms[atomname]/(obsdata.abundance[atomname][0] +
+                                              obsdata.abundance[atomname][1])
             if cur_violation > max_violation:
                 max_violation = cur_violation
         if max_violation > 2:
@@ -304,8 +321,6 @@ if __name__ == "__main__":
 
     # 50p dust params
     dustmodel.set_size_dist(fin_size_dist_50p)
-    cabs, csca, natoms, emission = dustmodel.eff_grain_props()
-    dust_alnhi = 1.086*(cabs + csca)
 
     # save the final size distributions
     dustmodel.save(basename + '_sizedist.fits',

@@ -40,6 +40,13 @@ class ObsData():
             else:
                 cur_tag = 'Tag' + str(i+1)
             self.ext_tags = self.ext_tags + len(t['wave'])*[cur_tag]
+
+        # sort 
+        sindxs = np.argsort(self.ext_waves)
+        self.ext_waves = self.ext_waves[sindxs]
+        self.ext_alav = self.ext_alav[sindxs]
+        self.ext_alav_unc = self.ext_alav_unc[sindxs]
+        self.ext_tags = np.array(self.ext_tags)[sindxs]
                                             
         # normalization from A(V) to N(HI)
         #   need to include this as input so that it can change
@@ -75,6 +82,16 @@ class ObsData():
         self.ir_emission_waves = np.array(t['WAVE'])
         self.ir_emission = np.array(t['SPEC'])/1e20
         self.ir_emission_unc = np.array(t['ERROR'])/1e20
+        # check if any uncs are zero
+        gindxs, = np.where(self.ir_emission_unc == 0.0)
+        if len(gindxs) > 0:
+            self.ir_emission_unc[gindxs] = 0.1*self.ir_emission[gindxs]
+
+        # sort 
+        sindxs = np.argsort(self.ir_emission_waves)
+        self.ir_emission_waves = self.ir_emission_waves[sindxs]
+        self.ir_emission = self.ir_emission[sindxs]
+        self.ir_emission_unc = self.ir_emission_unc[sindxs]
 
         # dust albedo (Gordon et al. AoD proceedings)
         files_dgl = ["mathis73","morgan76","lillie76","toller81", 
@@ -104,11 +121,18 @@ class ObsData():
                 scat_ref.append(ref)
 
         # remove all the measurements with zero uncertainty
-        gindxs, = np.where(np.array(scat_g_unc) > 0.0)
+        gindxs, = np.where(np.array(scat_albedo_unc) > 0.0)
         self.scat_a_waves = np.array(scat_waves)[gindxs]*1e-4
         self.scat_albedo = np.array(scat_albedo)[gindxs]
         self.scat_albedo_unc = np.array(scat_albedo_unc)[gindxs]
         self.scat_a_ref = np.array(scat_ref)[gindxs]
+
+        # sort 
+        sindxs = np.argsort(self.scat_a_waves)
+        self.scat_a_waves = self.scat_a_waves[sindxs]
+        self.scat_albedo = self.scat_albedo[sindxs]
+        self.scat_albedo_unc = self.scat_albedo_unc[sindxs]
+        self.scat_a_ref = self.scat_a_ref[sindxs]
 
         # remove all the measurements with zero uncertainty
         gindxs, = np.where(np.array(scat_g_unc) > 0.0)
@@ -117,8 +141,16 @@ class ObsData():
         self.scat_g_unc = np.array(scat_g_unc)[gindxs]
         self.scat_g_ref = np.array(scat_ref)[gindxs]
 
+        # sort 
+        sindxs = np.argsort(self.scat_g_waves)
+        self.scat_g_waves = self.scat_g_waves[sindxs]
+        self.scat_g = self.scat_g[sindxs]
+        self.scat_g_unc = self.scat_g_unc[sindxs]
+        self.scat_g_ref = self.scat_g_ref[sindxs]
+
+        # setup what can be fit
         self.fit_extinction = True
-        self.fit_depletions = True
+        self.fit_abundance = True
         self.fit_ir_emission = True
         self.fit_scat_a = True
         self.fit_scat_g = True

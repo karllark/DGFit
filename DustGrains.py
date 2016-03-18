@@ -287,7 +287,7 @@ class DustGrains():
                     (scat_a_csca[1:self.n_sizes,i]*
                      sizedist2) ) )
 
-        n_waves_scat_g = self.n_wavelengths_scat_a
+        n_waves_scat_g = self.n_wavelengths_scat_g
         scat_g_csca = self.scat_g_csca
 
         _effg = np.empty(n_waves_scat_g)

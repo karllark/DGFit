@@ -101,9 +101,9 @@ def plot_dgfit_abundances(ax, hdu, obsdata, colors=['r','b','g'],
     width = 0.5
     ax.bar(aindxs+0.25*width, atomabund, width, color=colors[0])
 
-    ax.errorbar(aindxs+0.75*width, [obsdata.depletions[x][0] 
+    ax.errorbar(aindxs+0.75*width, [obsdata.abundance[x][0] 
                                     for x in atomnames],
-                yerr=[obsdata.depletions[x][1] for x in atomnames], fmt='ko')
+                yerr=[obsdata.abundance[x][1] for x in atomnames], fmt='ko')
 
     ax.set_ylabel(r'$N(X)/[10^6 N(HI)]$', fontsize=fontsize)
     ax.set_xticks(aindxs+(0.75*width))
@@ -126,8 +126,8 @@ def plot_dgfit_extinction(ax, hdu, obsdata, colors=['r','b','g'],
             yrange = get_krange(hdu.data['EXT'+str(i+1)], logaxis=True, 
                                 in_range=yrange)
 
-    ax.plot(obsdata.wavelengths, obsdata.alnhi, 'k-', label='Observed')
-    yrange = get_krange(obsdata.alnhi, logaxis=True, in_range=yrange)
+    ax.plot(obsdata.ext_waves, obsdata.ext_alnhi, 'k-', label='Observed')
+    yrange = get_krange(obsdata.ext_alnhi, logaxis=True, in_range=yrange)
 
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -154,7 +154,7 @@ def plot_dgfit_emission(ax, hdu, obsdata, colors=['r','b','g'],
                                 in_range=yrange)
 
     ax.errorbar(obsdata.ir_emission_waves, obsdata.ir_emission, 
-                yerr=obsdata.ir_emission_uncs, fmt='ko', label='Observed')
+                yerr=obsdata.ir_emission_unc, fmt='ko', label='Observed')
     yrange = get_krange(obsdata.ir_emission, logaxis=True, in_range=yrange)
 
     ax.set_xscale('log')
@@ -180,7 +180,7 @@ def plot_dgfit_albedo(ax, hdu, obsdata, colors=['r','b','g'],
                     colors[i+1]+linetypes[i])
             yrange = get_krange(hdu.data['ALBEDO'+str(i+1)], in_range=yrange)
 
-    ax.errorbar(obsdata.scat_waves, obsdata.scat_albedo, 
+    ax.errorbar(obsdata.scat_a_waves, obsdata.scat_albedo, 
                 yerr=obsdata.scat_albedo_unc, fmt='ko', label='Observed')
     yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
 
@@ -199,6 +199,8 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--png", help="save figure as a png file",
                         action="store_true")
     parser.add_argument("-e", "--eps", help="save figure as an eps file",
+                        action="store_true")
+    parser.add_argument("-pdf", help="save figure as a pdf file",
                         action="store_true")
     args = parser.parse_args()
 
@@ -219,8 +221,13 @@ if __name__ == "__main__":
     hdulist = fits.open(args.filename)
 
     # get the observed data to fit
-    obsdata = ObsData(hdulist['EXTINCTION'].data['WAVE'],
-                      hdulist['EMISSION'].data['WAVE'])
+    obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                       'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                       'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                      'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                      'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+                      'dust_scat.dat',
+                      ext_tags=['band','iue','fuse'])
 
     # plot the dust size distributions
     colors = ['b','g']
