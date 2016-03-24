@@ -25,7 +25,6 @@ from scipy.optimize import minimize
 #from lmfit import minimize, Parameters
 
 import emcee
-import triangle
 
 from DustModel import DustModel
 from ObsData import ObsData
@@ -224,7 +223,7 @@ if __name__ == "__main__":
         
     #neg_lnprobsed = lambda *args: -1.0*lnprobsed(*args)
     #better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
-                            bounds=p0_bounds, method='L-BFGS-B')
+    #                        bounds=p0_bounds, method='L-BFGS-B')
     #print(better_start.success)
     #print(better_start.x)
     #exit()
