@@ -3,3 +3,7 @@
 *.dat
 *~
 *.pyc
+.cache
+figs
+old
+triangle.py

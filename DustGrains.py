@@ -100,8 +100,8 @@ class DustGrains():
                                  float(firstline[1:space_pos]),
                                  stochastic_heating))
 
-        # temp code to just pick every 5th size
-        tindxs = np.arange(0,len(filelist),5)
+        # temp code to just pick every 10th size
+        tindxs = np.arange(0,len(filelist),10)
         sfilelist = sorted(filelist, key=lambda file: file[1])
         filelist = []
         for k in tindxs:
@@ -118,7 +118,7 @@ class DustGrains():
         for k, file in enumerate(sorted(filelist, key=lambda file: file[1])):
             # read in the table of grain properties for this size
             t = Table.read(file[0],format='ascii.commented_header',
-                           header_start=9)
+                           header_start=-1)
             
             # setup more variables now that we know the number of wavelengths
             if k == 0:

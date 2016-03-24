@@ -35,14 +35,14 @@ from ObsData import ObsData
 def lnprobsed(params, obsdata, dustmodel):
 
     # make sure the size distributions are all positve
-    for param in params:
-        if param < 0.0:
-            return -np.inf
+    #for param in params:
+    #    if param < 0.0:
+    #        return -np.inf
 
     # update the size distributions
     #  the input params are the concatenated size distributions
     dustmodel.set_size_dist(params)
-
+    
     # get the integrated dust properties
     results = dustmodel.eff_grain_props()
     cabs = results[0]
@@ -68,14 +68,15 @@ def lnprobsed(params, obsdata, dustmodel):
         for atomname in natoms.keys():
             # hard limit at 1.5x the total possible abundaces
             #      (all atoms in dust)
-            if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]: 
+            #if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]: 
                 #print('boundary issue')
-                return -np.inf
+                #return -np.inf
+                #pass
             # only add if natoms > depletions
-            elif natoms[atomname] > obsdata.abundance[atomname][0]: 
-                lnp_dep = ((natoms[atomname] -
-                            obsdata.abundance[atomname][0])/
-                           obsdata.abundance[atomname][1])**2
+            #elif natoms[atomname] > obsdata.abundance[atomname][0]: 
+            lnp_dep = ((natoms[atomname] -
+                        obsdata.abundance[atomname][0])/
+                       obsdata.abundance[atomname][1])**2
         lnp_dep *= -0.5
 
     # compute the ln(prob) for IR emission
@@ -98,7 +99,10 @@ def lnprobsed(params, obsdata, dustmodel):
 
     # combine the lnps
     lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
-    
+
+    print(params)
+    print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
+
     if math.isinf(lnp) | math.isnan(lnp):
         print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
         print(lnp)
@@ -155,9 +159,9 @@ if __name__ == "__main__":
         for k, component in enumerate(dustmodel.components):
             fitsdata = fits.getdata(args.read,k+1)
             if len(component.size_dist) != len(fitsdata[:][1]):
-                component.size_dist = 10.**np.interp(np.log10(component.sizes),
-                                                     np.log10(fitsdata['SIZE']),
-                                                     np.log10(fitsdata['DIST']))
+                component.size_dist = 10**np.interp(np.log10(component.sizes),
+                                                    np.log10(fitsdata['SIZE']),
+                                                    np.log10(fitsdata['DIST']))
             else:
                 component.size_dist = fitsdata['DIST']
                 #if component.sizes[i] > 0.5e-4:
@@ -178,13 +182,13 @@ if __name__ == "__main__":
             for component in dustmodel.components:
                 component.size_dist *= ave_ratio
             
-        results = dustmodel.eff_grain_props()
-        natoms = results[2]
-        max_violation = 0.0
-        for atomname in natoms.keys():
-            cur_violation = natoms[atomname]/obsdata.abundance[atomname][0]
-            if cur_violation > max_violation:
-                max_violation = cur_violation
+        #results = dustmodel.eff_grain_props()
+        #natoms = results[2]
+        #max_violation = 0.0
+        #for atomname in natoms.keys():
+            #cur_violation = natoms[atomname]/obsdata.abundance[atomname][0]
+            #if cur_violation > max_violation:
+            #    max_violation = cur_violation
 
         #if max_violation > 2:
         #    for component in dustmodel.components:
@@ -204,8 +208,25 @@ if __name__ == "__main__":
 
     # call scipy.optimize to get a better initial guess
     #print(p0)
-    #better_start = minimize(lnprobsed, p0, args=(obsdata, dustmodel))
-    #print(better_start)
+    #print(lnprobsed(p0, obsdata, dustmodel))
+
+    # generate the bounds
+    #p0_bounds = []
+    #for k in range(len(p0)):
+    #    p0_bounds.append((0.0,1e20))
+
+    # setup what can be fit
+    #obsdata.fit_extinction = True
+    #obsdata.fit_abundance = False
+    #obsdata.fit_ir_emission = False
+    #obsdata.fit_scat_a = False
+    #obsdata.fit_scat_g = False
+        
+    #neg_lnprobsed = lambda *args: -1.0*lnprobsed(*args)
+    #better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
+                            bounds=p0_bounds, method='L-BFGS-B')
+    #print(better_start.success)
+    #print(better_start.x)
     #exit()
 
     #import scipy.optimize as op
@@ -231,8 +252,8 @@ if __name__ == "__main__":
     elif args.slow:
         print('using the slow params')
         nwalkers = 2*ndim
-        nsteps = 5000
-        burn   = 20000
+        nsteps = 10000
+        burn   = 50000
     else:
         nwalkers = 2*ndim
         nsteps = 1000

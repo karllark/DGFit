@@ -16,8 +16,6 @@ import matplotlib.pyplot as pyplot
 import matplotlib
 from astropy.table import Table
 
-from Ext import f99
-
 # Object for the observed dust data
 class ObsData():
 

@@ -56,11 +56,11 @@ class DustModel():
     # set the size distributions
     # new_size_dists are the concatenated size distributions for
     #     all the components
+    # input as a log to ensure it is always positive
     def set_size_dist(self, new_size_dists):
         k1 = 0
         for component in self.components:
             k2 = k1 + component.n_sizes
-            #print(k1,k2, component.n_sizes)
             component.size_dist[:] = new_size_dists[k1:k2]
             k1 += component.n_sizes
                 
@@ -298,7 +298,9 @@ if __name__ == "__main__":
     ax[1,0].set_yscale('log')
     ax[1,0].set_xlabel(r'$\lambda$ [$\mu m$]')
     ax[1,0].set_ylabel(r'C(ext)')
-
+    ax[1,0].set_xlim(1e-2,1e0)
+    ax[1,0].set_ylim(1e3,1e5)
+    
     ax[1,1].plot(DM.components[0].wavelengths_emission, emission, 'k-')
     ax[1,1].set_xscale('log')
     ax[1,1].set_yscale('log')
