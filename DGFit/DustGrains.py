@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-#
-# dg_props objects
-#  dust grain properties stored by dust size/composition
-#
-# Started: Jan 2015 (KDG)
-# Updated to include better diagnoistic plots when run (Mar 2016 KDG)
-# 
+#Started: Jan 2015 (KDG)
+#Updated to include better diagnoistic plots when run (Mar 2016 KDG) 
+"""
+DustGrains class
+  dust grain properties stored by dust size/composition
+"""
 from __future__ import print_function
 import glob
 import sys
@@ -27,15 +26,47 @@ from ObsData import ObsData
 
 # Object for the proprerties of dust grain with a specific composition
 class DustGrains():
+    """
+    DustGrains Class
+
+    Parameters
+    ----------
+    
+    Attributes
+    ----------
+    origin : 'string'
+
+    """
     def __init__(self):
+        """
+        Simple initialization allowing for multiple origins of data
+        """
         self.origin = None
 
-    def from_files(self, componentname, path='./',
-                   min_wave=0., max_wave=1e6,
-                   min_wave_emission=0., max_wave_emission=1e6):
+    def from_files(self, componentname, path='./'):
+        """
+        Read in precomputed dust grain information from files.
+        
+        Parameters
+        ----------
+        componentname : 'string'
+            Name that givesn the dust composition
+            [astro-silicates, astro-carbonacenous, astro-graphite]
+
+        path : 'string'
+            Path to the location of the dust grain files
+        """
+        
         self.origin = 'files'
         
-        # check that the component name is allowed
+        # min/max wavelengths for storage
+        #    set here in case later we want to pass them via the function call
+        min_wave = 0.
+        max_wave = 1e6,
+        min_wave_emission = 0.
+        max_wave_emission = 1e6
+
+                   # check that the component name is allowed
         #_allowed_components = ['astro-silicates','astro-graphite',
         #                       'astro-carbonaceous','astro-PAH']
         _allowed_components = ['astro-silicates','astro-carbonaceous',
@@ -177,9 +208,24 @@ class DustGrains():
         self.wavelengths_scat_g = self.wavelengths
         self.scat_g_csca = self.csca
 
-    # generate the dust grain info on the observed data grids
-    #   based on an existing DustGrain object
+
     def from_object(self, DustGrain, ObsData):
+        """
+        Setup a new DustGrains object on the ObsData object wavelength grids
+        using an existing DustGrain object for the dust grain information.
+        Currently the information is interpolated to the new wavelength grids.
+
+        In the future, this should be enhanced to integrate across filter
+        bandpasses for the data derived in filters.
+        
+        Parameters
+        ----------
+        DustGrain : DustGrains object 
+           usually read from the files with the from_files function
+
+        ObsData: ObsData object
+           contains all the observed data to be fit
+        """
         self.origin = 'object'
 
         # copy the basic information on the grain
@@ -238,11 +284,47 @@ class DustGrains():
                                        DustGrain.emission[i,:])
             self.emission[i,:] = emission_interp(self.wavelengths_emission)
 
-
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.
     # these are normalized to NHI (assumption)
     def eff_grain_props(self):
+        """
+        Calculate the grain properties integrated over the size distribution
+        for a single grain composition.
+
+        Returns
+        -------
+        C(abs) : 'numpy.ndarray'
+           Absorption cross section
+
+        C(sca) : 'numpy.ndarray'
+           Scattering cross section
+
+        Abundances : ('list', 'numpy.ndarray')
+           Tuple with (atomic elements, # per/10^6 H atoms
+
+        Emission : 'numpy.ndarray'
+           IR emission
+
+        albedo : 'numpy.ndarray'
+           Dust scattering albedo [Albedo C(sca)/Albedo C(ext)]
+
+        g : 'numpy.ndarray'
+           Dust scattering phase function assymetry [g = <cos theta>]
+
+        Albedo C(ext) : 'numpy.ndarray'
+           Extinction cross section on the albedo wavelength grid
+           (needed for combining with other dust grain compositions)
+
+        Albedo C(sca) : 'numpy.ndarray'
+           Scattering cross section on the albedo wavelength grid
+           (needed for combining with other dust grain compositions)
+
+        G C(sca) : 'numpy.ndarray'
+           Scattering cross section on the g wavelength grid 
+           (needed for combining with other dust grain compositions)
+        """
+        
         # initialize the results
         _effcabs = np.empty(self.n_wavelengths)
         _effcsca = np.empty(self.n_wavelengths)

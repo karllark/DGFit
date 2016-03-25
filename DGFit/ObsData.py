@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#
-# DGFit Observed Data Object
-#
 # Started: Jan 2015 (KDG)
 #    Revised to read in all the data from files: Mar 2016 (KDG)
 #       observed data defines the wavelength grids to fit on
-# 
+"""
+ObsData class
+  observed data that will be used to constrain the dust model
+"""
 from __future__ import print_function
 
 import string
@@ -18,9 +18,61 @@ from astropy.table import Table
 
 # Object for the observed dust data
 class ObsData():
+    """
+    ObsData Class
 
+    Parameters
+    ----------
+    ext_filenames: list of 'string'
+        filenames with the observed extincction curve
+
+    abund_filename: 'string'
+        filename with the observed atomic abundances
+
+    ir_emis_filename: 'string'
+        filename with the observed infrared dust emission
+
+    dust_scat_filename: 'string'
+        filename with the observed dust scattering (a, g) parameters
+        [currently not used - hard coded for MW diffuse - need to change]
+
+    ext_tags : list of 'string'
+        list of tags identifying the origin of the dust extinction curve segments
+
+    Attributes
+    ----------
+    Rv : 'float'
+        R(V) = A(V)/E(B-V) for extinction curve
+    
+    alnhi : float
+        A(lamda)/N(HI) value for extinction curve
+
+    alnhi_unc : float
+        uncertainty in A(lamda)/N(HI) value for extinction curve
+
+    ext_waves : 'numpy.ndarray'
+        wavelengths for the extinction curve
+    
+    ext_alav : 'numpy.ndarray'
+        extinction curve in A(lambda)/A(V) units
+    
+    ext_alav_unc : 'numpy.ndarray'
+        extinction curve uncertainties in A(lambda)/A(V) units
+    
+    ext_alnhi : 'numpy.ndarray'
+        extinction curve in A(lambda)/N(HI) units
+
+    ext_alnhi_unc : 'numpy.ndarray'
+        extinction curve uncertainties in A(lambda)/N(HI) units
+    
+    ext_tags : 'numpy.ndarray'
+        string tags identifying the origin of the extinction curve measurement
+    
+    
+    """
+    
     # read in the data from files
-    def __init__(self, ext_filenames, dep_filename, ir_emis_filename,
+    def __init__(self, ext_filenames, abund_filename, ir_emis_filename,
                  dust_scat_filename, ext_tags=None):
 
         # extinction curve
@@ -61,7 +113,7 @@ class ObsData():
         self.ext_alnhi_unc = self.ext_alnhi*np.sqrt(self.ext_alnhi_unc)
         
         # dust abundances
-        t = Table.read(dep_filename,format='ascii.commented_header')
+        t = Table.read(abund_filename,format='ascii.commented_header')
         self.abundance = {}
         self.total_abundance = {}
         for i in range(len(t)):
