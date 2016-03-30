@@ -26,6 +26,9 @@ class ObsData():
     ext_filenames: list of 'string'
         filenames with the observed extincction curve
 
+    avnhi_filenames: list of 'string'
+        filename with the observed A(V)/N(HI) value + unc
+
     abund_filename: 'string'
         filename with the observed atomic abundances
 
@@ -37,13 +40,11 @@ class ObsData():
         [currently not used - hard coded for MW diffuse - need to change]
 
     ext_tags : list of 'string'
-        list of tags identifying the origin of the dust extinction curve segments
+        list of tags identifying the origin of the 
+        dust extinction curve segments
 
     Attributes
     ----------
-    Rv : 'float'
-        R(V) = A(V)/E(B-V) for extinction curve
-    
     alnhi : float
         A(lamda)/N(HI) value for extinction curve
 
@@ -72,7 +73,8 @@ class ObsData():
     """
     
     # read in the data from files
-    def __init__(self, ext_filenames, abund_filename, ir_emis_filename,
+    def __init__(self, ext_filenames, avnhi_filename,
+                 abund_filename, ir_emis_filename,
                  dust_scat_filename, ext_tags=None):
 
         # extinction curve
@@ -99,12 +101,10 @@ class ObsData():
         self.ext_tags = np.array(self.ext_tags)[sindxs]
                                             
         # normalization from A(V) to N(HI)
-        #   need to include this as input so that it can change
-        #   current values from average of 40 curves
-        #       with R(V)~3.1 in Gordon et al. (2009)
-        self.Rv = 3.1
-        self.avnhi = 5.7e-22
-        self.avnhi_unc = 0.2e-22
+        t = Table.read(avnhi_filename,format='ascii.commented_header',
+                       header_start=-1)
+        self.avnhi = t['Av_to_NHI'][0]
+        self.avnhi_unc = t['unc'][0]
         
         # change the extinction normalization from A(V) to N(HI)
         self.ext_alnhi = self.ext_alav*self.avnhi
@@ -220,6 +220,7 @@ if __name__ == "__main__":
     OD = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
                   'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
                   'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                 'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
                  'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
                  'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
                  'dust_scat.dat',

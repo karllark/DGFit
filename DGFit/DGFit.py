@@ -127,6 +127,8 @@ if __name__ == "__main__":
                         help="basename to use for output files")
     parser.add_argument("-c", "--cpus", metavar=int, default=4,
                         help="number of cpus to use")
+    parser.add_argument("--nolarge", action="store_true",
+                        help="Deweight a > 0.5 micron by 1e-10")
     args = parser.parse_args()
 
     # set the basename of the output
@@ -164,11 +166,6 @@ if __name__ == "__main__":
             else:
                 component.size_dist = fitsdata['DIST']
 
-            # deweight large grains (test)
-            indxs, = np.where(component.sizes > 0.5e-4)
-            if len(indxs) > 0:
-                print('deweighting sizes > 0.5 micron')
-                component.size_dist[indxs] *= 1e-10
     else:
         # check that the default size distributions give approximately
         #     the right level of the A(lambda)/N(HI) curve
@@ -196,6 +193,13 @@ if __name__ == "__main__":
         #if max_violation > 2:
         #    for component in dustmodel.components:
         #        component.size_dist *= 1.9/max_violation        
+
+            # deweight large grains (test)
+    if args.nolarge:
+        indxs, = np.where(component.sizes > 0.5e-4)
+        if len(indxs) > 0:
+            print('deweighting sizes > 0.5 micron')
+            component.size_dist[indxs] *= 1e-10
 
     # save the starting model
     dustmodel.save(basename + '_sizedist_start.fits')
