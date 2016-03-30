@@ -141,6 +141,7 @@ if __name__ == "__main__":
     obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
                        'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
                        'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                      'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
                       'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
                       'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
                       'dust_scat.dat',
