@@ -31,11 +31,7 @@ class DustModel():
         for componentname in componentnames:
             cur_DG = DustGrains()
             cur_DG.from_files(componentname,
-                              path=path,
-                              min_wave=min_wave,
-                              max_wave=max_wave,
-                              min_wave_emission=min_wave_emission,
-                              max_wave_emission=max_wave_emission)
+                              path=path)
             self.components.append(cur_DG)
 
     # calculate the dust grain properties in the observed data space

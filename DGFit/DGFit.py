@@ -99,8 +99,8 @@ def lnprobsed(params, obsdata, dustmodel):
     # combine the lnps
     lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
 
-    print(params)
-    print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
+    #print(params)
+    #print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
 
     if math.isinf(lnp) | math.isnan(lnp):
         print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
@@ -163,8 +163,12 @@ if __name__ == "__main__":
                                                     np.log10(fitsdata['DIST']))
             else:
                 component.size_dist = fitsdata['DIST']
-                #if component.sizes[i] > 0.5e-4:
-                #    component.size_dist[i] *= 1e-4
+
+            # deweight large grains (test)
+            indxs, = np.where(component.sizes > 0.5e-4)
+            if len(indxs) > 0:
+                print('deweighting sizes > 0.5 micron')
+                component.size_dist[indxs] *= 1e-10
     else:
         # check that the default size distributions give approximately
         #     the right level of the A(lambda)/N(HI) curve
