@@ -196,6 +196,8 @@ if __name__ == "__main__":
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("filename",help="file with the dust model details (size distribution, extinction, etc.)")
+    parser.add_argument("--smc", help="use an SMC sightline",
+                        action="store_true")
     parser.add_argument("-p", "--png", help="save figure as a png file",
                         action="store_true")
     parser.add_argument("-e", "--eps", help="save figure as an eps file",
@@ -220,14 +222,22 @@ if __name__ == "__main__":
     # open the DGFit results
     hdulist = fits.open(args.filename)
 
-    # get the observed data to fit
-    obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                       'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                       'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                      'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                      'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                      'dust_scat.dat',
-                      ext_tags=['band','iue','fuse'])
+    # get the observed data
+    if args.smc:
+        obsdata = ObsData('data_smc_azv215/azv215_50p_ext.fits',
+                          'data_smc_azv215/azv215_avnhi.dat',
+                          'data_smc_azv215/SMC_AzV215_abundances.dat',
+                          None,
+                          None)
+    else:
+        obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                           'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                           'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                          'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
+                          'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                          'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+                          'dust_scat.dat',
+                          ext_tags=['band','iue','fuse'])
 
     # plot the dust size distributions
     colors = ['b','g']
@@ -243,11 +253,13 @@ if __name__ == "__main__":
                           fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    plot_dgfit_emission(ax[0,2], hdulist['EMISSION'], obsdata, 
-                        fontsize=fontsize)
+    if obsdata.fit_ir_emission:
+        plot_dgfit_emission(ax[0,2], hdulist['EMISSION'], obsdata, 
+                            fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    plot_dgfit_albedo(ax[1,2], hdulist['ALBEDO'], obsdata, fontsize=fontsize)
+    if obsdata.fit_scat_a:
+        plot_dgfit_albedo(ax[1,2], hdulist['ALBEDO'], obsdata, fontsize=fontsize)
 
     pyplot.tight_layout()    
 

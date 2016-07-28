@@ -16,7 +16,6 @@ import time
 import argparse
 
 import numpy as np
-import matplotlib.pyplot as pyplot
 from astropy.io import fits
 
 from scipy.interpolate import interp1d
@@ -34,29 +33,24 @@ from ObsData import ObsData
 def lnprobsed(params, obsdata, dustmodel):
 
     # make sure the size distributions are all positve
-    #for param in params:
-    #    if param < 0.0:
-    #        return -np.inf
+    for param in params:
+        if param < 0.0:
+            return -np.inf
 
     # update the size distributions
     #  the input params are the concatenated size distributions
     dustmodel.set_size_dist(params)
     
     # get the integrated dust properties
-    results = dustmodel.eff_grain_props()
-    cabs = results[0]
-    csca = results[1]
-    natoms = results[2]
-    emission = results[3]
-    albedo = results[4]
-    g = results[5]
+    results = dustmodel.eff_grain_props(obsdata)
 
-    cext = cabs + csca
-    dust_alnhi = 1.086*cext
-    
     # compute the ln(prob) for A(l)/N(HI)
     lnp_alnhi = 0.0
     if obsdata.fit_extinction:
+        cabs = results[0]
+        csca = results[1]
+        cext = cabs + csca
+        dust_alnhi = 1.086*cext
         lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)/
                                  obsdata.ext_alnhi_unc)**2)
     #lnp_alnhi /= obsdata.n_wavelengths
@@ -64,6 +58,7 @@ def lnprobsed(params, obsdata, dustmodel):
     # compute the ln(prob) for the depletions
     lnp_dep = 0.0
     if obsdata.fit_abundance:
+        natoms = results[2]
         for atomname in natoms.keys():
             # hard limit at 1.5x the total possible abundaces
             #      (all atoms in dust)
@@ -81,18 +76,21 @@ def lnprobsed(params, obsdata, dustmodel):
     # compute the ln(prob) for IR emission
     lnp_emission = 0.0
     if obsdata.fit_ir_emission:
+        emission = results[3]
         lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)/
                                      (obsdata.ir_emission_unc))**2))
 
     # compute the ln(prob) for the dust albedo
     lnp_albedo = 0.0
     if obsdata.fit_scat_a:
+        albedo = results[4]
         lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)/
                                    (obsdata.scat_albedo_unc))**2))
 
     # compute the ln(prob) for the dust g
     lnp_g = 0.0
     if obsdata.fit_scat_g:
+        g = results[5]
         lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)/
                                    (obsdata.scat_g_unc))**2))
 
@@ -129,6 +127,8 @@ if __name__ == "__main__":
                         help="number of cpus to use")
     parser.add_argument("--nolarge", action="store_true",
                         help="Deweight a > 0.5 micron by 1e-10")
+    parser.add_argument("--smc", help="use an SMC sightline",
+                        action="store_true")
     args = parser.parse_args()
 
     # set the basename of the output
@@ -138,14 +138,21 @@ if __name__ == "__main__":
     start_time = time.clock()
 
     # get the observed data
-    obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                       'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                       'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                      'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                      'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                      'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                      'dust_scat.dat',
-                      ext_tags=['band','iue','fuse'])
+    if args.smc:
+        obsdata = ObsData('data_smc_azv215/azv215_50p_ext.fits',
+                          'data_smc_azv215/azv215_avnhi.dat',
+                          'data_smc_azv215/SMC_AzV215_abundances.dat',
+                          None,
+                          None)
+    else:
+        obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                           'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                           'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                          'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
+                          'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                          'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+                          'dust_scat.dat',
+                          ext_tags=['band','iue','fuse'])
 
     # get the dust model on the full wavelength grid
     dustmodel_full = DustModel()
@@ -172,7 +179,7 @@ if __name__ == "__main__":
         #     the right level of the A(lambda)/N(HI) curve
         # if not, adjust the overall level of the size distributions to
         #     get them close
-        results = dustmodel.eff_grain_props()
+        results = dustmodel.eff_grain_props(obsdata)
         cabs = results[0]
         csca = results[1]
         dust_alnhi = 1.086*(cabs + csca)
@@ -203,7 +210,7 @@ if __name__ == "__main__":
             component.size_dist[indxs] *= 1e-10
 
     # save the starting model
-    dustmodel.save(basename + '_sizedist_start.fits')
+    dustmodel.save(basename + '_sizedist_start.fits', obsdata)
     
     # setup time
     setup_time = time.clock()
@@ -279,11 +286,10 @@ if __name__ == "__main__":
     # make sure each walker starts with allowed abundances
     for pc in p:
         dustmodel.set_size_dist(pc)
-        results = dustmodel.eff_grain_props()
+        results = dustmodel.eff_grain_props(obsdata)
         cabs = results[0]
         csca = results[1]
         natoms = results[2]
-        emission = results[3]
         max_violation = 0.0
         for atomname in natoms.keys():
             cur_violation = natoms[atomname]/(obsdata.abundance[atomname][0] +
@@ -332,14 +338,9 @@ if __name__ == "__main__":
             fit_params_best = sampler.chain[k,indxs[0],:]
 
     dustmodel.set_size_dist(fit_params_best)
-    results = dustmodel.eff_grain_props()
-    cabs_best = results[0]
-    csca_best = results[1]
-    natoms_best = results[2]
-    emission_best = results[3]
     
     # save the best fit size distributions
-    dustmodel.save(basename + '_sizedist_best.fits')
+    dustmodel.save(basename + '_sizedist_best.fits', obsdata)
 
     # get the 50p values and uncertainties
     samples = sampler.chain.reshape((-1, ndim))
@@ -352,6 +353,6 @@ if __name__ == "__main__":
     dustmodel.set_size_dist(fin_size_dist_50p)
 
     # save the final size distributions
-    dustmodel.save(basename + '_sizedist.fits',
+    dustmodel.save(basename + '_sizedist.fits', obsdata,
                    size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
     
