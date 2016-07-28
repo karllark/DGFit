@@ -110,9 +110,11 @@ class ObsData():
 
                 # only keep positive measurements
                 gindxs, = np.where(ext > 0.0)
-                self.ext_waves = np.concatenate([self.ext_waves, t['WAVELENGTH'][gindxs]])
+                self.ext_waves = np.concatenate([self.ext_waves,
+                                                 t['WAVELENGTH'][gindxs]])
                 self.ext_alav = np.concatenate([self.ext_alav, ext[gindxs]])
-                self.ext_alav_unc = np.concatenate([self.ext_alav_unc, ext_unc[gindxs]])
+                self.ext_alav_unc = np.concatenate([self.ext_alav_unc,
+                                                    ext_unc[gindxs]])
                 self.ext_tags = self.ext_tags + \
                     len(t['WAVELENGTH'])*[hdulist[i].header['EXTNAME']]
 
@@ -191,7 +193,8 @@ class ObsData():
                 ref = f.readline().rstrip()
                 f.close()
 
-                t = Table.read(scat_path+sfile+'.dat',format='ascii',header_start=1)
+                t = Table.read(scat_path+sfile+'.dat',format='ascii',
+                               header_start=1)
                 for k in range(len(t)):
                     scat_waves.append(t['wave,'][k])
                     scat_albedo.append(t['albedo,'][k])

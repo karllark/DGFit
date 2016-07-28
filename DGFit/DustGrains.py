@@ -17,7 +17,7 @@ import argparse
 import numpy as np
 from astropy.table import Table
 
-import matplotlib.pyplot as pyplot
+import matplotlib.pyplot as plt
 import matplotlib
 
 from scipy.interpolate import interp1d
@@ -267,14 +267,17 @@ class DustGrains():
         if ObsData.fit_scat_a:
             self.wavelengths_scat_a = ObsData.scat_a_waves
             self.n_wavelengths_scat_a = len(self.wavelengths_scat_a)
-            self.scat_a_cext = np.empty((self.n_sizes, self.n_wavelengths_scat_a))
-            self.scat_a_csca = np.empty((self.n_sizes, self.n_wavelengths_scat_a))
+            self.scat_a_cext = np.empty((self.n_sizes,
+                                         self.n_wavelengths_scat_a))
+            self.scat_a_csca = np.empty((self.n_sizes,
+                                         self.n_wavelengths_scat_a))
 
         if ObsData.fit_scat_a:
             self.wavelengths_scat_g = ObsData.scat_g_waves
             self.n_wavelengths_scat_g = len(self.wavelengths_scat_g)
             self.scat_g = np.empty((self.n_sizes, self.n_wavelengths_scat_g))
-            self.scat_g_csca = np.empty((self.n_sizes, self.n_wavelengths_scat_g))
+            self.scat_g_csca = np.empty((self.n_sizes,
+                                         self.n_wavelengths_scat_g))
 
         # loop over the sizes and generate grain info on the observed data grid
         for i in range(self.n_sizes):
@@ -309,6 +312,8 @@ class DustGrains():
 
         Returns
         -------
+        A dictonary of:
+
         C(abs) : 'numpy.ndarray'
            Absorption cross section
 
@@ -339,6 +344,9 @@ class DustGrains():
            Scattering cross section on the g wavelength grid 
            (needed for combining with other dust grain compositions)
         """
+
+        # output is a dictonary
+        results = {}
         
         # initialize the results
         _effcabs = np.empty(self.n_wavelengths)
@@ -360,8 +368,10 @@ class DustGrains():
                                             sizedist2) ) )
 
             # *not* faster to use numexpr (tested in 2015)
-
-        results = [_effcabs, _effcsca]
+            
+        results['cabs'] = _effcabs
+        results['csca'] = _effcsca
+        #results = [_effcabs, _effcsca]
 
         # compute the number of atoms/NHI 
         _natoms = np.empty(len(self.atomic_comp_names))
@@ -376,17 +386,20 @@ class DustGrains():
         # convert to N(N) per 1e6 N(HI)
         _natoms *= 1e6
         
-        results.append(dict(zip(self.atomic_comp_names, _natoms)))
+        results['natoms'] = dict(zip(self.atomic_comp_names, _natoms))
+        #results.append(dict(zip(self.atomic_comp_names, _natoms)))
         
         # compute the integrated emission spectrum
         if ObsData.fit_ir_emission:
             _emission = np.empty(self.n_wavelengths_emission)
             for i in range(self.n_wavelengths_emission):
-                _emission[i] = np.sum( deltas*( (self.emission[0:self.n_sizes-1,i]*
-                                                 sizedist1) +
-                                                (self.emission[1:self.n_sizes,i]*
-                                                 sizedist2) ) )
-            results.append(_emission)
+                _emission[i] = np.sum( deltas*(
+                    (self.emission[0:self.n_sizes-1,i]*
+                     sizedist1) +
+                    (self.emission[1:self.n_sizes,i]*
+                     sizedist2) ) )
+            results['emission'] = _emission    
+            #results.append(_emission)
             
         # scattering parameters a & g
         if ObsData.fit_scat_a:
@@ -409,7 +422,9 @@ class DustGrains():
                         (scat_a_csca[1:self.n_sizes,i]*
                          sizedist2) ) )
 
-            results.append(_effscat_a_csca/_effscat_a_cext)
+            results['albedo'] = _effscat_a_csca/_effscat_a_cext
+            results['scat_a_cext'] = _effscat_a_cext
+            results['scat_a_csca'] = _effscat_a_csca
 
         if ObsData.fit_scat_g:
             n_waves_scat_g = self.n_wavelengths_scat_g
@@ -431,15 +446,8 @@ class DustGrains():
                          sizedist1) +
                         (scat_g_csca[1:self.n_sizes,i]*
                          sizedist2) ) )
-            results.append(_effg/_effscat_g_csca)
-
-        # misc results needed for internal calculations
-        if ObsData.fit_scat_a:
-            results.append(_effscat_a_cext)
-            results.append(_effscat_a_csca)
-
-        if ObsData.fit_scat_g:
-            results.append(_effscat_g_csca)
+            results['g'] = _effg/_effscat_g_csca
+            results['scat_g_csca'] = _effscat_g_csca
 
         # return the results as a tuple of arrays
         return results
@@ -472,6 +480,7 @@ if __name__ == "__main__":
         OD = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
                       'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
                       'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                     'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
                      'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
                      'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
                      'dust_scat.dat',
@@ -491,7 +500,7 @@ if __name__ == "__main__":
     matplotlib.rc('xtick.major', width=2)
     matplotlib.rc('ytick.major', width=2)
 
-    fig, ax = pyplot.subplots(ncols=3, nrows=2, figsize=(15,10))
+    fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15,10))
 
     ws_indxs = np.argsort(DG.wavelengths)
     ews_indxs = np.argsort(DG.wavelengths_emission)
@@ -539,7 +548,7 @@ if __name__ == "__main__":
         cur_ylim = ax[1,2].get_ylim()
         ax[1,2].set_ylim([1e-23,1e-0])
         
-    pyplot.tight_layout()    
+    plt.tight_layout()    
 
     # show or save
     basename = 'DustGrains_diag'
@@ -550,6 +559,6 @@ if __name__ == "__main__":
     elif args.pdf:
         fig.savefig(basename+'.pdf')
     else:
-        pyplot.show()
+        plt.show()
     
     

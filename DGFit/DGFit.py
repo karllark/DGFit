@@ -47,8 +47,8 @@ def lnprobsed(params, obsdata, dustmodel):
     # compute the ln(prob) for A(l)/N(HI)
     lnp_alnhi = 0.0
     if obsdata.fit_extinction:
-        cabs = results[0]
-        csca = results[1]
+        cabs = results['cabs']
+        csca = results['csca']
         cext = cabs + csca
         dust_alnhi = 1.086*cext
         lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)/
@@ -58,7 +58,7 @@ def lnprobsed(params, obsdata, dustmodel):
     # compute the ln(prob) for the depletions
     lnp_dep = 0.0
     if obsdata.fit_abundance:
-        natoms = results[2]
+        natoms = results['natoms']
         for atomname in natoms.keys():
             # hard limit at 1.5x the total possible abundaces
             #      (all atoms in dust)
@@ -76,21 +76,21 @@ def lnprobsed(params, obsdata, dustmodel):
     # compute the ln(prob) for IR emission
     lnp_emission = 0.0
     if obsdata.fit_ir_emission:
-        emission = results[3]
+        emission = results['emission']
         lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)/
                                      (obsdata.ir_emission_unc))**2))
 
     # compute the ln(prob) for the dust albedo
     lnp_albedo = 0.0
     if obsdata.fit_scat_a:
-        albedo = results[4]
+        albedo = results['albedo']
         lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)/
                                    (obsdata.scat_albedo_unc))**2))
 
     # compute the ln(prob) for the dust g
     lnp_g = 0.0
     if obsdata.fit_scat_g:
-        g = results[5]
+        g = results['g']
         lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)/
                                    (obsdata.scat_g_unc))**2))
 
@@ -180,8 +180,8 @@ if __name__ == "__main__":
         # if not, adjust the overall level of the size distributions to
         #     get them close
         results = dustmodel.eff_grain_props(obsdata)
-        cabs = results[0]
-        csca = results[1]
+        cabs = results['cabs']
+        csca = results['csca']
         dust_alnhi = 1.086*(cabs + csca)
         ave_model = np.average(dust_alnhi)
         ave_data = np.average(obsdata.ext_alnhi)
@@ -287,9 +287,9 @@ if __name__ == "__main__":
     for pc in p:
         dustmodel.set_size_dist(pc)
         results = dustmodel.eff_grain_props(obsdata)
-        cabs = results[0]
-        csca = results[1]
-        natoms = results[2]
+        cabs = results['cabs']
+        csca = results['csca']
+        natoms = results['natoms']
         max_violation = 0.0
         for atomname in natoms.keys():
             cur_violation = natoms[atomname]/(obsdata.abundance[atomname][0] +

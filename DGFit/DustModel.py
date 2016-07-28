@@ -84,13 +84,13 @@ class DustModel():
             results = component.eff_grain_props(ObsData)
 
             # add the component info to the total values
-            _tcabs = results[0]
-            _tcsca = results[1]
+            _tcabs = results['cabs']
+            _tcsca = results['csca']
             _cabs += _tcabs
             _csca += _tcsca
 
             # for the depletions (# of atoms), a bit more careful work needed
-            _tnatoms = results[2]
+            _tnatoms = results['natoms']
             for aname in _tnatoms.keys():
                 #if (len(_natoms) > 0) & (aname in _natoms.keys()):
                 if aname in _natoms.keys():
@@ -100,31 +100,34 @@ class DustModel():
 
 
             if ObsData.fit_ir_emission:
-                _temission = results[3]
+                _temission = results['emission']
                 _emission += _temission
 
             if ObsData.fit_scat_a:
-                _tscat_a_cext = results[6]
-                _tscat_a_csca = results[7]
+                _tscat_a_cext = results['scat_a_cext']
+                _tscat_a_csca = results['scat_a_csca']
                 _scat_a_cext += _tscat_a_cext
                 _scat_a_csca += _tscat_a_csca
 
             if ObsData.fit_scat_g:
-                _tg = results[5]
-                _tscat_g_csca = results[8]
+                _tg = results['g']
+                _tscat_g_csca = results['scat_g_csca']
                 _g += _tscat_g_csca*_tg
                 _scat_g_csca += _tscat_g_csca
 
-        results = [_cabs, _csca, _natoms]
-
+        results = {}
+        results['cabs'] = _cabs
+        results['csca'] = _csca
+        results['natoms'] = _natoms
+        
         if ObsData.fit_ir_emission:
-            results.append(_emission)
+            results['emission'] = _emission
 
         if ObsData.fit_scat_a:
-            results.append(_scat_a_csca/_scat_a_cext)
+            results['albedo'] = _scat_a_csca/_scat_a_cext
 
         if ObsData.fit_scat_g:
-            results.append(_g/_scat_g_csca)
+            results['g'] = _g/_scat_g_csca
 
         return results
 
@@ -172,9 +175,9 @@ class DustModel():
 
         # output the resulting observable parameters
         results = self.eff_grain_props(ObsData)
-        cabs = results[0]
-        csca = results[1]
-        natoms = results[2]
+        cabs = results['cabs']
+        csca = results['csca']
+        natoms = results['natoms']
 
         # natoms
         col1 = fits.Column(name='NAME', format='A2',
@@ -196,7 +199,7 @@ class DustModel():
         
         # emission
         if ObsData.fit_ir_emission:
-            emission = results[3]
+            emission = results['emission']
             col1 = fits.Column(name='WAVE', format='E',
                                array=self.components[0].wavelengths_emission)
             col2 = fits.Column(name='EMIS', format='E',
@@ -205,7 +208,7 @@ class DustModel():
 
         # albedo
         if ObsData.fit_scat_a:
-            albedo = results[4]
+            albedo = results['albedo']
             tvals = self.components[0].wavelengths_scat_a
             col1 = fits.Column(name='WAVE', format='E',
                                array=tvals)
@@ -213,28 +216,44 @@ class DustModel():
                                array=albedo)
             all_cols_albedo = [col1, col2]
 
+        # g
+        if ObsData.fit_scat_g:
+            g = results['g']
+            tvals = self.components[0].wavelengths_scat_g
+            col1 = fits.Column(name='WAVE', format='E',
+                               array=tvals)
+            col2 = fits.Column(name='G', format='E',
+                               array=g)
+            all_cols_g = [col1, col2]
+            
         for k, component in enumerate(self.components):
             results = component.eff_grain_props(ObsData)
-            tcabs = results[0]
-            tcsca = results[1]
-            tnatoms = results[2]
+            tcabs = results['cabs']
+            tcsca = results['csca']
+            tnatoms = results['natoms']
 
             tcol = fits.Column(name='EXT'+str(k+1), format='E',
                                array=1.086*(tcabs+tcsca))
             all_cols_ext.append(tcol)
 
             if ObsData.fit_ir_emission:
-                temission = results[3]
+                temission = results['emission']
                 tcol = fits.Column(name='EMIS'+str(k+1), format='E',
                                    array=temission)
                 all_cols_emis.append(tcol)
 
             if ObsData.fit_scat_a:
-                talbedo = results[4]
+                talbedo = results['albedo']
                 tcol = fits.Column(name='ALBEDO'+str(k+1), format='E',
                                    array=talbedo)
                 all_cols_albedo.append(tcol)
 
+            if ObsData.fit_scat_g:
+                tg = results['g']
+                tcol = fits.Column(name='G'+str(k+1), format='E',
+                                   array=tg)
+                all_cols_g.append(tcol)
+                
         # now output the results
         #    extinction
         cols = fits.ColDefs(all_cols_ext)
@@ -247,7 +266,8 @@ class DustModel():
         if ObsData.fit_ir_emission:
             cols = fits.ColDefs(all_cols_emis)
             tbhdu = fits.BinTableHDU.from_columns(cols)
-            tbhdu.header.set('EXTNAME', 'Emission', 'emission MJy/sr/H atom units')
+            tbhdu.header.set('EXTNAME', 'Emission',
+                             'emission MJy/sr/H atom units')
             hdulist.append(tbhdu)
 
         #    albedo
@@ -257,6 +277,14 @@ class DustModel():
             tbhdu.header.set('EXTNAME', 'Albedo', 'dust scattering albedo')
             hdulist.append(tbhdu)
 
+        #    g
+        if ObsData.fit_scat_g:
+            cols = fits.ColDefs(all_cols_g)
+            tbhdu = fits.BinTableHDU.from_columns(cols)
+            tbhdu.header.set('EXTNAME', 'G',
+                             'dust scattering phase function asymmetry')
+            hdulist.append(tbhdu)
+            
         hdulist.writeto(filename, clobber=True)
     
 if __name__ == "__main__":
@@ -304,12 +332,12 @@ if __name__ == "__main__":
         DM = DM_obs
 
     results = DM.eff_grain_props(OD)
-    cabs = results[0]
-    csca = results[1]
-    natoms = results[2]
-    emission = results[3]
-    albedo = results[4]
-    g = results[5]
+    cabs = results['cabs']
+    csca = results['csca']
+    natoms = results['natoms']
+    emission = results['emission']
+    albedo = results['albedo']
+    g = results['g']
     
     fig, ax = plt.subplots(ncols=3, nrows=3, figsize=(16,12))
 
@@ -319,15 +347,15 @@ if __name__ == "__main__":
     ax[1,0].set_yscale('log')
     ax[1,0].set_xlabel(r'$\lambda$ [$\mu m$]')
     ax[1,0].set_ylabel(r'C(ext)')
-    ax[1,0].set_xlim(1e-2,1e0)
-    ax[1,0].set_ylim(1e3,1e5)
+    #ax[1,0].set_xlim(1e-2,1e0)
+    #ax[1,0].set_ylim(1e3,1e5)
     
     ax[1,1].plot(DM.components[0].wavelengths_emission, emission, 'k-')
     ax[1,1].set_xscale('log')
     ax[1,1].set_yscale('log')
     ax[1,1].set_xlabel(r'$\lambda$ [$\mu m$]')
     ax[1,1].set_ylabel(r'S')
-    ax[1,1].set_xlim(1e0,1e4)
+    #ax[1,1].set_xlim(1e0,1e4)
     gindxs, = np.where(DM.components[0].wavelengths > 1e0)
     #ax[1,1].set_ylim(min(emission[gindxs]), max(emission[gindxs]))
 
@@ -355,10 +383,10 @@ if __name__ == "__main__":
                      label=component.name)
 
         cresults = component.eff_grain_props(OD)
-        ax[1,0].plot(component.wavelengths, cresults[0]+cresults[1])
-        ax[1,1].plot(component.wavelengths_emission, cresults[3])
-        ax[1,2].plot(component.wavelengths_scat_a, cresults[4])
-        ax[2,2].plot(component.wavelengths_scat_g, cresults[5])
+        ax[1,0].plot(component.wavelengths, cresults['cabs']+cresults['csca'])
+        ax[1,1].plot(component.wavelengths_emission, cresults['emission'])
+        ax[1,2].plot(component.wavelengths_scat_a, cresults['albedo'])
+        ax[2,2].plot(component.wavelengths_scat_g, cresults['g'])
 
     ax[0,0].set_xscale('log')
     ax[0,0].set_yscale('log')
@@ -372,8 +400,8 @@ if __name__ == "__main__":
 
     ax[0,2].set_xscale('log')
     ax[0,2].set_yscale('log')
-    ax[0,1].set_xlabel(r'$\lambda$ [$\mu m$]')
-    ax[0,1].set_ylabel(r'$a^3 N(a)$')
+    ax[0,2].set_xlabel(r'$\lambda$ [$\mu m$]')
+    ax[0,2].set_ylabel(r'$a^3 N(a)$')
 
     ax[0,0].legend()
 
