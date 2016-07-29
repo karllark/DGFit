@@ -29,17 +29,9 @@ from DustModel import DustModel
 from ObsData import ObsData
 #import ObsData_Azv18 as ObsData
 
-# compute the ln(prob) for an input set of model parameters
-def lnprobsed(params, obsdata, dustmodel):
-
-    # make sure the size distributions are all positve
-    for param in params:
-        if param < 0.0:
-            return -np.inf
-
-    # update the size distributions
-    #  the input params are the concatenated size distributions
-    dustmodel.set_size_dist(params)
+# get the ln(prob) for the dust grain size/composition distribution
+#  defined in dustmodel
+def lnprob_all(obsdata, dustmodel):
     
     # get the integrated dust properties
     results = dustmodel.eff_grain_props(obsdata)
@@ -107,6 +99,22 @@ def lnprobsed(params, obsdata, dustmodel):
         exit()
     else:
         return lnp
+
+# compute the ln(prob) for discrete size distributions
+def lnprob_discrete(params, obsdata, dustmodel):
+
+    # make sure the size distributions are all positve
+    lnp_bound = 0.0
+    for param in params:
+        if param < 0.0:
+            lnp_bound = -1e20
+            #return -np.inf
+
+    # update the size distributions
+    #  the input params are the concatenated size distributions
+    dustmodel.set_size_dist(params)
+
+    return lnprob_all(obsdata, dustmodel) + lnp_bound
 
 # main fitting code
 if __name__ == "__main__":
@@ -300,7 +308,7 @@ if __name__ == "__main__":
             pc *= 1.9/max_violation        
             
     # setup the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprobsed,
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_discrete,
                                     args=(obsdata, dustmodel),
                                     threads=int(args.cpus))
 
