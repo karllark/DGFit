@@ -24,6 +24,8 @@ from scipy.interpolate import interp1d
 
 from ObsData import ObsData
 
+__all__ = ["DustGrains"]
+
 # Object for the proprerties of dust grain with a specific composition
 class DustGrains():
     """
@@ -314,33 +316,33 @@ class DustGrains():
         -------
         A dictonary of:
 
-        C(abs) : 'numpy.ndarray'
+        C(abs) : 'numpy.ndarray' named 'cabs'
            Absorption cross section
 
-        C(sca) : 'numpy.ndarray'
+        C(sca) : 'numpy.ndarray' named 'csca'
            Scattering cross section
 
-        Abundances : ('list', 'numpy.ndarray')
+        Abundances : ('list', 'numpy.ndarray') named 'natoms'
            Tuple with (atomic elements, # per/10^6 H atoms
 
-        Emission : 'numpy.ndarray'
+        Emission : 'numpy.ndarray' named 'emission'
            IR emission
 
-        albedo : 'numpy.ndarray'
+        albedo : 'numpy.ndarray' named 'albedo'
            Dust scattering albedo [Albedo C(sca)/Albedo C(ext)]
 
-        g : 'numpy.ndarray'
+        g : 'numpy.ndarray' named 'g'
            Dust scattering phase function assymetry [g = <cos theta>]
 
-        Albedo C(ext) : 'numpy.ndarray'
+        Albedo C(ext) : 'numpy.ndarray' named 'scat_a_cext'
            Extinction cross section on the albedo wavelength grid
            (needed for combining with other dust grain compositions)
 
-        Albedo C(sca) : 'numpy.ndarray'
+        Albedo C(sca) : 'numpy.ndarray' named 'scat_a_csca'
            Scattering cross section on the albedo wavelength grid
            (needed for combining with other dust grain compositions)
 
-        G C(sca) : 'numpy.ndarray'
+        G C(sca) : 'numpy.ndarray' named 'scat_g_csca'
            Scattering cross section on the g wavelength grid 
            (needed for combining with other dust grain compositions)
         """

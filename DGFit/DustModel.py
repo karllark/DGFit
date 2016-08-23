@@ -16,6 +16,8 @@ from astropy.io import fits
 from DustGrains import DustGrains
 from ObsData import ObsData
 
+__all__ = ["DustModel"]
+
 # Object for the proprerties of dust grain with a specific composition
 class DustModel():
     def __init__(self):

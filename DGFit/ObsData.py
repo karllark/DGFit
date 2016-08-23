@@ -17,6 +17,8 @@ import matplotlib
 from astropy.table import Table
 from astropy.io import fits
 
+__all__ = ["ObsData"]
+
 # Object for the observed dust data
 class ObsData():
     """
