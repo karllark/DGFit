@@ -7,12 +7,12 @@ Getting Started
 
 The DGFit module provides:
 
+Reference API
+=============
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-.. automodapi:: DGFit.DustGrains
-.. automodapi:: DGFit.DustModel
-.. automodapi:: DGFit.ObsData
+   DGFit/reference_api.rst
 
 Indices and tables
 ==================
