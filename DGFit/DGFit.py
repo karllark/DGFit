@@ -116,9 +116,8 @@ def lnprob_discrete(params, obsdata, dustmodel):
 
     return lnprob_all(obsdata, dustmodel) + lnp_bound
 
-# main fitting code
-if __name__ == "__main__":
-    
+def DGFit_cmdparser():
+
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--fast",
@@ -137,6 +136,13 @@ if __name__ == "__main__":
                         help="Deweight a > 0.5 micron by 1e-10")
     parser.add_argument("--smc", help="use an SMC sightline",
                         action="store_true")
+
+
+# main fitting code
+if __name__ == "__main__":
+    
+    parser = DGFit_cmdparser()
+
     args = parser.parse_args()
 
     # set the basename of the output

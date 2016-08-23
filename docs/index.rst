@@ -1,11 +1,14 @@
 DGFit Documentation
 ====================================
 
+Running DGFit
+=============
 
-Getting Started
----------------
-
-The DGFit module provides:
+.. Does not work, needs fixing
+   argparse::
+   :module: DGFit
+   :func: DGFit_cmdparser
+   :prog: DGFit
 
 Reference API
 =============
