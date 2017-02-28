@@ -137,6 +137,8 @@ def DGFit_cmdparser():
     parser.add_argument("--smc", help="use an SMC sightline",
                         action="store_true")
 
+    return parser
+
 
 # main fitting code
 if __name__ == "__main__":

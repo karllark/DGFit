@@ -4,10 +4,12 @@ DGFit Documentation
 Running DGFit
 =============
 
-.. Does not work, needs fixing
+text needed
+
+..
    argparse::
    :module: DGFit
-   :func: DGFit_cmdparser
+   :ref: DGFit_cmdparser
    :prog: DGFit
 
 Reference API
