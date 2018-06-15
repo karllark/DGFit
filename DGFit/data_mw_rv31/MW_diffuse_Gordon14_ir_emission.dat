@@ -1,0 +1,8 @@
+# wave   emission  emission_unc
+100.  0.71e-20   3.55e-22
+160.  1.53e-20   7.65e-22
+250.  1.08e-20   5.40e-22
+350.  0.56e-20   2.80e-22
+500.  0.25e-20   1.25e-22
+# IR emission from MW diffuse ISM
+# from Gordon et al. (2014)
