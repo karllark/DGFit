@@ -1,5 +1,5 @@
 DGFit Documentation
-====================================
+===================
 
 Running DGFit
 =============
@@ -18,10 +18,3 @@ Reference API
    :maxdepth: 1
 
    DGFit/reference_api.rst
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
