@@ -8,7 +8,7 @@
 # Started: Jan 2015 (KDG)
 #  added IR emission: Feb 2015 (KDG)
 #  udpated to move plotting to a separate function: Dec 2015 (KDG)
-# 
+#
 from __future__ import print_function
 
 import math
@@ -25,14 +25,14 @@ from scipy.optimize import minimize
 
 import emcee
 
-from DustModel import DustModel
-from ObsData import ObsData
+from .DustModel import DustModel
+from .ObsData import ObsData
 #import ObsData_Azv18 as ObsData
 
 # get the ln(prob) for the dust grain size/composition distribution
 #  defined in dustmodel
 def lnprob_all(obsdata, dustmodel):
-    
+
     # get the integrated dust properties
     results = dustmodel.eff_grain_props(obsdata)
 
@@ -54,12 +54,12 @@ def lnprob_all(obsdata, dustmodel):
         for atomname in natoms.keys():
             # hard limit at 1.5x the total possible abundaces
             #      (all atoms in dust)
-            #if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]: 
+            #if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]:
                 #print('boundary issue')
                 #return -np.inf
                 #pass
             # only add if natoms > depletions
-            #elif natoms[atomname] > obsdata.abundance[atomname][0]: 
+            #elif natoms[atomname] > obsdata.abundance[atomname][0]:
             lnp_dep = ((natoms[atomname] -
                         obsdata.abundance[atomname][0])/
                        obsdata.abundance[atomname][1])**2
@@ -142,7 +142,7 @@ def DGFit_cmdparser():
 
 # main fitting code
 if __name__ == "__main__":
-    
+
     parser = DGFit_cmdparser()
 
     args = parser.parse_args()
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     # set the basename of the output
     basename = args.tag
 
-    # save the start time 
+    # save the start time
     start_time = time.clock()
 
     # get the observed data
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         if (ave_ratio < 0.5) | (ave_ratio > 2):
             for component in dustmodel.components:
                 component.size_dist *= ave_ratio
-            
+
         #results = dustmodel.eff_grain_props()
         #natoms = results[2]
         #max_violation = 0.0
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
         #if max_violation > 2:
         #    for component in dustmodel.components:
-        #        component.size_dist *= 1.9/max_violation        
+        #        component.size_dist *= 1.9/max_violation
 
             # deweight large grains (test)
     if args.nolarge:
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
     # save the starting model
     dustmodel.save(basename + '_sizedist_start.fits', obsdata)
-    
+
     # setup time
     setup_time = time.clock()
     print('setup time taken: ',(setup_time - start_time)/60., ' min')
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     #obsdata.fit_ir_emission = False
     #obsdata.fit_scat_a = False
     #obsdata.fit_scat_g = False
-        
+
     #neg_lnprobsed = lambda *args: -1.0*lnprobsed(*args)
     #better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
     #                        bounds=p0_bounds, method='L-BFGS-B')
@@ -313,8 +313,8 @@ if __name__ == "__main__":
             if cur_violation > max_violation:
                 max_violation = cur_violation
         if max_violation > 2:
-            pc *= 1.9/max_violation        
-            
+            pc *= 1.9/max_violation
+
     # setup the sampler
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_discrete,
                                     args=(obsdata, dustmodel),
@@ -354,7 +354,7 @@ if __name__ == "__main__":
             fit_params_best = sampler.chain[k,indxs[0],:]
 
     dustmodel.set_size_dist(fit_params_best)
-    
+
     # save the best fit size distributions
     dustmodel.save(basename + '_sizedist_best.fits', obsdata)
 
@@ -371,4 +371,3 @@ if __name__ == "__main__":
     # save the final size distributions
     dustmodel.save(basename + '_sizedist.fits', obsdata,
                    size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
-    

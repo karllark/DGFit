@@ -4,7 +4,7 @@
 #  dust model properites
 #
 # Started: Jan 2015 (KDG)
-# 
+
 from __future__ import print_function
 import argparse
 
@@ -13,17 +13,18 @@ import matplotlib.pyplot as plt
 import matplotlib
 from astropy.io import fits
 
-from DustGrains import DustGrains
-from ObsData import ObsData
+from .DustGrains import DustGrains
+from .ObsData import ObsData
 
 __all__ = ["DustModel"]
+
 
 # Object for the proprerties of dust grain with a specific composition
 class DustModel():
     def __init__(self):
         self.origin = None
 
-    def predict_full_grid(self, componentnames, path='./', 
+    def predict_full_grid(self, componentnames, path='./',
                           min_wave=0., max_wave=1e6,
                           min_wave_emission=0., max_wave_emission=1e6):
         self.origin = 'files'
@@ -37,7 +38,7 @@ class DustModel():
             self.components.append(cur_DG)
 
     # calculate the dust grain properties in the observed data space
-    #   basically, transform the unifrom dust grain grid to the 
+    #   basically, transform the unifrom dust grain grid to the
     #   the nonuniform spectroscipic and band integrated grids
     #   of the observed data
     # this is caching the dust grains predictions to make the fitting faster
@@ -61,7 +62,7 @@ class DustModel():
             k2 = k1 + component.n_sizes
             component.size_dist[:] = new_size_dists[k1:k2]
             k1 += component.n_sizes
-                
+
     # compute integrated dust properties
     def eff_grain_props(self, ObsData):
         # storage for results
@@ -121,7 +122,7 @@ class DustModel():
         results['cabs'] = _cabs
         results['csca'] = _csca
         results['natoms'] = _natoms
-        
+
         if ObsData.fit_ir_emission:
             results['emission'] = _emission
 
@@ -146,7 +147,7 @@ class DustModel():
         pheader.add_comment('written by Karl D. Gordon')
         pheader.add_comment('kgordon@stsci.edu')
         phdu = fits.PrimaryHDU(header=pheader)
-        
+
         hdulist = fits.HDUList([phdu])
 
         # output the dust grain size distribution
@@ -198,7 +199,7 @@ class DustModel():
         col2 = fits.Column(name='EXT', format='E',
                            array=1.086*(cabs+csca))
         all_cols_ext = [col1, col2]
-        
+
         # emission
         if ObsData.fit_ir_emission:
             emission = results['emission']
@@ -227,7 +228,7 @@ class DustModel():
             col2 = fits.Column(name='G', format='E',
                                array=g)
             all_cols_g = [col1, col2]
-            
+
         for k, component in enumerate(self.components):
             results = component.eff_grain_props(ObsData)
             tcabs = results['cabs']
@@ -255,7 +256,7 @@ class DustModel():
                 tcol = fits.Column(name='G'+str(k+1), format='E',
                                    array=tg)
                 all_cols_g.append(tcol)
-                
+
         # now output the results
         #    extinction
         cols = fits.ColDefs(all_cols_ext)
@@ -286,11 +287,11 @@ class DustModel():
             tbhdu.header.set('EXTNAME', 'G',
                              'dust scattering phase function asymmetry')
             hdulist.append(tbhdu)
-            
+
         hdulist.writeto(filename, clobber=True)
-    
+
 if __name__ == "__main__":
-    
+
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--obsdata", help="transform to observed data grids",
@@ -340,7 +341,7 @@ if __name__ == "__main__":
     emission = results['emission']
     albedo = results['albedo']
     g = results['g']
-    
+
     fig, ax = plt.subplots(ncols=3, nrows=3, figsize=(16,12))
 
     # plot the total results
@@ -351,7 +352,7 @@ if __name__ == "__main__":
     ax[1,0].set_ylabel(r'C(ext)')
     #ax[1,0].set_xlim(1e-2,1e0)
     #ax[1,0].set_ylim(1e3,1e5)
-    
+
     ax[1,1].plot(DM.components[0].wavelengths_emission, emission, 'k-')
     ax[1,1].set_xscale('log')
     ax[1,1].set_yscale('log')
@@ -407,7 +408,7 @@ if __name__ == "__main__":
 
     ax[0,0].legend()
 
-    plt.tight_layout()    
+    plt.tight_layout()
 
     # show or save
     basename = 'ObsData_MW_Diffuse'
@@ -419,5 +420,3 @@ if __name__ == "__main__":
         fig.savefig(basename+'.pdf')
     else:
         plt.show()
-    
-    

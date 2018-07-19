@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-#Started: Jan 2015 (KDG)
-#Updated to include better diagnoistic plots when run (Mar 2016 KDG) 
+# Started: Jan 2015 (KDG)
+# Updated to include better diagnoistic plots when run (Mar 2016 KDG)
 """
 DustGrains class
   dust grain properties stored by dust size/composition
 """
 from __future__ import print_function
 import glob
-import sys
 import re
-import string
 import math
 import colorsys
 import argparse
@@ -22,9 +20,10 @@ import matplotlib
 
 from scipy.interpolate import interp1d
 
-from ObsData import ObsData
+from .ObsData import ObsData
 
 __all__ = ["DustGrains"]
+
 
 # Object for the proprerties of dust grain with a specific composition
 class DustGrains():
@@ -33,7 +32,7 @@ class DustGrains():
 
     Parameters
     ----------
-    
+
     Attributes
     ----------
     origin : 'string'
@@ -48,7 +47,7 @@ class DustGrains():
     def from_files(self, componentname, path='./'):
         """
         Read in precomputed dust grain information from files.
-        
+
         Parameters
         ----------
         componentname : 'string'
@@ -58,9 +57,9 @@ class DustGrains():
         path : 'string'
             Path to the location of the dust grain files
         """
-        
+
         self.origin = 'files'
-        
+
         # min/max wavelengths for storage
         #    set here in case later we want to pass them via the function call
         min_wave = 0.
@@ -87,19 +86,19 @@ class DustGrains():
             self.atomic_comp_masses = np.array([24.305, 55.845, 28.0855,
                                                 15.994])*1.660e-24  # in grams
         elif componentname == 'astro-carbonaceous':  # from WD01
-            self.density = 2.24  # g/cm^3  
+            self.density = 2.24  # g/cm^3
             self.atomic_composition = 'C'
             self.atomic_comp_names = ['C']
             self.atomic_comp_number = np.array([1])
             self.atomic_comp_masses = np.array([12.0107])*1.660e-24  # in grams
 
         elif componentname == 'astro-graphite':  # need origin (copy)
-            self.density = 2.24  # g/cm^3  
+            self.density = 2.24  # g/cm^3
             self.atomic_composition = 'C'
             self.atomic_comp_names = ['C']
             self.atomic_comp_number = np.array([1])
             self.atomic_comp_masses = np.array([12.0107])*1.660e-24  # in grams
-            
+
         #useful quantities
         self.mass_per_mol_comp = np.sum(self.atomic_comp_masses*
                                         self.atomic_comp_number)
@@ -128,7 +127,7 @@ class DustGrains():
                     stochastic_heating = True
                 else:
                     stochastic_heating = False
-                
+
                 filelist.append((file,int(sizenum),
                                  float(firstline[1:space_pos]),
                                  stochastic_heating))
@@ -158,7 +157,7 @@ class DustGrains():
             # read in the table of grain properties for this size
             t = Table.read(file[0],format='ascii.commented_header',
                            header_start=-1)
-            
+
             # setup more variables now that we know the number of wavelengths
             if k == 0:
                 # generate the indices to crop the wavelength to the
@@ -193,12 +192,12 @@ class DustGrains():
             # convert emission from ergs/(s cm sr) to Jy/sr
             #   wavelengths in microns
             #      convert from cm^-1 to Hz^-1
-            self.emission[k,:] *= (self.wavelengths_emission)**2/2.998e10  
+            self.emission[k,:] *= (self.wavelengths_emission)**2/2.998e10
             self.emission[k,:] /= 1e-19  # convert from ergs/(s Hz) to Jy
             self.emission[k,:] *= 1e-6 # convert from Jy/sr to MJy/sr
             # convert from m^-2 to cm^-2
-            self.emission[k,:] *= 1e-4 
-            
+            self.emission[k,:] *= 1e-4
+
             # default size distributions
             self.size_dist[k] = self.sizes[k]**(-4.0)
 
@@ -225,10 +224,10 @@ class DustGrains():
 
         In the future, this should be enhanced to integrate across filter
         bandpasses for the data derived in filters.
-        
+
         Parameters
         ----------
-        DustGrain : DustGrains object 
+        DustGrain : DustGrains object
            usually read from the files with the from_files function
 
         ObsData: ObsData object
@@ -300,7 +299,7 @@ class DustGrains():
                 self.scat_g_csca[i,:] = csca_interp(self.wavelengths_scat_g)
 
             if ObsData.fit_ir_emission:
-                emission_interp = interp1d(DustGrain.wavelengths_emission, 
+                emission_interp = interp1d(DustGrain.wavelengths_emission,
                                            DustGrain.emission[i,:])
                 self.emission[i,:] = emission_interp(self.wavelengths_emission)
 
@@ -343,17 +342,17 @@ class DustGrains():
            (needed for combining with other dust grain compositions)
 
         G C(sca) : 'numpy.ndarray' named 'scat_g_csca'
-           Scattering cross section on the g wavelength grid 
+           Scattering cross section on the g wavelength grid
            (needed for combining with other dust grain compositions)
         """
 
         # output is a dictonary
         results = {}
-        
+
         # initialize the results
         _effcabs = np.empty(self.n_wavelengths)
         _effcsca = np.empty(self.n_wavelengths)
-        
+
         # do a very simple integration (later this could be made more complex)
         deltas = 0.5*(self.sizes[1:self.n_sizes] -
                       self.sizes[0:self.n_sizes-1])
@@ -370,12 +369,12 @@ class DustGrains():
                                             sizedist2) ) )
 
             # *not* faster to use numexpr (tested in 2015)
-            
+
         results['cabs'] = _effcabs
         results['csca'] = _effcsca
         #results = [_effcabs, _effcsca]
 
-        # compute the number of atoms/NHI 
+        # compute the number of atoms/NHI
         _natoms = np.empty(len(self.atomic_comp_names))
         for i in range(len(self.atomic_comp_names)):
             _natoms[i] = np.sum(deltas*( ((self.sizes[0:self.n_sizes-1]**3)*
@@ -387,10 +386,10 @@ class DustGrains():
 
         # convert to N(N) per 1e6 N(HI)
         _natoms *= 1e6
-        
+
         results['natoms'] = dict(zip(self.atomic_comp_names, _natoms))
         #results.append(dict(zip(self.atomic_comp_names, _natoms)))
-        
+
         # compute the integrated emission spectrum
         if ObsData.fit_ir_emission:
             _emission = np.empty(self.n_wavelengths_emission)
@@ -400,9 +399,9 @@ class DustGrains():
                      sizedist1) +
                     (self.emission[1:self.n_sizes,i]*
                      sizedist2) ) )
-            results['emission'] = _emission    
+            results['emission'] = _emission
             #results.append(_emission)
-            
+
         # scattering parameters a & g
         if ObsData.fit_scat_a:
             n_waves_scat_a = self.n_wavelengths_scat_a
@@ -413,12 +412,12 @@ class DustGrains():
             _effscat_a_csca = np.empty(n_waves_scat_a)
 
             for i in range(n_waves_scat_a):
-                _effscat_a_cext[i] = np.sum( deltas*( 
+                _effscat_a_cext[i] = np.sum( deltas*(
                         (scat_a_cext[0:self.n_sizes-1,i]*
                          sizedist1) +
                         (scat_a_cext[1:self.n_sizes,i]*
                          sizedist2) ) )
-                _effscat_a_csca[i] = np.sum( deltas*( 
+                _effscat_a_csca[i] = np.sum( deltas*(
                         (scat_a_csca[0:self.n_sizes-1,i]*
                          sizedist1) +
                         (scat_a_csca[1:self.n_sizes,i]*
@@ -436,14 +435,14 @@ class DustGrains():
             _effscat_g_csca = np.empty(n_waves_scat_g)
 
             for i in range(n_waves_scat_g):
-                _effg[i] = np.sum( deltas*( 
+                _effg[i] = np.sum( deltas*(
                         (self.scat_g[0:self.n_sizes-1,i]*
                          scat_g_csca[0:self.n_sizes-1,i]*
                          sizedist1) +
                         (self.scat_g[1:self.n_sizes,i]*
                          scat_g_csca[1:self.n_sizes,i]*
                          sizedist2) ) )
-                _effscat_g_csca[i] = np.sum( deltas*( 
+                _effscat_g_csca[i] = np.sum( deltas*(
                         (scat_g_csca[0:self.n_sizes-1,i]*
                          sizedist1) +
                         (scat_g_csca[1:self.n_sizes,i]*
@@ -455,14 +454,14 @@ class DustGrains():
         return results
 
 if __name__ == "__main__":
-    
+
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--composition",
                         choices=['astro-silicates', 'astro-carbonaceous',
                                  'astro-graphite',
                                  'astro-PAH-ionized', 'astro-PAH-neutral'],
-                        default='astro-silicates', 
+                        default='astro-silicates',
                         help="Grain composition")
     parser.add_argument("--obsdata", help="transform to observed data grids",
                         action="store_true")
@@ -528,7 +527,7 @@ if __name__ == "__main__":
         ax[0,2].set_xscale('log')
         ax[0,2].set_yscale('log')
 
-        ax[1,0].plot(DG.wavelengths_scat_a, 
+        ax[1,0].plot(DG.wavelengths_scat_a,
                      DG.scat_a_csca[i,:]/DG.scat_a_cext[i,:],
                      'o',
                      color=pcolor)
@@ -541,7 +540,7 @@ if __name__ == "__main__":
         ax[1,1].set_ylabel('g')
         ax[1,1].set_xscale('log')
 
-        ax[1,2].plot(DG.wavelengths_emission[ews_indxs], 
+        ax[1,2].plot(DG.wavelengths_emission[ews_indxs],
                      DG.emission[i,ews_indxs],color=pcolor)
         ax[1,2].set_xlabel(r'$\lambda$ [$\mu m$]')
         ax[1,2].set_ylabel('Emission')
@@ -549,8 +548,8 @@ if __name__ == "__main__":
         ax[1,2].set_yscale('log')
         cur_ylim = ax[1,2].get_ylim()
         ax[1,2].set_ylim([1e-23,1e-0])
-        
-    plt.tight_layout()    
+
+    plt.tight_layout()
 
     # show or save
     basename = 'DustGrains_diag'
@@ -562,5 +561,3 @@ if __name__ == "__main__":
         fig.savefig(basename+'.pdf')
     else:
         plt.show()
-    
-    
