@@ -5,8 +5,8 @@ import colorsys
 import matplotlib
 import numpy as np
 
-from ObsData import ObsData
-from DustGrains import DustGrains
+from DGFit.ObsData import ObsData
+from DGFit.DustGrains import DustGrains
 
 if __name__ == "__main__":
 
