@@ -18,16 +18,17 @@ import argparse
 import numpy as np
 from astropy.io import fits
 
-from scipy.interpolate import interp1d
-from scipy.optimize import minimize
+# from scipy.interpolate import interp1d
+# from scipy.optimize import minimize
 
-#from lmfit import minimize, Parameters
+# from lmfit import minimize, Parameters
 
 import emcee
 
-from .DustModel import DustModel
-from .ObsData import ObsData
-#import ObsData_Azv18 as ObsData
+from DGFit.DustModel import DustModel
+from DGFit.ObsData import ObsData
+# import ObsData_Azv18 as ObsData
+
 
 # get the ln(prob) for the dust grain size/composition distribution
 #  defined in dustmodel
@@ -43,9 +44,9 @@ def lnprob_all(obsdata, dustmodel):
         csca = results['csca']
         cext = cabs + csca
         dust_alnhi = 1.086*cext
-        lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)/
-                                 obsdata.ext_alnhi_unc)**2)
-    #lnp_alnhi /= obsdata.n_wavelengths
+        lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)
+                                 / obsdata.ext_alnhi_unc)**2)
+    # lnp_alnhi /= obsdata.n_wavelengths
 
     # compute the ln(prob) for the depletions
     lnp_dep = 0.0
@@ -54,51 +55,52 @@ def lnprob_all(obsdata, dustmodel):
         for atomname in natoms.keys():
             # hard limit at 1.5x the total possible abundaces
             #      (all atoms in dust)
-            #if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]:
-                #print('boundary issue')
-                #return -np.inf
-                #pass
+            # if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]:
+                # print('boundary issue')
+                # return -np.inf
+                # pass
             # only add if natoms > depletions
-            #elif natoms[atomname] > obsdata.abundance[atomname][0]:
+            # elif natoms[atomname] > obsdata.abundance[atomname][0]:
             lnp_dep = ((natoms[atomname] -
-                        obsdata.abundance[atomname][0])/
-                       obsdata.abundance[atomname][1])**2
+                        obsdata.abundance[atomname][0])
+                       / obsdata.abundance[atomname][1])**2
         lnp_dep *= -0.5
 
     # compute the ln(prob) for IR emission
     lnp_emission = 0.0
     if obsdata.fit_ir_emission:
         emission = results['emission']
-        lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)/
-                                     (obsdata.ir_emission_unc))**2))
+        lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)
+                                    / (obsdata.ir_emission_unc))**2))
 
     # compute the ln(prob) for the dust albedo
     lnp_albedo = 0.0
     if obsdata.fit_scat_a:
         albedo = results['albedo']
-        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)/
-                                   (obsdata.scat_albedo_unc))**2))
+        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)
+                                 / (obsdata.scat_albedo_unc))**2))
 
     # compute the ln(prob) for the dust g
     lnp_g = 0.0
     if obsdata.fit_scat_g:
         g = results['g']
-        lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)/
-                                   (obsdata.scat_g_unc))**2))
+        lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)
+                                   / (obsdata.scat_g_unc))**2))
 
     # combine the lnps
     lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
 
-    #print(params)
-    #print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
+    # print(params)
+    # print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
 
     if math.isinf(lnp) | math.isnan(lnp):
         print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
         print(lnp)
-        print(params)
+        # print(params)
         exit()
     else:
         return lnp
+
 
 # compute the ln(prob) for discrete size distributions
 def lnprob_discrete(params, obsdata, dustmodel):
@@ -108,7 +110,7 @@ def lnprob_discrete(params, obsdata, dustmodel):
     for param in params:
         if param < 0.0:
             lnp_bound = -1e20
-            #return -np.inf
+            # return -np.inf
 
     # update the size distributions
     #  the input params are the concatenated size distributions
@@ -116,12 +118,13 @@ def lnprob_discrete(params, obsdata, dustmodel):
 
     return lnprob_all(obsdata, dustmodel) + lnp_bound
 
+
 def DGFit_cmdparser():
 
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--fast",
-                    help="Use minimal walkers, n_steps, n_burn to debug code",
+                        help="Use minimal walkers, n_steps, n_burn to debug code",
                         action="store_true")
     parser.add_argument("-s", "--slow",
                         help="Use lots of walkers, n_steps, n_burn",
@@ -155,24 +158,24 @@ if __name__ == "__main__":
 
     # get the observed data
     if args.smc:
-        obsdata = ObsData('data_smc_azv215/azv215_50p_ext.fits',
-                          'data_smc_azv215/azv215_avnhi.dat',
-                          'data_smc_azv215/SMC_AzV215_abundances.dat',
+        obsdata = ObsData('data/smc_azv215/azv215_50p_ext.fits',
+                          'data/smc_azv215/azv215_avnhi.dat',
+                          'data/smc_azv215/SMC_AzV215_abundances.dat',
                           None,
                           None)
     else:
-        obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                           'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                           'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                          'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                          'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                          'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+        obsdata = ObsData(['data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                           'data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                           'data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                          'data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
+                          'data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                          'data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
                           'dust_scat.dat',
-                          ext_tags=['band','iue','fuse'])
+                          ext_tags=['band', 'iue', 'fuse'])
 
     # get the dust model on the full wavelength grid
     dustmodel_full = DustModel()
-    dustmodel_full.predict_full_grid(['astro-silicates','astro-carbonaceous'],
+    dustmodel_full.predict_full_grid(['astro-silicates', 'astro-carbonaceous'],
                                      path='./indiv_grain/')
 
     # get the dust model predicted on the observed data grids
@@ -182,7 +185,7 @@ if __name__ == "__main__":
     # replace the default size distribution with one from a file
     if args.read != "":
         for k, component in enumerate(dustmodel.components):
-            fitsdata = fits.getdata(args.read,k+1)
+            fitsdata = fits.getdata(args.read, k+1)
             if len(component.size_dist) != len(fitsdata[:][1]):
                 component.size_dist = 10**np.interp(np.log10(component.sizes),
                                                     np.log10(fitsdata['SIZE']),
@@ -206,15 +209,15 @@ if __name__ == "__main__":
             for component in dustmodel.components:
                 component.size_dist *= ave_ratio
 
-        #results = dustmodel.eff_grain_props()
-        #natoms = results[2]
-        #max_violation = 0.0
-        #for atomname in natoms.keys():
-            #cur_violation = natoms[atomname]/obsdata.abundance[atomname][0]
-            #if cur_violation > max_violation:
+        # results = dustmodel.eff_grain_props()
+        # natoms = results[2]
+        # max_violation = 0.0
+        # for atomname in natoms.keys():
+            # cur_violation = natoms[atomname]/obsdata.abundance[atomname][0]
+            # if cur_violation > max_violation:
             #    max_violation = cur_violation
 
-        #if max_violation > 2:
+        # if max_violation > 2:
         #    for component in dustmodel.components:
         #        component.size_dist *= 1.9/max_violation
 
@@ -230,48 +233,48 @@ if __name__ == "__main__":
 
     # setup time
     setup_time = time.clock()
-    print('setup time taken: ',(setup_time - start_time)/60., ' min')
+    print('setup time taken: ', (setup_time - start_time)/60., ' min')
 
     # inital guesses at parameters
     p0 = dustmodel.components[0].size_dist
-    for k in range(1,dustmodel.n_components):
-        p0 = np.concatenate([p0,dustmodel.components[k].size_dist])
+    for k in range(1, dustmodel.n_components):
+        p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
 
     # call scipy.optimize to get a better initial guess
-    #print(p0)
-    #print(lnprobsed(p0, obsdata, dustmodel))
+    # print(p0)
+    # print(lnprobsed(p0, obsdata, dustmodel))
 
     # generate the bounds
-    #p0_bounds = []
-    #for k in range(len(p0)):
+    # p0_bounds = []
+    # for k in range(len(p0)):
     #    p0_bounds.append((0.0,1e20))
 
     # setup what can be fit
-    #obsdata.fit_extinction = True
-    #obsdata.fit_abundance = False
-    #obsdata.fit_ir_emission = False
-    #obsdata.fit_scat_a = False
-    #obsdata.fit_scat_g = False
+    # obsdata.fit_extinction = True
+    # obsdata.fit_abundance = False
+    # obsdata.fit_ir_emission = False
+    # obsdata.fit_scat_a = False
+    # obsdata.fit_scat_g = False
 
-    #neg_lnprobsed = lambda *args: -1.0*lnprobsed(*args)
-    #better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
+    # neg_lnprobsed = lambda *args: -1.0*lnprobsed(*args)
+    # better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
     #                        bounds=p0_bounds, method='L-BFGS-B')
-    #print(better_start.success)
-    #print(better_start.x)
-    #exit()
+    # print(better_start.success)
+    # print(better_start.x)
+    # exit()
 
-    #import scipy.optimize as op
-    #nll = lambda *args: -lnprobsed(*args)
-    #result = op.minimize(nll, p0, args=(obsdata, dustmodel))
-    #print(result)
-    #exit()
+    # import scipy.optimize as op
+    # nll = lambda *args: -lnprobsed(*args)
+    # result = op.minimize(nll, p0, args=(obsdata, dustmodel))
+    # print(result)
+    # exit()
 
     # trying with lmfit (not tested)
-    #params = Parameters()
-    #for i in range(n_params):
+    # params = Parameters()
+    # for i in range(n_params):
     #   params.add('p'+str(i),value=p0[i],min=0.0)
-    #out = minimize(kext_residuals, params, args=(1.0/xdata, ydata))
-    #print(out.params)
+    # out = minimize(kext_residuals, params, args=(1.0/xdata, ydata))
+    # print(out.params)
 
     ndim = len(p0)
     print('# params = ', ndim)
@@ -279,19 +282,19 @@ if __name__ == "__main__":
         print('using the fast params')
         nwalkers = 2*ndim
         nsteps = 50
-        burn   = 5
+        burn = 5
     elif args.slow:
         print('using the slow params')
         nwalkers = 2*ndim
         nsteps = 10000
-        burn   = 50000
+        burn = 50000
     else:
         nwalkers = 2*ndim
         nsteps = 1000
-        burn   = 5000
+        burn = 5000
 
     # setting up the walkers to start "near" the inital guess
-    p  = [ p0*(1+0.25*np.random.normal(0,1.,ndim))  for k in range(nwalkers)]
+    p = [p0*(1+0.25*np.random.normal(0, 1., ndim)) for k in range(nwalkers)]
 
     # ensure that all the walkers start with positive values
     for pc in p:
@@ -330,9 +333,9 @@ if __name__ == "__main__":
     pos, prob, state = sampler.run_mcmc(pos, nsteps, rstate0=state)
 
     # untested code from emcee webpages for incrementally saving the chains
-    #f = open("chain.dat", "w")
-    #f.close()
-    #for k, result in enumerate(sampler.sample(pos0, iterations=500,
+    # f = open("chain.dat", "w")
+    # f.close()
+    # for k, result in enumerate(sampler.sample(pos0, iterations=500,
     #                           storechain=False)):
     #    print(k)
     #    position = result[0]
@@ -342,7 +345,7 @@ if __name__ == "__main__":
     #    f.close()
 
     emcee_time = time.clock()
-    print('emcee time taken: ',(emcee_time - setup_time)/60., ' min')
+    print('emcee time taken: ', (emcee_time - setup_time)/60., ' min')
 
     # get the best fit values
     max_lnp = -1e6
@@ -351,7 +354,7 @@ if __name__ == "__main__":
         if tmax_lnp > max_lnp:
             max_lnp = tmax_lnp
             indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
-            fit_params_best = sampler.chain[k,indxs[0],:]
+            fit_params_best = sampler.chain[k, indxs[0], :]
 
     dustmodel.set_size_dist(fit_params_best)
 

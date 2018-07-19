@@ -14,7 +14,7 @@ import matplotlib
 
 from astropy.io import fits
 
-from .ObsData import ObsData
+from DGFit.ObsData import ObsData
 
 
 def get_krange(x, logaxis=False, in_range=[0]):

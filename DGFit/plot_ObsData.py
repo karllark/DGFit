@@ -9,7 +9,7 @@ import matplotlib
 
 from astropy.table import Table
 
-from ObsData import ObsData
+from DGFit.ObsData import ObsData
 
 if __name__ == "__main__":
 
