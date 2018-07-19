@@ -90,9 +90,12 @@ class ObsData():
         if isinstance(ext_filenames, (list, tuple)):
             for i, filename in enumerate(ext_filenames):
                 t = Table.read(filename, format='ascii.commented_header')
-                self.ext_waves = np.concatenate([self.ext_waves, 1.0/t['wave']])
-                self.ext_alav = np.concatenate([self.ext_alav, t['A(l)/A(V)']])
-                self.ext_alav_unc = np.concatenate([self.ext_alav_unc, t['unc']])
+                self.ext_waves = np.concatenate([self.ext_waves,
+                                                 1.0/t['wave']])
+                self.ext_alav = np.concatenate([self.ext_alav,
+                                                t['A(l)/A(V)']])
+                self.ext_alav_unc = np.concatenate([self.ext_alav_unc,
+                                                    t['unc']])
                 if ext_tags is not None:
                     cur_tag = ext_tags[i]
                 else:
@@ -101,7 +104,7 @@ class ObsData():
         else:
             # assume it is a FITS file (need to add checks)
             hdulist = fits.open(ext_filenames)
-            for i in range(1,len(hdulist)):
+            for i in range(1, len(hdulist)):
                 t = hdulist[i].data
                 # hack to get AzV 215 to work
                 #  need to get a better file format for FITS extinction curves
@@ -130,34 +133,36 @@ class ObsData():
         self.ext_tags = np.array(self.ext_tags)[sindxs]
 
         # normalization from A(V) to N(HI)
-        t = Table.read(avnhi_filename,format='ascii.commented_header',
+        t = Table.read(avnhi_filename,
+                       format='ascii.commented_header',
                        header_start=-1)
         self.avnhi = t['Av_to_NHI'][0]
         self.avnhi_unc = t['unc'][0]
 
         # change the extinction normalization from A(V) to N(HI)
         self.ext_alnhi = self.ext_alav*self.avnhi
-        self.ext_alnhi_unc = np.square(self.ext_alav_unc/self.ext_alav) + \
-                             np.square(self.avnhi_unc/self.avnhi)
+        self.ext_alnhi_unc = (np.square(self.ext_alav_unc/self.ext_alav)
+                              + np.square(self.avnhi_unc/self.avnhi))
         self.ext_alnhi_unc = self.ext_alnhi*np.sqrt(self.ext_alnhi_unc)
 
         # dust abundances
         self.fit_abundance = False
         if abund_filename is not None:
             self.fit_abundance = True
-            t = Table.read(abund_filename,format='ascii.commented_header')
+            t = Table.read(abund_filename, format='ascii.commented_header')
             self.abundance = {}
             self.total_abundance = {}
             for i in range(len(t)):
-                self.abundance[t['atom'][i]] = (t['abund'][i], t['abund_unc'][i])
+                self.abundance[t['atom'][i]] = (t['abund'][i],
+                                                t['abund_unc'][i])
                 self.total_abundance[t['atom'][i]] = (t['total_abund'][i],
                                                       t['total_abund_unc'][i])
 
-        #diffuse IR emission spectrum
+        # diffuse IR emission spectrum
         self.fit_ir_emission = False
         if ir_emis_filename is not None:
             self.fit_ir_emission = True
-            t = Table.read(ir_emis_filename,format='ascii.commented_header')
+            t = Table.read(ir_emis_filename, format='ascii.commented_header')
             self.ir_emission_waves = np.array(t['WAVE'])
             self.ir_emission = np.array(t['SPEC'])/1e20
             self.ir_emission_unc = np.array(t['ERROR'])/1e20
@@ -178,11 +183,11 @@ class ObsData():
         if dust_scat_filename is not None:
             self.fit_scat_a = True
             self.fit_scat_g = True
-            files_dgl = ["mathis73","morgan76","lillie76","toller81",
-                         "murthy93","murthy95","petersohn97","witt97",
-                         "schiminovich01","shalima04","sujatha05","sujatha07",
-                         "sujatha10"]
-            scat_path = "/home/kgordon/Pro/Dust/Scat_Data/"
+            files_dgl = ["mathis73", "morgan76", "lillie76", "toller81",
+                         "murthy93", "murthy95", "petersohn97", "witt97",
+                         "schiminovich01", "shalima04", "sujatha05",
+                         "sujatha07", "sujatha10"]
+            scat_path = "data/mw_rv31/Scat_Data/"
 
             scat_waves = []
             scat_albedo = []
@@ -195,7 +200,8 @@ class ObsData():
                 ref = f.readline().rstrip()
                 f.close()
 
-                t = Table.read(scat_path+sfile+'.dat',format='ascii',
+                t = Table.read(scat_path+sfile+'.dat',
+                               format='ascii',
                                header_start=1)
                 for k in range(len(t)):
                     scat_waves.append(t['wave,'][k])
@@ -233,6 +239,7 @@ class ObsData():
             self.scat_g_unc = self.scat_g_unc[sindxs]
             self.scat_g_ref = self.scat_g_ref[sindxs]
 
+
 if __name__ == "__main__":
 
     # commandline parser
@@ -248,24 +255,24 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.smc:
-        OD = ObsData('data_smc_azv215/azv215_50p_ext.fits',
-                     'data_smc_azv215/azv215_avnhi.dat',
-                     'data_smc_azv215/SMC_AzV215_abundances.dat',
+        OD = ObsData('data/smc_azv215/azv215_50p_ext.fits',
+                     'data/smc_azv215/azv215_avnhi.dat',
+                     'data/smc_azv215/SMC_AzV215_abundances.dat',
                      None,
                      None)
     else:
-        OD = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                      'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                      'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                     'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                     'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                     'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                     'dust_scat.dat',
-                     ext_tags=['band','iue','fuse'])
+        OD = ObsData(['data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
+                      'data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
+                      'data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
+                     'data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
+                     'data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
+                     'data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
+                     'dta/mw_rv31/dust_scat.dat',
+                     ext_tags=['band', 'iue', 'fuse'])
 
     # setup the plots
     fontsize = 12
-    font = {'size'   : fontsize}
+    font = {'size': fontsize}
 
     matplotlib.rc('font', **font)
 
@@ -274,76 +281,76 @@ if __name__ == "__main__":
     matplotlib.rc('xtick.major', width=2)
     matplotlib.rc('ytick.major', width=2)
 
-    fig, ax = pyplot.subplots(ncols=3, nrows=2, figsize=(15,10))
+    fig, ax = pyplot.subplots(ncols=3, nrows=2, figsize=(15, 10))
 
-    ax[0,0].errorbar(OD.ext_waves, OD.ext_alnhi, yerr=OD.ext_alnhi_unc, fmt='o',
-                     label='Extinction')
-    ax[0,0].set_xlabel(r'$\lambda [\mu m]$')
-    ax[0,0].set_ylabel(r'$A(\lambda)/N(HI)$')
-    ax[0,0].set_xscale('log')
-    ax[0,0].set_xlim(0.085,3.0)
-    ax[0,0].legend()
+    ax[0, 0].errorbar(OD.ext_waves, OD.ext_alnhi, yerr=OD.ext_alnhi_unc,
+                      fmt='o', label='Extinction')
+    ax[0, 0].set_xlabel(r'$\lambda [\mu m]$')
+    ax[0, 0].set_ylabel(r'$A(\lambda)/N(HI)$')
+    ax[0, 0].set_xscale('log')
+    ax[0, 0].set_xlim(0.085, 3.0)
+    ax[0, 0].legend()
 
     n_atoms = len(OD.abundance)
     aindxs = np.arange(n_atoms)
     width = 0.5
     atomnames = sorted(list(OD.abundance.keys()))
 
-    ax[1,0].bar(aindxs+0.25*width,
-                [OD.total_abundance[x][0] for x in atomnames],
-                width, color='g', alpha=0.25,label='gas+dust')
+    ax[1, 0].bar(aindxs+0.25*width,
+                 [OD.total_abundance[x][0] for x in atomnames],
+                 width, color='g', alpha=0.25, label='gas+dust')
 
-    ax[1,0].errorbar(aindxs+0.75*width,
-                [OD.abundance[x][0] for x in atomnames],
-                yerr=[OD.abundance[x][1] for x in atomnames],
-                fmt='o', label='dust')
+    ax[1, 0].errorbar(aindxs+0.75*width,
+                      [OD.abundance[x][0] for x in atomnames],
+                      yerr=[OD.abundance[x][1] for x in atomnames],
+                      fmt='o', label='dust')
 
-    ax[1,0].set_ylabel(r'$N(X)/[10^6 N(HI)]$', fontsize=fontsize)
-    ax[1,0].set_xticks(aindxs+(0.75*width))
-    ax[1,0].set_xticklabels(atomnames)
-    ax[1,0].legend(loc=2)
+    ax[1, 0].set_ylabel(r'$N(X)/[10^6 N(HI)]$', fontsize=fontsize)
+    ax[1, 0].set_xticks(aindxs+(0.75*width))
+    ax[1, 0].set_xticklabels(atomnames)
+    ax[1, 0].legend(loc=2)
 
     if OD.fit_ir_emission:
-        ax[0,1].errorbar(OD.ir_emission_waves, OD.ir_emission,
-                         yerr=OD.ir_emission_unc, fmt='o',label="Emission")
-        ax[0,1].set_xlabel(r'$\lambda [\mu m]$')
-        ax[0,1].set_ylabel(r'$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$')
-        ax[0,1].set_xscale('log')
-        ax[0,1].set_xlim(1.0,1.5e4)
-        ax[0,1].set_yscale('log')
-        ax[0,1].legend(loc=2)
+        ax[0, 1].errorbar(OD.ir_emission_waves, OD.ir_emission,
+                          yerr=OD.ir_emission_unc, fmt='o', label="Emission")
+        ax[0, 1].set_xlabel(r'$\lambda [\mu m]$')
+        ax[0, 1].set_ylabel(r'$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$')
+        ax[0, 1].set_xscale('log')
+        ax[0, 1].set_xlim(1.0, 1.5e4)
+        ax[0, 1].set_yscale('log')
+        ax[0, 1].legend(loc=2)
 
-    t = Table.read('data_mw_rv31/MW_diffuse_Mathis83_ISRF.dat',
+    t = Table.read('data/mw_rv31/MW_diffuse_Mathis83_ISRF.dat',
                    format='ascii.commented_header')
-    ax[1,1].plot(t['wave'],t['ISRF'],'-', label="ISRF")
-    ax[1,1].set_xlabel(r'$\lambda [\mu m]$')
-    ax[1,1].set_ylabel(r'ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]')
-    ax[1,1].set_xscale('log')
-    ax[1,1].set_yscale('log')
-    ax[1,1].set_xlim(0.09,1e1)
-    ax[1,1].set_ylim(1e-2,1e2)
-    ax[1,1].legend()
+    ax[1, 1].plot(t['wave'], t['ISRF'], '-', label="ISRF")
+    ax[1, 1].set_xlabel(r'$\lambda [\mu m]$')
+    ax[1, 1].set_ylabel(r'ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]')
+    ax[1, 1].set_xscale('log')
+    ax[1, 1].set_yscale('log')
+    ax[1, 1].set_xlim(0.09, 1e1)
+    ax[1, 1].set_ylim(1e-2, 1e2)
+    ax[1, 1].legend()
 
     if OD.fit_scat_a:
-        ax[0,2].errorbar(OD.scat_a_waves, OD.scat_albedo,
-                         yerr=OD.scat_albedo_unc, fmt='o', label='albedo')
-        ax[0,2].set_xlabel(r'$\lambda [\mu m]$')
-        ax[0,2].set_ylabel(r'$a$')
-        ax[0,2].set_xscale('log')
-        ax[0,2].set_xlim(0.085,3.0)
-        ax[0,2].set_ylim(0.0,1.0)
-        ax[0,2].legend()
+        ax[0, 2].errorbar(OD.scat_a_waves, OD.scat_albedo,
+                          yerr=OD.scat_albedo_unc, fmt='o', label='albedo')
+        ax[0, 2].set_xlabel(r'$\lambda [\mu m]$')
+        ax[0, 2].set_ylabel(r'$a$')
+        ax[0, 2].set_xscale('log')
+        ax[0, 2].set_xlim(0.085, 3.0)
+        ax[0, 2].set_ylim(0.0, 1.0)
+        ax[0, 2].legend()
 
     if OD.fit_scat_g:
-        ax[1,2].errorbar(OD.scat_g_waves, OD.scat_g,
-                         yerr=OD.scat_g_unc, fmt='o',
-                         label=r'$g = < \mathrm{cos} (\theta) >$')
-        ax[1,2].set_xlabel(r'$\lambda [\mu m]$')
-        ax[1,2].set_ylabel(r'$g$')
-        ax[1,2].set_xscale('log')
-        ax[1,2].set_xlim(0.085,3.0)
-        ax[1,2].set_ylim(0.0,1.0)
-        ax[1,2].legend()
+        ax[1, 2].errorbar(OD.scat_g_waves, OD.scat_g,
+                          yerr=OD.scat_g_unc, fmt='o',
+                          label=r'$g = < \mathrm{cos} (\theta) >$')
+        ax[1, 2].set_xlabel(r'$\lambda [\mu m]$')
+        ax[1, 2].set_ylabel(r'$g$')
+        ax[1, 2].set_xscale('log')
+        ax[1, 2].set_xlim(0.085, 3.0)
+        ax[1, 2].set_ylim(0.0, 1.0)
+        ax[1, 2].legend()
 
     pyplot.tight_layout()
 
