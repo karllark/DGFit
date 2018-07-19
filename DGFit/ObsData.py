@@ -8,7 +8,6 @@ ObsData class
 """
 from __future__ import print_function
 
-import string
 import argparse
 
 import numpy as np
@@ -18,6 +17,7 @@ from astropy.table import Table
 from astropy.io import fits
 
 __all__ = ["ObsData"]
+
 
 # Object for the observed dust data
 class ObsData():
@@ -43,7 +43,7 @@ class ObsData():
         [currently not used - hard coded for MW diffuse - need to change]
 
     ext_tags : list of 'string'
-        list of tags identifying the origin of the 
+        list of tags identifying the origin of the
         dust extinction curve segments
 
     Attributes
@@ -56,25 +56,25 @@ class ObsData():
 
     ext_waves : 'numpy.ndarray'
         wavelengths for the extinction curve
-    
+
     ext_alav : 'numpy.ndarray'
         extinction curve in A(lambda)/A(V) units
-    
+
     ext_alav_unc : 'numpy.ndarray'
         extinction curve uncertainties in A(lambda)/A(V) units
-    
+
     ext_alnhi : 'numpy.ndarray'
         extinction curve in A(lambda)/N(HI) units
 
     ext_alnhi_unc : 'numpy.ndarray'
         extinction curve uncertainties in A(lambda)/N(HI) units
-    
+
     ext_tags : 'numpy.ndarray'
         string tags identifying the origin of the extinction curve measurement
-    
-    
+
+
     """
-    
+
     # read in the data from files
     def __init__(self, ext_filenames, avnhi_filename,
                  abund_filename, ir_emis_filename,
@@ -122,19 +122,19 @@ class ObsData():
 
             hdulist.close()
 
-        # sort 
+        # sort
         sindxs = np.argsort(self.ext_waves)
         self.ext_waves = self.ext_waves[sindxs]
         self.ext_alav = self.ext_alav[sindxs]
         self.ext_alav_unc = self.ext_alav_unc[sindxs]
         self.ext_tags = np.array(self.ext_tags)[sindxs]
-                                            
+
         # normalization from A(V) to N(HI)
         t = Table.read(avnhi_filename,format='ascii.commented_header',
                        header_start=-1)
         self.avnhi = t['Av_to_NHI'][0]
         self.avnhi_unc = t['unc'][0]
-        
+
         # change the extinction normalization from A(V) to N(HI)
         self.ext_alnhi = self.ext_alav*self.avnhi
         self.ext_alnhi_unc = np.square(self.ext_alav_unc/self.ext_alav) + \
@@ -166,7 +166,7 @@ class ObsData():
             if len(gindxs) > 0:
                 self.ir_emission_unc[gindxs] = 0.1*self.ir_emission[gindxs]
 
-            # sort 
+            # sort
             sindxs = np.argsort(self.ir_emission_waves)
             self.ir_emission_waves = self.ir_emission_waves[sindxs]
             self.ir_emission = self.ir_emission[sindxs]
@@ -178,8 +178,8 @@ class ObsData():
         if dust_scat_filename is not None:
             self.fit_scat_a = True
             self.fit_scat_g = True
-            files_dgl = ["mathis73","morgan76","lillie76","toller81", 
-                         "murthy93","murthy95","petersohn97","witt97", 
+            files_dgl = ["mathis73","morgan76","lillie76","toller81",
+                         "murthy93","murthy95","petersohn97","witt97",
                          "schiminovich01","shalima04","sujatha05","sujatha07",
                          "sujatha10"]
             scat_path = "/home/kgordon/Pro/Dust/Scat_Data/"
@@ -212,7 +212,7 @@ class ObsData():
             self.scat_albedo_unc = np.array(scat_albedo_unc)[gindxs]
             self.scat_a_ref = np.array(scat_ref)[gindxs]
 
-            # sort 
+            # sort
             sindxs = np.argsort(self.scat_a_waves)
             self.scat_a_waves = self.scat_a_waves[sindxs]
             self.scat_albedo = self.scat_albedo[sindxs]
@@ -226,7 +226,7 @@ class ObsData():
             self.scat_g_unc = np.array(scat_g_unc)[gindxs]
             self.scat_g_ref = np.array(scat_ref)[gindxs]
 
-            # sort 
+            # sort
             sindxs = np.argsort(self.scat_g_waves)
             self.scat_g_waves = self.scat_g_waves[sindxs]
             self.scat_g = self.scat_g[sindxs]
@@ -234,7 +234,7 @@ class ObsData():
             self.scat_g_ref = self.scat_g_ref[sindxs]
 
 if __name__ == "__main__":
-    
+
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--smc", help="use an SMC sightline",
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     matplotlib.rc('ytick.major', width=2)
 
     fig, ax = pyplot.subplots(ncols=3, nrows=2, figsize=(15,10))
-    
+
     ax[0,0].errorbar(OD.ext_waves, OD.ext_alnhi, yerr=OD.ext_alnhi_unc, fmt='o',
                      label='Extinction')
     ax[0,0].set_xlabel(r'$\lambda [\mu m]$')
@@ -289,11 +289,11 @@ if __name__ == "__main__":
     width = 0.5
     atomnames = sorted(list(OD.abundance.keys()))
 
-    ax[1,0].bar(aindxs+0.25*width, 
-                [OD.total_abundance[x][0] for x in atomnames], 
+    ax[1,0].bar(aindxs+0.25*width,
+                [OD.total_abundance[x][0] for x in atomnames],
                 width, color='g', alpha=0.25,label='gas+dust')
 
-    ax[1,0].errorbar(aindxs+0.75*width, 
+    ax[1,0].errorbar(aindxs+0.75*width,
                 [OD.abundance[x][0] for x in atomnames],
                 yerr=[OD.abundance[x][1] for x in atomnames],
                 fmt='o', label='dust')
@@ -336,7 +336,7 @@ if __name__ == "__main__":
 
     if OD.fit_scat_g:
         ax[1,2].errorbar(OD.scat_g_waves, OD.scat_g,
-                         yerr=OD.scat_g_unc, fmt='o', 
+                         yerr=OD.scat_g_unc, fmt='o',
                          label=r'$g = < \mathrm{cos} (\theta) >$')
         ax[1,2].set_xlabel(r'$\lambda [\mu m]$')
         ax[1,2].set_ylabel(r'$g$')
@@ -345,7 +345,7 @@ if __name__ == "__main__":
         ax[1,2].set_ylim(0.0,1.0)
         ax[1,2].legend()
 
-    pyplot.tight_layout()    
+    pyplot.tight_layout()
 
     # show or save
     basename = 'ObsData_MW_Diffuse'
@@ -357,5 +357,3 @@ if __name__ == "__main__":
         fig.savefig(basename+'.pdf')
     else:
         pyplot.show()
-    
-    
