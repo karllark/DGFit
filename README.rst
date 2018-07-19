@@ -1,6 +1,16 @@
 DGFit
 -----
 
+.. image:: https://travis-ci.org/karllark/DGFit.svg?branch=master
+    :target: https://travis-ci.org/karllark/DGFit
+
+.. image:: https://readthedocs.org/projects/dgfit/badge/?version=latest
+    :target: https://dgfit.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. image:: https://coveralls.io/repos/github/karllark/DGFit/badge.svg?branch=master
+    :target: https://coveralls.io/github/karllark/DGFit?branch=master
+
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
