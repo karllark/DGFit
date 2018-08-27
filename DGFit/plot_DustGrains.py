@@ -45,8 +45,6 @@ if __name__ == "__main__":
         new_DG.from_object(DG, OD)
         DG = new_DG
 
-    print(DG.sizes*1e4)
-
     # setup the plots
     fontsize = 12
     font = {'size': fontsize}
@@ -107,10 +105,12 @@ if __name__ == "__main__":
         cur_ylim = ax[1, 2].get_ylim()
         ax[1, 2].set_ylim([1e-23, 1e-0])
 
+    ax[0, 1].set_title(args.composition)
+
     plt.tight_layout()
 
     # show or save
-    basename = 'DustGrains_diag'
+    basename = 'DustGrains_diag_%s' % (args.composition)
     if args.png:
         fig.savefig(basename+'.png')
     elif args.eps:

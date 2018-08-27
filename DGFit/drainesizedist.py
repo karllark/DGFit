@@ -76,7 +76,7 @@ if __name__ == "__main__":
     matplotlib.rc('xtick.major', width=2)
     matplotlib.rc('ytick.major', width=2)
 
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(ncols=2, figsize=(14, 8))
 
     # coefficients from Weingartner & Draine for R(V) = 3.1, Case A
     bC = np.array([0.0, 1.0, 2.0, 3.0,
@@ -102,15 +102,22 @@ if __name__ == "__main__":
                                                 alpha_g[i],
                                                 beta_g[i])
 
-        ax.plot(a*1e-4, sizedist_graphite*np.power(1e-8*a, 4.0)*1e29)
+        ax[0].plot(a*1e-4, sizedist_graphite*np.power(1e-8*a, 4.0)*1e29)
+        ax[1].plot(a*1e-4, sizedist_graphite)
 
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlim(3.5e-4, 2.2)
-    ax.set_ylim(0.1, 25)
-    ax.set_xlabel(r'$\lambda$ [$\mu m$]')
-    ax.set_ylabel(r'$dn/da$ [$10^{-29}$ $cm^3$ $n_H^{-1}$]')
+    ax[0].set_xscale('log')
+    ax[0].set_yscale('log')
+    ax[0].set_xlim(3.5e-4, 2.2)
+    ax[0].set_ylim(0.1, 25)
+    ax[0].set_xlabel(r'$a$ [$\mu m$]')
+    ax[0].set_ylabel(r'$dn/da$ [$10^{-29}$ $cm^3$ $n_H^{-1}$]')
 
+    ax[1].set_xscale('log')
+    ax[1].set_yscale('log')
+    ax[1].set_xlim(3.5e-4, 2.2)
+    ax[1].set_ylim(1e-15, 1e4)
+    ax[1].set_xlabel(r'$a$ [$\mu m$]')
+    ax[1].set_ylabel(r'$dn/da$ [$n_H^{-1}$]')
     plt.tight_layout()
 
     # show or save
