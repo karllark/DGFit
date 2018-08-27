@@ -21,14 +21,16 @@ if __name__ == "__main__":
                         action="store_true")
     args = parser.parse_args()
 
-    OD = ObsData(['data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                  'data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                  'data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                 'data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                 'data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                 'data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                 'dust_scat.dat',
-                 ext_tags=['band', 'iue', 'fuse'])
+    path = 'DGFit/data/mw_rv31'
+    OD = ObsData(['%s/MW_diffuse_Gordon09_band_ext.dat' % path,
+                  '%s/MW_diffuse_Gordon09_iue_ext.dat' % path,
+                  '%s/MW_diffuse_Gordon09_fuse_ext.dat' % path],
+                 '%s/MW_diffuse_Gordon09_avnhi.dat' % path,
+                 '%s/MW_diffuse_Jenkins09_abundances.dat' % path,
+                 '%s/MW_diffuse_Compiegne11_ir_emission.dat' % path,
+                 '%s/dust_scat.dat' % path,
+                 ext_tags=['band', 'iue', 'fuse'],
+                 scat_path='%s/Scat_Data/' % path)
 
     # setup the plots
     fontsize = 12
@@ -44,7 +46,7 @@ if __name__ == "__main__":
     # dustmodel = DustModel(['astro-silicates','astro-graphite'])
     DM = DustModel()
     DM.predict_full_grid(['astro-silicates', 'astro-carbonaceous'],
-                         path='data/indiv_grain/')
+                         path='DGFit/data/indiv_grain/')
 
     if args.obsdata:
         DM_obs = DustModel()
@@ -59,7 +61,7 @@ if __name__ == "__main__":
     albedo = results['albedo']
     g = results['g']
 
-    fig, ax = plt.subplots(ncols=3, nrows=3, figsize=(16, 12))
+    fig, ax = plt.subplots(ncols=3, nrows=3, figsize=(14, 10))
 
     # plot the total results
     ax[1, 0].plot(DM.components[0].wavelengths, cabs+csca, 'k-')
@@ -110,17 +112,17 @@ if __name__ == "__main__":
 
     ax[0, 0].set_xscale('log')
     ax[0, 0].set_yscale('log')
-    ax[0, 0].set_xlabel(r'$\lambda$ [$\mu m$]')
+    ax[0, 0].set_xlabel(r'$a$ [$cm$]')
     ax[0, 0].set_ylabel(r'$N(a)$')
 
     ax[0, 1].set_xscale('log')
     ax[0, 1].set_yscale('log')
-    ax[0, 1].set_xlabel(r'$\lambda$ [$\mu m$]')
+    ax[0, 1].set_xlabel(r'$a$ [$cm$]')
     ax[0, 1].set_ylabel(r'$a^4 N(a)$')
 
     ax[0, 2].set_xscale('log')
     ax[0, 2].set_yscale('log')
-    ax[0, 2].set_xlabel(r'$\lambda$ [$\mu m$]')
+    ax[0, 2].set_xlabel(r'$a$ [$cm$]')
     ax[0, 2].set_ylabel(r'$a^3 N(a)$')
 
     ax[0, 0].legend()
