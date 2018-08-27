@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     DG = DustGrains()
     DG.from_files(args.composition,
-                  path='data/indiv_grain/')
+                  path='DGFit/data/indiv_grain/')
 
     if args.obsdata:
         OD = ObsData(['data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
@@ -44,6 +44,8 @@ if __name__ == "__main__":
         new_DG = DustGrains()
         new_DG.from_object(DG, OD)
         DG = new_DG
+
+    print(DG.sizes*1e4)
 
     # setup the plots
     fontsize = 12
@@ -78,7 +80,7 @@ if __name__ == "__main__":
 
         ax[0, 2].plot(waves, DG.cext[i, ws_indxs], color=pcolor)
         ax[0, 2].set_xlabel(r'$\lambda$ [$\mu m$]')
-        ax[0, 2].set_ylabel('C(sca)')
+        ax[0, 2].set_ylabel('C(ext)')
         ax[0, 2].set_xscale('log')
         ax[0, 2].set_yscale('log')
 
