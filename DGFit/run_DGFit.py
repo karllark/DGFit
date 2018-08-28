@@ -12,171 +12,17 @@
 from __future__ import print_function
 
 import sys
-import math
 import time
 import argparse
 
 import numpy as np
-from astropy.io import fits
-
-# from scipy.interpolate import interp1d
-from scipy.optimize import minimize
-
-# from lmfit import minimize, Parameters
 
 import emcee
 
 from DGFit.DustModel import DustModel
 from DGFit.ObsData import ObsData
-from DGFit.drainesizedist import WGsizedist_graphite
+from DGFit.DGFit_Models import DGFit_bins
 # import ObsData_Azv18 as ObsData
-
-
-# get the ln(prob) for the dust grain size/composition distribution
-#  defined in dustmodel
-def lnprob_all(obsdata, dustmodel):
-
-    # get the integrated dust properties
-    results = dustmodel.eff_grain_props(obsdata)
-
-    # compute the ln(prob) for A(l)/N(HI)
-    lnp_alnhi = 0.0
-    if obsdata.fit_extinction:
-        cabs = results['cabs']
-        csca = results['csca']
-        cext = cabs + csca
-        dust_alnhi = 1.086*cext
-        lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)
-                                 / obsdata.ext_alnhi_unc)**2)
-    # lnp_alnhi /= obsdata.n_wavelengths
-
-    # compute the ln(prob) for the depletions
-    lnp_dep = 0.0
-    if obsdata.fit_abundance:
-        natoms = results['natoms']
-        for atomname in natoms.keys():
-            # hard limit at 1.5x the total possible abundaces
-            #      (all atoms in dust)
-            # if natoms[atomname] > 1.5*obsdata.total_abundance[atomname][0]:
-                # print('boundary issue')
-                # return -np.inf
-                # pass
-            # only add if natoms > depletions
-            # elif natoms[atomname] > obsdata.abundance[atomname][0]:
-            lnp_dep = ((natoms[atomname] -
-                        obsdata.abundance[atomname][0])
-                       / obsdata.abundance[atomname][1])**2
-        lnp_dep *= -0.5
-
-    # compute the ln(prob) for IR emission
-    lnp_emission = 0.0
-    if obsdata.fit_ir_emission:
-        emission = results['emission']
-        lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)
-                                    / (obsdata.ir_emission_unc))**2))
-
-    # compute the ln(prob) for the dust albedo
-    lnp_albedo = 0.0
-    if obsdata.fit_scat_a:
-        albedo = results['albedo']
-        lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)
-                                 / (obsdata.scat_albedo_unc))**2))
-
-    # compute the ln(prob) for the dust g
-    lnp_g = 0.0
-    if obsdata.fit_scat_g:
-        g = results['g']
-        lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)
-                                   / (obsdata.scat_g_unc))**2))
-
-    # combine the lnps
-    lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
-
-    # print(params)
-    # print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
-
-    if math.isinf(lnp) | math.isnan(lnp):
-        print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
-        print(lnp)
-        # print(params)
-        exit()
-    else:
-        return lnp
-
-
-# compute the ln(prob) for discrete size distributions
-def lnprob_discrete(params, obsdata, dustmodel):
-
-    # make sure the size distributions are all positve
-    lnp_bound = 0.0
-    for param in params:
-        if param < 0.0:
-            lnp_bound = -1e20
-            # return -np.inf
-
-    # update the size distributions
-    #  the input params are the concatenated size distributions
-    dustmodel.set_size_dist(params)
-
-    return lnprob_all(obsdata, dustmodel) + lnp_bound
-
-
-# compute the ln(prob) for discrete size distributions
-def lnprob_WGsizedist(params, obsdata, dustmodel):
-
-    # update the size distributions
-    #   params are the WG size dist parameters
-    # params = bC_input, Cg, a_tg, a_cg, alpha_g, beta_g
-    for component in dustmodel.components:
-        csizedist = WGsizedist_graphite(component.sizes, params)
-    dustmodel.set_size_dist_WG(csizedist)
-
-    return lnprob_all(obsdata, dustmodel)
-
-
-def get_percentile_vals(sampler):
-    """
-    Compute the 50% +/- 33% values from the samples
-    """
-    # get the 50p values and uncertainties
-    samples = sampler.chain.reshape((-1, ndim))
-    values = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
-                 zip(*np.percentile(samples, [16, 50, 84],
-                                    axis=0)))
-    val_50p, punc, munc = zip(*values)
-    return (val_50p, punc, munc)
-
-
-def save_percentile_vals(oname, dustmodel, sampler, obsdata):
-    """
-    Save the percentile values using the sampler chain
-    """
-    fin_size_dist_50p, fin_size_dist_punc, fin_size_dist_munc = \
-        get_percentile_vals(sampler)
-    dustmodel.set_size_dist(fin_size_dist_50p)
-
-    # save the final size distributions
-    dustmodel.save(oname, obsdata,
-                   size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
-
-
-def save_best_vals(oname, dustmodel, sampler, obsdata):
-    """
-    Save the best fit values using the sampler chain
-    """
-    # get the best fit values
-    max_lnp = -1e20
-    for k in range(nwalkers):
-        tmax_lnp = np.max(sampler.lnprobability[k])
-        if tmax_lnp > max_lnp:
-            max_lnp = tmax_lnp
-            indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
-            fit_params_best = sampler.chain[k, indxs[0], :]
-
-    dustmodel.set_size_dist(fit_params_best)
-
-    # save the best fit size distributions
-    dustmodel.save(oname, obsdata)
 
 
 def DGFit_cmdparser():
@@ -197,7 +43,7 @@ def DGFit_cmdparser():
                         help="Limit based on abundances")
     parser.add_argument("--usemin", action="store_true",
                         help="Find min before EMCEE")
-    parser.add_argument("-r", "--read", default="",
+    parser.add_argument("-r", "--read", default=None,
                         help="Read size distribution from disk")
     parser.add_argument("-t", "--tag", default='dgfit_test',
                         help="basename to use for output files")
@@ -223,6 +69,19 @@ if __name__ == "__main__":
 
     # save the start time
     start_time = time.clock()
+
+    # emcee parameters
+    if args.fast:
+        print('using the fast params')
+        nsteps = 100
+        burn = 50
+    elif args.slow:
+        print('using the slow params')
+        nsteps = 10000
+        burn = 5000
+    else:
+        burn = int(args.nburn)
+        nsteps = int(args.nsteps)
 
     # get the observed data
     if args.smc:
@@ -253,51 +112,53 @@ if __name__ == "__main__":
     dustmodel = DustModel()
     dustmodel.predict_observed_data(dustmodel_full, obsdata)
 
-    # replace the default size distribution with one from a file
-    if args.read != "":
-        for k, component in enumerate(dustmodel.components):
-            fitsdata = fits.getdata(args.read, k+1)
-            if len(component.size_dist) != len(fitsdata[:][1]):
-                component.size_dist = 10**np.interp(np.log10(component.sizes),
-                                                    np.log10(fitsdata['SIZE']),
-                                                    np.log10(fitsdata['DIST']))
-            else:
-                component.size_dist = fitsdata['DIST']
+    # possible types are 'bins', 'WG', or 'MRN'
+    sizedisttype = 'bins'
 
+    if sizedisttype == 'bins':
+        # replace the default size distribution with one from a file
+        if args.read is not None:
+            dustmodel.sizedist_from_file(args.read)
+
+        else:
+            # check that the default size distributions give approximately
+            #     the right level of the A(lambda)/N(HI) curve
+            # if not, adjust the overall level of the size distributions to
+            #     get them close
+            results = dustmodel.eff_grain_props(obsdata)
+            cabs = results['cabs']
+            csca = results['csca']
+            dust_alnhi = 1.086*(cabs + csca)
+            ave_model = np.average(dust_alnhi)
+            ave_data = np.average(obsdata.ext_alnhi)
+            ave_ratio = ave_data/ave_model
+            if (ave_ratio < 0.5) | (ave_ratio > 2):
+                for component in dustmodel.components:
+                    component.size_dist *= ave_ratio
+
+        # deweight large grains (test)
+        if args.nolarge:
+            indxs, = np.where(component.sizes > 0.5e-4)
+            if len(indxs) > 0:
+                print('deweighting sizes > 0.5 micron')
+                component.size_dist[indxs] *= 1e-10
+
+        # inital guesses at parameters
+        p0 = dustmodel.components[0].size_dist
+        for k in range(1, dustmodel.n_components):
+            p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
+
+        # define the fitting model
+        dgfit_model = DGFit_bins()
+
+    elif sizedisttype == 'MRN':
+        pass
+
+        # need to set dust model size distribution
+        #     initial guess p0
     else:
-        # check that the default size distributions give approximately
-        #     the right level of the A(lambda)/N(HI) curve
-        # if not, adjust the overall level of the size distributions to
-        #     get them close
-        results = dustmodel.eff_grain_props(obsdata)
-        cabs = results['cabs']
-        csca = results['csca']
-        dust_alnhi = 1.086*(cabs + csca)
-        ave_model = np.average(dust_alnhi)
-        ave_data = np.average(obsdata.ext_alnhi)
-        ave_ratio = ave_data/ave_model
-        if (ave_ratio < 0.5) | (ave_ratio > 2):
-            for component in dustmodel.components:
-                component.size_dist *= ave_ratio
-
-        # results = dustmodel.eff_grain_props()
-        # natoms = results[2]
-        # max_violation = 0.0
-        # for atomname in natoms.keys():
-            # cur_violation = natoms[atomname]/obsdata.abundance[atomname][0]
-            # if cur_violation > max_violation:
-            #    max_violation = cur_violation
-
-        # if max_violation > 2:
-        #    for component in dustmodel.components:
-        #        component.size_dist *= 1.9/max_violation
-
-            # deweight large grains (test)
-    if args.nolarge:
-        indxs, = np.where(component.sizes > 0.5e-4)
-        if len(indxs) > 0:
-            print('deweighting sizes > 0.5 micron')
-            component.size_dist[indxs] *= 1e-10
+        print('Size distribution not known')
+        exit()
 
     # save the starting model
     dustmodel.save(basename + '_sizedist_start.fits', obsdata)
@@ -306,100 +167,20 @@ if __name__ == "__main__":
     setup_time = time.clock()
     print('setup time taken: ', (setup_time - start_time)/60., ' min')
 
-    # inital guesses at parameters
-    p0 = dustmodel.components[0].size_dist
-    for k in range(1, dustmodel.n_components):
-        p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
-
-    # call scipy.optimize to get a better initial guess
-    if args.usemin:
-        print(p0)
-        print(lnprob_discrete(p0, obsdata, dustmodel))
-
-        # generate the bounds
-        p0_bounds = []
-        for k in range(len(p0)):
-            p0_bounds.append((0.0, 1e20))
-
-            # setup what can be fit
-        obsdata.fit_extinction = True
-        obsdata.fit_abundance = False
-        obsdata.fit_ir_emission = False
-        obsdata.fit_scat_a = False
-        obsdata.fit_scat_g = False
-
-        # neg_lnprobsed = lambda *args: -1.0*lnprob_discrete(*args)
-        def neg_lnprobsed(*args): -1.0*lnprob_discrete(*args)
-        better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
-                                bounds=p0_bounds, method='L-BFGS-B')
-        print(better_start.success)
-        print(better_start.x)
-        exit()
-
-    # import scipy.optimize as op
-    # nll = lambda *args: -lnprobsed(*args)
-    # result = op.minimize(nll, p0, args=(obsdata, dustmodel))
-    # print(result)
-    # exit()
-
-    # trying with lmfit (not tested)
-    # params = Parameters()
-    # for i in range(n_params):
-    #   params.add('p'+str(i),value=p0[i],min=0.0)
-    # out = minimize(kext_residuals, params, args=(1.0/xdata, ydata))
-    # print(out.params)
-
+    # more emcee setup
     ndim = len(p0)
-    print('# params = ', ndim)
-    if args.fast:
-        print('using the fast params')
-        nwalkers = 4*ndim
-        nsteps = 100
-        burn = 50
-    elif args.slow:
-        print('using the slow params')
-        nwalkers = 4*ndim
-        nsteps = 10000
-        burn = 5000
-    else:
-        nwalkers = 4*ndim
-        burn = int(args.nburn)
-        nsteps = int(args.nsteps)
+    nwalkers = 2*ndim
 
-    print("nburn = %i" % burn)
-    print("nsteps = %i" % nsteps)
+    print('# params = %i' % ndim)
+    print('# walkers = %i' % nwalkers)
+    print("# burn = %i" % burn)
+    print("# steps = %i" % nsteps)
 
     # setting up the walkers to start "near" the inital guess
-    #   and initial ball should be in log space
-    p = [10**(np.log10(p0) + 1.*np.random.uniform(-1, 1., ndim))
-         for k in range(nwalkers)]
-
-    # ensure that all the walkers start with positive values
-    for pc in p:
-        for pcs in pc:
-            if pcs <= 0.0:
-                pcs = 0.0
-
-    # make sure each walker starts with allowed abundances
-    if args.limit_abund:
-        for pc in p:
-            dustmodel.set_size_dist(pc)
-            results = dustmodel.eff_grain_props(obsdata)
-            cabs = results['cabs']
-            csca = results['csca']
-            natoms = results['natoms']
-            max_violation = 0.0
-            for atomname in natoms.keys():
-                cur_violation = (natoms[atomname]
-                                 / (obsdata.abundance[atomname][0] +
-                                    obsdata.abundance[atomname][1]))
-                if cur_violation > max_violation:
-                    max_violation = cur_violation
-            if max_violation > 2:
-                pc *= 1.9/max_violation
+    p = dgfit_model.initial_walkers(p0, nwalkers)
 
     # setup the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_discrete,
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, dgfit_model.lnprob,
                                     args=(obsdata, dustmodel),
                                     threads=int(args.cpus))
 
@@ -425,14 +206,13 @@ if __name__ == "__main__":
 
     sys.stdout.write("\n")
 
+    # decompose so the next sampling is done from the last position
     pos, prob, state = result
 
-    # rest the sampler
+    # reset the sampler
     sampler.reset()
 
     # do the full sampling
-    # pos, prob, state = sampler.run_mcmc(pos, nsteps, rstate0=state)
-
     print("afterburn")
     width = 60
     save_frac = 0.1
@@ -455,23 +235,22 @@ if __name__ == "__main__":
         # output the size distribution
         if i > targ_out:
             oname = '%s_sizedist_%i.fits' % (basename, targ_out)
-            save_percentile_vals(oname, dustmodel, sampler, obsdata)
+            dgfit_model.save_percentile_vals(oname, dustmodel, sampler,
+                                             obsdata, cur_step=i)
+            oname = '%s_sizedist_best_%i.fits' % (basename, targ_out)
+            dgfit_model.save_best_vals(oname, dustmodel, sampler, obsdata,
+                                       cur_step=i)
             targ_out += int(save_frac*nsteps)
 
-            oname = '%s_sizedist_best_%i.fits' % (basename, targ_out)
-            save_best_vals(oname, dustmodel, sampler, obsdata)
-
     sys.stdout.write("\n")
-
-    pos, prob, state = result
 
     emcee_time = time.clock()
     print('emcee time taken: ', (emcee_time - setup_time)/60., ' min')
 
     # best fit dust params
     oname = '%s_sizedist_best_fin.fits' % (basename)
-    save_best_vals(oname, dustmodel, sampler, obsdata)
+    dgfit_model.save_best_vals(oname, dustmodel, sampler, obsdata)
 
     # 50p dust params
     oname = '%s_sizedist_fin.fits' % (basename)
-    save_percentile_vals(oname, dustmodel, sampler, obsdata)
+    dgfit_model.save_percentile_vals(oname, dustmodel, sampler, obsdata)

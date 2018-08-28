@@ -61,3 +61,5 @@ distribute-*.tar.gz
 
 # custom
 *.fits
+*.png
+*.dat

@@ -55,6 +55,7 @@ def plot_dgfit_sizedist(ax, hdulist, colors=['b', 'g'],
 
         xvals = hdu.data['SIZE']*1e4
         yvals = hdu.data['DIST']
+
         if plot_uncs:
             yvals_punc = hdu.data['DISTPUNC']
             yvals_munc = hdu.data['DISTMUNC']

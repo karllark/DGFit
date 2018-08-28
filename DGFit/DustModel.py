@@ -129,6 +129,29 @@ class DustModel():
 
         return results
 
+    def sizedist_from_file(self, filename):
+        """
+        Read in the size distribution from a file interpolating
+        if needed
+
+        Parameters
+        ----------
+        filename : str
+            name of FITS file with size distributions
+            one component per extension
+        """
+        for k, component in enumerate(self.components):
+            fitsdata = fits.getdata(filename, k+1)
+
+            # interpolate, otherwise assume exact match in sizes
+            #   might want to add some checking here for robustness
+            if len(component.size_dist) != len(fitsdata[:][1]):
+                component.size_dist = 10**np.interp(np.log10(component.sizes),
+                                                    np.log10(fitsdata['SIZE']),
+                                                    np.log10(fitsdata['DIST']))
+            else:
+                component.size_dist = fitsdata['DIST']
+
     def save(self, filename, ObsData, size_dist_uncs=[0]):
 
         # write a small primary header
