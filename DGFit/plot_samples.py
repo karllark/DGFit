@@ -3,8 +3,8 @@ from __future__ import print_function
 import argparse
 
 import numpy as np
-import matplotlib.pyplot as pyplot
-import matplotlib
+# import matplotlib.pyplot as pyplot
+# import matplotlib
 
 import corner
 
