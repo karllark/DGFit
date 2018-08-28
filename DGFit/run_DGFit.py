@@ -134,6 +134,51 @@ def lnprob_WGsizedist(params, obsdata, dustmodel):
     return lnprob_all(obsdata, dustmodel)
 
 
+def get_percentile_vals(sampler):
+    """
+    Compute the 50% +/- 33% values from the samples
+    """
+    # get the 50p values and uncertainties
+    samples = sampler.chain.reshape((-1, ndim))
+    values = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+                 zip(*np.percentile(samples, [16, 50, 84],
+                                    axis=0)))
+    val_50p, punc, munc = zip(*values)
+    return (val_50p, punc, munc)
+
+
+def save_percentile_vals(oname, dustmodel, sampler, obsdata):
+    """
+    Save the percentile values using the sampler chain
+    """
+    fin_size_dist_50p, fin_size_dist_punc, fin_size_dist_munc = \
+        get_percentile_vals(sampler)
+    dustmodel.set_size_dist(fin_size_dist_50p)
+
+    # save the final size distributions
+    dustmodel.save(oname, obsdata,
+                   size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
+
+
+def save_best_vals(oname, dustmodel, sampler, obsdata):
+    """
+    Save the best fit values using the sampler chain
+    """
+    # get the best fit values
+    max_lnp = -1e20
+    for k in range(nwalkers):
+        tmax_lnp = np.max(sampler.lnprobability[k])
+        if tmax_lnp > max_lnp:
+            max_lnp = tmax_lnp
+            indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
+            fit_params_best = sampler.chain[k, indxs[0], :]
+
+    dustmodel.set_size_dist(fit_params_best)
+
+    # save the best fit size distributions
+    dustmodel.save(oname, obsdata)
+
+
 def DGFit_cmdparser():
 
     # commandline parser
@@ -144,6 +189,10 @@ def DGFit_cmdparser():
     parser.add_argument("-s", "--slow",
                         help="Use lots of walkers, n_steps, n_burn",
                         action="store_true")
+    parser.add_argument("--nburn", metavar=int, default=500,
+                        help="Number of samples for burn")
+    parser.add_argument("--nsteps", metavar=int, default=1000,
+                        help="Number of samples for full run")
     parser.add_argument("--limit_abund", action="store_true",
                         help="Limit based on abundances")
     parser.add_argument("--usemin", action="store_true",
@@ -314,8 +363,11 @@ if __name__ == "__main__":
         burn = 5000
     else:
         nwalkers = 4*ndim
-        nsteps = 1000
-        burn = 500
+        burn = int(args.nburn)
+        nsteps = int(args.nsteps)
+
+    print("nburn = %i" % burn)
+    print("nsteps = %i" % nsteps)
 
     # setting up the walkers to start "near" the inital guess
     #   and initial ball should be in log space
@@ -351,6 +403,11 @@ if __name__ == "__main__":
                                     args=(obsdata, dustmodel),
                                     threads=int(args.cpus))
 
+    # incrementally save the full chain (burn+run) to a file
+    inc_prog_fname = "%s_chain.dat" % basename
+    f = open(inc_prog_fname, "w")
+    f.close()
+
     # burn in the walkers
     # pos, prob, state = sampler.run_mcmc(p, burn)
     print("burn")
@@ -358,6 +415,14 @@ if __name__ == "__main__":
     for i, result in enumerate(sampler.sample(p, iterations=burn)):
         n = int((width+1) * float(i) / burn)
         sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
+
+        position = result[0]
+        f = open(inc_prog_fname, "a")
+        for k in range(position.shape[0]):
+            pos_str = " ".join(str(e) for e in position[k])
+            f.write("{0:4d} {1:s}\n".format(k, pos_str))
+        f.close()
+
     sys.stdout.write("\n")
 
     pos, prob, state = result
@@ -370,53 +435,43 @@ if __name__ == "__main__":
 
     print("afterburn")
     width = 60
+    save_frac = 0.1
+    if nsteps > 1000:
+        save_frac = 0.025
+    targ_out = int(save_frac*nsteps)
     for i, result in enumerate(sampler.sample(pos, iterations=nsteps,
                                               rstate0=state)):
         n = int((width+1) * float(i) / nsteps)
         sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
+
+        # incrementally save the chain
+        position = result[0]
+        f = open(inc_prog_fname, "a")
+        for k in range(position.shape[0]):
+            pos_str = " ".join(str(e) for e in position[k])
+            f.write("{0:4d} {1:s}\n".format(k, pos_str))
+        f.close()
+
+        # output the size distribution
+        if i > targ_out:
+            oname = '%s_sizedist_%i.fits' % (basename, targ_out)
+            save_percentile_vals(oname, dustmodel, sampler, obsdata)
+            targ_out += int(save_frac*nsteps)
+
+            oname = '%s_sizedist_best_%i.fits' % (basename, targ_out)
+            save_best_vals(oname, dustmodel, sampler, obsdata)
+
     sys.stdout.write("\n")
 
     pos, prob, state = result
 
-    # untested code from emcee webpages for incrementally saving the chains
-    # f = open("chain.dat", "w")
-    # f.close()
-    # for k, result in enumerate(sampler.sample(pos0, iterations=500,
-    #                           storechain=False)):
-    #    print(k)
-    #    position = result[0]
-    #    f = open("chain.dat", "a")
-    #    for k in range(position.shape[0]):
-    #        f.write("{0:4d} {1:s}\n".format(k, " ".join(position[k])))
-    #    f.close()
-
     emcee_time = time.clock()
     print('emcee time taken: ', (emcee_time - setup_time)/60., ' min')
 
-    # get the best fit values
-    max_lnp = -1e20
-    for k in range(nwalkers):
-        tmax_lnp = np.max(sampler.lnprobability[k])
-        if tmax_lnp > max_lnp:
-            max_lnp = tmax_lnp
-            indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
-            fit_params_best = sampler.chain[k, indxs[0], :]
-
-    dustmodel.set_size_dist(fit_params_best)
-
-    # save the best fit size distributions
-    dustmodel.save(basename + '_sizedist_best.fits', obsdata)
-
-    # get the 50p values and uncertainties
-    samples = sampler.chain.reshape((-1, ndim))
-    values = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
-                 zip(*np.percentile(samples, [16, 50, 84],
-                                    axis=0)))
-    fin_size_dist_50p, fin_size_dist_punc, fin_size_dist_munc = zip(*values)
+    # best fit dust params
+    oname = '%s_sizedist_best_fin.fits' % (basename)
+    save_best_vals(oname, dustmodel, sampler, obsdata)
 
     # 50p dust params
-    dustmodel.set_size_dist(fin_size_dist_50p)
-
-    # save the final size distributions
-    dustmodel.save(basename + '_sizedist.fits', obsdata,
-                   size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
+    oname = '%s_sizedist_fin.fits' % (basename)
+    save_percentile_vals(oname, dustmodel, sampler, obsdata)
