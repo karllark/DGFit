@@ -283,4 +283,4 @@ class DustModel():
                              'dust scattering phase function asymmetry')
             hdulist.append(tbhdu)
 
-        hdulist.writeto(filename, clobber=True)
+        hdulist.writeto(filename, overwrite=True)

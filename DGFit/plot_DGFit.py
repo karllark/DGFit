@@ -234,20 +234,23 @@ if __name__ == "__main__":
 
     # get the observed data
     if args.smc:
-        obsdata = ObsData('data_smc_azv215/azv215_50p_ext.fits',
-                          'data_smc_azv215/azv215_avnhi.dat',
-                          'data_smc_azv215/SMC_AzV215_abundances.dat',
-                          None,
-                          None)
+        path = 'DGFit/data/smc_azv215'
+        OD = ObsData('%s/azv215_50p_ext.fits' % path,
+                     '%s/azv215_avnhi.dat' % path,
+                     '%s/SMC_AzV215_abundances.dat' % path,
+                     None,
+                     None)
     else:
-        obsdata = ObsData(['data_mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                           'data_mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                           'data_mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                          'data_mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                          'data_mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                          'data_mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                          'dust_scat.dat',
-                          ext_tags=['band', 'iue', 'fuse'])
+        path = 'DGFit/data/mw_rv31'
+        OD = ObsData(['%s/MW_diffuse_Gordon09_band_ext.dat' % path,
+                      '%s/MW_diffuse_Gordon09_iue_ext.dat' % path,
+                      '%s/MW_diffuse_Gordon09_fuse_ext.dat' % path],
+                     '%s/MW_diffuse_Gordon09_avnhi.dat' % path,
+                     '%s/MW_diffuse_Jenkins09_abundances.dat' % path,
+                     '%s/MW_diffuse_Compiegne11_ir_emission.dat' % path,
+                     '%s/dust_scat.dat' % path,
+                     ext_tags=['band', 'iue', 'fuse'],
+                     scat_path='%s/Scat_Data/' % path)
 
     # plot the dust size distributions
     colors = ['b', 'g']
@@ -255,21 +258,21 @@ if __name__ == "__main__":
     plot_dgfit_sizedist(ax[1, 0], hdulist, fontsize=fontsize, plegend=False)
 
     # plot the abundances
-    plot_dgfit_abundances(ax[0, 1], hdulist['ABUNDANCES'], obsdata,
+    plot_dgfit_abundances(ax[0, 1], hdulist['ABUNDANCES'], OD,
                           fontsize=fontsize)
 
     # plot the resulting total and component extinction curves
-    plot_dgfit_extinction(ax[1, 1], hdulist['EXTINCTION'], obsdata,
+    plot_dgfit_extinction(ax[1, 1], hdulist['EXTINCTION'], OD,
                           fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    if obsdata.fit_ir_emission:
-        plot_dgfit_emission(ax[0, 2], hdulist['EMISSION'], obsdata,
+    if OD.fit_ir_emission:
+        plot_dgfit_emission(ax[0, 2], hdulist['EMISSION'], OD,
                             fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    if obsdata.fit_scat_a:
-        plot_dgfit_albedo(ax[1, 2], hdulist['ALBEDO'], obsdata,
+    if OD.fit_scat_a:
+        plot_dgfit_albedo(ax[1, 2], hdulist['ALBEDO'], OD,
                           fontsize=fontsize)
 
     pyplot.tight_layout()

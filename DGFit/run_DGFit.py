@@ -11,6 +11,7 @@
 #
 from __future__ import print_function
 
+import sys
 import math
 import time
 import argparse
@@ -19,7 +20,7 @@ import numpy as np
 from astropy.io import fits
 
 # from scipy.interpolate import interp1d
-# from scipy.optimize import minimize
+from scipy.optimize import minimize
 
 # from lmfit import minimize, Parameters
 
@@ -27,6 +28,7 @@ import emcee
 
 from DGFit.DustModel import DustModel
 from DGFit.ObsData import ObsData
+from DGFit.drainesizedist import WGsizedist_graphite
 # import ObsData_Azv18 as ObsData
 
 
@@ -119,16 +121,33 @@ def lnprob_discrete(params, obsdata, dustmodel):
     return lnprob_all(obsdata, dustmodel) + lnp_bound
 
 
+# compute the ln(prob) for discrete size distributions
+def lnprob_WGsizedist(params, obsdata, dustmodel):
+
+    # update the size distributions
+    #   params are the WG size dist parameters
+    # params = bC_input, Cg, a_tg, a_cg, alpha_g, beta_g
+    for component in dustmodel.components:
+        csizedist = WGsizedist_graphite(component.sizes, params)
+    dustmodel.set_size_dist_WG(csizedist)
+
+    return lnprob_all(obsdata, dustmodel)
+
+
 def DGFit_cmdparser():
 
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--fast",
-                        help="Use minimal walkers, n_steps, n_burn to debug code",
+                        help="Use minimal walkers, steps, burns to debug code",
                         action="store_true")
     parser.add_argument("-s", "--slow",
                         help="Use lots of walkers, n_steps, n_burn",
                         action="store_true")
+    parser.add_argument("--limit_abund", action="store_true",
+                        help="Limit based on abundances")
+    parser.add_argument("--usemin", action="store_true",
+                        help="Find min before EMCEE")
     parser.add_argument("-r", "--read", default="",
                         help="Read size distribution from disk")
     parser.add_argument("-t", "--tag", default='dgfit_test',
@@ -158,25 +177,28 @@ if __name__ == "__main__":
 
     # get the observed data
     if args.smc:
-        obsdata = ObsData('data/smc_azv215/azv215_50p_ext.fits',
-                          'data/smc_azv215/azv215_avnhi.dat',
-                          'data/smc_azv215/SMC_AzV215_abundances.dat',
+        path = 'DGFit/data/smc_azv215'
+        obsdata = ObsData('%s/azv215_50p_ext.fits' % path,
+                          '%s/azv215_avnhi.dat' % path,
+                          '%s/SMC_AzV215_abundances.dat' % path,
                           None,
                           None)
     else:
-        obsdata = ObsData(['data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                           'data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                           'data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                          'data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                          'data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                          'data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                          'dust_scat.dat',
-                          ext_tags=['band', 'iue', 'fuse'])
+        path = 'DGFit/data/mw_rv31'
+        obsdata = ObsData(['%s/MW_diffuse_Gordon09_band_ext.dat' % path,
+                           '%s/MW_diffuse_Gordon09_iue_ext.dat' % path,
+                           '%s/MW_diffuse_Gordon09_fuse_ext.dat' % path],
+                          '%s/MW_diffuse_Gordon09_avnhi.dat' % path,
+                          '%s/MW_diffuse_Jenkins09_abundances.dat' % path,
+                          '%s/MW_diffuse_Compiegne11_ir_emission.dat' % path,
+                          '%s/dust_scat.dat' % path,
+                          ext_tags=['band', 'iue', 'fuse'],
+                          scat_path='%s/Scat_Data/' % path)
 
     # get the dust model on the full wavelength grid
     dustmodel_full = DustModel()
     dustmodel_full.predict_full_grid(['astro-silicates', 'astro-carbonaceous'],
-                                     path='./indiv_grain/')
+                                     path='DGFit/data/indiv_grain/')
 
     # get the dust model predicted on the observed data grids
     dustmodel = DustModel()
@@ -241,27 +263,29 @@ if __name__ == "__main__":
         p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
 
     # call scipy.optimize to get a better initial guess
-    # print(p0)
-    # print(lnprobsed(p0, obsdata, dustmodel))
+    if args.usemin:
+        print(p0)
+        print(lnprob_discrete(p0, obsdata, dustmodel))
 
-    # generate the bounds
-    # p0_bounds = []
-    # for k in range(len(p0)):
-    #    p0_bounds.append((0.0,1e20))
+        # generate the bounds
+        p0_bounds = []
+        for k in range(len(p0)):
+            p0_bounds.append((0.0, 1e20))
 
-    # setup what can be fit
-    # obsdata.fit_extinction = True
-    # obsdata.fit_abundance = False
-    # obsdata.fit_ir_emission = False
-    # obsdata.fit_scat_a = False
-    # obsdata.fit_scat_g = False
+            # setup what can be fit
+        obsdata.fit_extinction = True
+        obsdata.fit_abundance = False
+        obsdata.fit_ir_emission = False
+        obsdata.fit_scat_a = False
+        obsdata.fit_scat_g = False
 
-    # neg_lnprobsed = lambda *args: -1.0*lnprobsed(*args)
-    # better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
-    #                        bounds=p0_bounds, method='L-BFGS-B')
-    # print(better_start.success)
-    # print(better_start.x)
-    # exit()
+        # neg_lnprobsed = lambda *args: -1.0*lnprob_discrete(*args)
+        def neg_lnprobsed(*args): -1.0*lnprob_discrete(*args)
+        better_start = minimize(neg_lnprobsed, p0, args=(obsdata, dustmodel),
+                                bounds=p0_bounds, method='L-BFGS-B')
+        print(better_start.success)
+        print(better_start.x)
+        exit()
 
     # import scipy.optimize as op
     # nll = lambda *args: -lnprobsed(*args)
@@ -280,21 +304,23 @@ if __name__ == "__main__":
     print('# params = ', ndim)
     if args.fast:
         print('using the fast params')
-        nwalkers = 2*ndim
-        nsteps = 50
-        burn = 5
+        nwalkers = 4*ndim
+        nsteps = 100
+        burn = 50
     elif args.slow:
         print('using the slow params')
-        nwalkers = 2*ndim
+        nwalkers = 4*ndim
         nsteps = 10000
-        burn = 50000
-    else:
-        nwalkers = 2*ndim
-        nsteps = 1000
         burn = 5000
+    else:
+        nwalkers = 4*ndim
+        nsteps = 1000
+        burn = 500
 
     # setting up the walkers to start "near" the inital guess
-    p = [p0*(1+0.25*np.random.normal(0, 1., ndim)) for k in range(nwalkers)]
+    #   and initial ball should be in log space
+    p = [10**(np.log10(p0) + 1.*np.random.uniform(-1, 1., ndim))
+         for k in range(nwalkers)]
 
     # ensure that all the walkers start with positive values
     for pc in p:
@@ -303,20 +329,22 @@ if __name__ == "__main__":
                 pcs = 0.0
 
     # make sure each walker starts with allowed abundances
-    for pc in p:
-        dustmodel.set_size_dist(pc)
-        results = dustmodel.eff_grain_props(obsdata)
-        cabs = results['cabs']
-        csca = results['csca']
-        natoms = results['natoms']
-        max_violation = 0.0
-        for atomname in natoms.keys():
-            cur_violation = natoms[atomname]/(obsdata.abundance[atomname][0] +
-                                              obsdata.abundance[atomname][1])
-            if cur_violation > max_violation:
-                max_violation = cur_violation
-        if max_violation > 2:
-            pc *= 1.9/max_violation
+    if args.limit_abund:
+        for pc in p:
+            dustmodel.set_size_dist(pc)
+            results = dustmodel.eff_grain_props(obsdata)
+            cabs = results['cabs']
+            csca = results['csca']
+            natoms = results['natoms']
+            max_violation = 0.0
+            for atomname in natoms.keys():
+                cur_violation = (natoms[atomname]
+                                 / (obsdata.abundance[atomname][0] +
+                                    obsdata.abundance[atomname][1]))
+                if cur_violation > max_violation:
+                    max_violation = cur_violation
+            if max_violation > 2:
+                pc *= 1.9/max_violation
 
     # setup the sampler
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_discrete,
@@ -324,13 +352,31 @@ if __name__ == "__main__":
                                     threads=int(args.cpus))
 
     # burn in the walkers
-    pos, prob, state = sampler.run_mcmc(p, burn)
+    # pos, prob, state = sampler.run_mcmc(p, burn)
+    print("burn")
+    width = 60
+    for i, result in enumerate(sampler.sample(p, iterations=burn)):
+        n = int((width+1) * float(i) / burn)
+        sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
+    sys.stdout.write("\n")
+
+    pos, prob, state = result
 
     # rest the sampler
     sampler.reset()
 
     # do the full sampling
-    pos, prob, state = sampler.run_mcmc(pos, nsteps, rstate0=state)
+    # pos, prob, state = sampler.run_mcmc(pos, nsteps, rstate0=state)
+
+    print("afterburn")
+    width = 60
+    for i, result in enumerate(sampler.sample(pos, iterations=nsteps,
+                                              rstate0=state)):
+        n = int((width+1) * float(i) / nsteps)
+        sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
+    sys.stdout.write("\n")
+
+    pos, prob, state = result
 
     # untested code from emcee webpages for incrementally saving the chains
     # f = open("chain.dat", "w")
@@ -348,7 +394,7 @@ if __name__ == "__main__":
     print('emcee time taken: ', (emcee_time - setup_time)/60., ' min')
 
     # get the best fit values
-    max_lnp = -1e6
+    max_lnp = -1e20
     for k in range(nwalkers):
         tmax_lnp = np.max(sampler.lnprobability[k])
         if tmax_lnp > max_lnp:
