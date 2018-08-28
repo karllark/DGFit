@@ -74,7 +74,8 @@ class ObsData():
     # read in the data from files
     def __init__(self, ext_filenames, avnhi_filename,
                  abund_filename, ir_emis_filename,
-                 dust_scat_filename, ext_tags=None):
+                 dust_scat_filename, ext_tags=None,
+                 scat_path="./"):
 
         # extinction curve
         self.fit_extinction = True
@@ -183,7 +184,6 @@ class ObsData():
                          "murthy93", "murthy95", "petersohn97", "witt97",
                          "schiminovich01", "shalima04", "sujatha05",
                          "sujatha07", "sujatha10"]
-            scat_path = "data/mw_rv31/Scat_Data/"
 
             scat_waves = []
             scat_albedo = []

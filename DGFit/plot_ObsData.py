@@ -26,20 +26,23 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.smc:
-        OD = ObsData('data/smc_azv215/azv215_50p_ext.fits',
-                     'data/smc_azv215/azv215_avnhi.dat',
-                     'data/smc_azv215/SMC_AzV215_abundances.dat',
+        path = 'DGFit/data/smc_azv215'
+        OD = ObsData('%s/azv215_50p_ext.fits' % path,
+                     '%s/azv215_avnhi.dat' % path,
+                     '%s/SMC_AzV215_abundances.dat' % path,
                      None,
                      None)
     else:
-        OD = ObsData(['data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat',
-                      'data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat',
-                      'data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat'],
-                     'data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat',
-                     'data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat',
-                     'data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat',
-                     'dta/mw_rv31/dust_scat.dat',
-                     ext_tags=['band', 'iue', 'fuse'])
+        path = 'DGFit/data/mw_rv31'
+        OD = ObsData(['%s/MW_diffuse_Gordon09_band_ext.dat' % path,
+                      '%s/MW_diffuse_Gordon09_iue_ext.dat' % path,
+                      '%s/MW_diffuse_Gordon09_fuse_ext.dat' % path],
+                     '%s/MW_diffuse_Gordon09_avnhi.dat' % path,
+                     '%s/MW_diffuse_Jenkins09_abundances.dat' % path,
+                     '%s/MW_diffuse_Compiegne11_ir_emission.dat' % path,
+                     '%s/dust_scat.dat' % path,
+                     ext_tags=['band', 'iue', 'fuse'],
+                     scat_path='%s/Scat_Data/' % path)
 
     # setup the plots
     fontsize = 12
@@ -91,7 +94,7 @@ if __name__ == "__main__":
         ax[0, 1].set_yscale('log')
         ax[0, 1].legend(loc=2)
 
-    t = Table.read('data/mw_rv31/MW_diffuse_Mathis83_ISRF.dat',
+    t = Table.read('%s/MW_diffuse_Mathis83_ISRF.dat' % path,
                    format='ascii.commented_header')
     ax[1, 1].plot(t['wave'], t['ISRF'], '-', label="ISRF")
     ax[1, 1].set_xlabel(r'$\lambda [\mu m]$')
