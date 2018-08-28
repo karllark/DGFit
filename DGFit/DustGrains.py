@@ -300,7 +300,8 @@ class DustGrains():
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.
     # these are normalized to NHI (assumption)
-    def eff_grain_props(self, ObsData):
+    def eff_grain_props(self, ObsData,
+                        predict_all=False):
         """
         Calculate the grain properties integrated over the size distribution
         for a single grain composition.
@@ -383,7 +384,7 @@ class DustGrains():
         results['natoms'] = dict(zip(self.atomic_comp_names, _natoms))
 
         # compute the integrated emission spectrum
-        if ObsData.fit_ir_emission:
+        if ObsData.fit_ir_emission or predict_all:
             _emission = np.empty(self.n_wavelengths_emission)
             for i in range(self.n_wavelengths_emission):
                 _emission[i] = np.sum(deltas*(
@@ -394,7 +395,7 @@ class DustGrains():
             results['emission'] = _emission
 
         # scattering parameters a & g
-        if ObsData.fit_scat_a:
+        if ObsData.fit_scat_a or predict_all:
             n_waves_scat_a = self.n_wavelengths_scat_a
             scat_a_cext = self.scat_a_cext
             scat_a_csca = self.scat_a_csca
@@ -418,7 +419,7 @@ class DustGrains():
             results['scat_a_cext'] = _effscat_a_cext
             results['scat_a_csca'] = _effscat_a_csca
 
-        if ObsData.fit_scat_g:
+        if ObsData.fit_scat_g or predict_all:
             n_waves_scat_g = self.n_wavelengths_scat_g
             scat_g_csca = self.scat_g_csca
 

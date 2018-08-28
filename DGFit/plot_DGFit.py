@@ -267,14 +267,12 @@ if __name__ == "__main__":
                           fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    if OD.fit_ir_emission:
-        plot_dgfit_emission(ax[0, 2], hdulist['EMISSION'], OD,
-                            fontsize=fontsize)
+    plot_dgfit_emission(ax[0, 2], hdulist['EMISSION'], OD,
+                        fontsize=fontsize)
 
     # plot the resulting total and component emission spectra
-    if OD.fit_scat_a:
-        plot_dgfit_albedo(ax[1, 2], hdulist['ALBEDO'], OD,
-                          fontsize=fontsize)
+    plot_dgfit_albedo(ax[1, 2], hdulist['ALBEDO'], OD,
+                      fontsize=fontsize)
 
     pyplot.tight_layout()
 
