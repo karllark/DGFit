@@ -21,7 +21,7 @@ import emcee
 
 from DGFit.DustModel import DustModel
 from DGFit.ObsData import ObsData
-from DGFit.DGFit_Models import DGFit_bins
+from DGFit.DGFit_Models import (DGFit_bins, DGFit_MRN)
 # import ObsData_Azv18 as ObsData
 
 
@@ -29,6 +29,9 @@ def DGFit_cmdparser():
 
     # commandline parser
     parser = argparse.ArgumentParser()
+    parser.add_argument("--sizedisttype", default='bins',
+                        choices=['bins', 'MRN'],
+                        help='Size distribution type')
     parser.add_argument("-f", "--fast",
                         help="Use minimal walkers, steps, burns to debug code",
                         action="store_true")
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     dustmodel.predict_observed_data(dustmodel_full, obsdata)
 
     # possible types are 'bins', 'WG', or 'MRN'
-    sizedisttype = 'bins'
+    sizedisttype = args.sizedisttype
 
     if sizedisttype == 'bins':
         # replace the default size distribution with one from a file
@@ -136,12 +139,12 @@ if __name__ == "__main__":
                 for component in dustmodel.components:
                     component.size_dist *= ave_ratio
 
-        # deweight large grains (test)
-        if args.nolarge:
-            indxs, = np.where(component.sizes > 0.5e-4)
-            if len(indxs) > 0:
-                print('deweighting sizes > 0.5 micron')
-                component.size_dist[indxs] *= 1e-10
+                    # deweight large grains (test)
+                    if args.nolarge:
+                        indxs, = np.where(component.sizes > 0.5e-4)
+                        if len(indxs) > 0:
+                            print('deweighting sizes > 0.5 micron')
+                            component.size_dist[indxs] *= 1e-10
 
         # inital guesses at parameters
         p0 = dustmodel.components[0].size_dist
@@ -152,10 +155,22 @@ if __name__ == "__main__":
         dgfit_model = DGFit_bins()
 
     elif sizedisttype == 'MRN':
-        pass
+
+        # define the fitting model
+        dgfit_model = DGFit_MRN()
+
+        # initial guesses at parameters
+        #    starting range is 0.001 to 1 micron
+        p0 = [1e-25, 3.5, 1e-7, 1e-3,
+              1e-25, 3.5, 1e-7, 1e-3]
 
         # need to set dust model size distribution
-        #     initial guess p0
+        dgfit_model.set_size_dist(p0, dustmodel)
+
+        obsdata.fit_abundance = False
+        # obsdata.fit_ir_emission = False
+        obsdata.fit_scat_a = False
+        obsdata.fit_scat_g = False
     else:
         print('Size distribution not known')
         exit()
@@ -178,6 +193,10 @@ if __name__ == "__main__":
 
     # setting up the walkers to start "near" the inital guess
     p = dgfit_model.initial_walkers(p0, nwalkers)
+
+    # for pc in p:
+    #    print(dgfit_model.lnprob(pc, obsdata, dustmodel))
+    # exit()
 
     # setup the sampler
     sampler = emcee.EnsembleSampler(nwalkers, ndim, dgfit_model.lnprob,

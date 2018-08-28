@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 
-__all__ = ["DGFit_bins"]
+__all__ = ['DGFit_bins', 'DGFit_MRN']
 
 
 def _lnprob_all(obsdata, dustmodel):
@@ -158,6 +158,133 @@ class DGFit_bins():
                 fit_params_best = sampler.chain[k, indxs[0], :]
 
         dustmodel.set_size_dist(fit_params_best)
+
+        # save the best fit size distributions
+        dustmodel.save(oname, obsdata)
+
+
+def _mrn_size_model(a, params):
+    """
+    MRN size distribution
+
+    MRN model paramters are
+        A = amplitude
+        alpha = exponent of power law
+        amin = min grain size
+        amax = max grain size
+
+    sizedist = A*a^-alpha
+    """
+    sizedist = params[0]*np.power(a, -1.0*params[1])
+    # indxs, = np.where(np.logical_or(a < params[2],
+    #                                 a > params[3]))
+    # if len(indxs) > 0:
+    #    sizedist[indxs] = 0.0
+
+    return(sizedist)
+
+
+class DGFit_MRN():
+    """
+    Model that uses the Weingartner & Draine functional form for the
+    size distributions
+    """
+    def __init__(self):
+        self.type = 'MRN'
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the ln(prob) given the model parameters
+
+        MRN model paramters for each component are
+            A = amplitude
+            alpha = negative of the power law exponent
+            amin = min grain size
+            amax = max grain size
+        """
+        k1 = 0
+        n_mrn_params = 4
+        lnp_bound = 0.0
+        for component in dustmodel.components:
+            k2 = k1 + n_mrn_params
+            cparams = params[k1:k2]
+            component.size_dist[:] = _mrn_size_model(component.sizes[:],
+                                                     cparams)
+            k1 += n_mrn_params
+            # check that amin < amax (params 3 & 4)
+            if cparams[2] > cparams[3]:
+                lnp_bound = -1e20
+            # check that the amin and amax are within the bounds
+            # of the dustmodel
+            if cparams[2] < component.sizes[0]:
+                lnp_bound = -1e20
+            if cparams[3] > component.sizes[-1]:
+                lnp_bound = -1e20
+            # keep the normalization always positive
+            if cparams[0] < 0.0:
+                lnp_bound = -1e20
+            if cparams[1] < 0.0:
+                lnp_bound = -1e20
+
+        if lnp_bound < 0.0:
+            return lnp_bound
+        else:
+            return _lnprob_all(obsdata, dustmodel) + lnp_bound
+
+    def set_size_dist(self, params, dustmodel):
+        k1 = 0
+        n_mrn_params = 4
+        for component in dustmodel.components:
+            k2 = k1 + n_mrn_params
+            cparams = params[k1:k2]
+            component.size_dist[:] = _mrn_size_model(component.sizes[:],
+                                                     cparams)
+            k1 += n_mrn_params
+
+    def initial_walkers(self, p0, nwalkers):
+        """
+        Setup the walkers based on the initial parameters p0
+        """
+        self.ndim = len(p0)
+        self.nwalkers = nwalkers
+        # Initial ball should be in log space
+        p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
+             for k in range(self.nwalkers)]
+
+        return p
+
+    def save_percentile_vals(self, oname, dustmodel, sampler, obsdata,
+                             cur_step=None):
+        """
+        Save the percentile values using the sampler chain
+        """
+        if cur_step is None:
+            cur_step = sampler.chain.shape[1]
+        fin_param_50p, fin_param_punc, fin_param_munc = \
+            _get_percentile_vals(sampler.chain[:, 0:cur_step+1, :], self.ndim)
+        self.set_size_dist(fin_param_50p, dustmodel)
+
+        # save the final size distributions
+        dustmodel.save(oname, obsdata)
+
+    def save_best_vals(self, oname, dustmodel, sampler, obsdata,
+                       cur_step=None):
+        """
+        Save the best fit values using the sampler chain
+        """
+        # get the best fit values
+        max_lnp = -1e20
+        if cur_step is None:
+            cur_step = len(sampler.lnprobability[0])
+        for k in range(self.nwalkers):
+            tmax_lnp = np.max(sampler.lnprobability[k, 0:cur_step])
+            if tmax_lnp > max_lnp:
+                max_lnp = tmax_lnp
+                indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
+                fit_params_best = sampler.chain[k, indxs[0], :]
+
+        self.set_size_dist(fit_params_best, dustmodel)
 
         # save the best fit size distributions
         dustmodel.save(oname, obsdata)

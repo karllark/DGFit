@@ -60,27 +60,29 @@ class DustModel():
             k1 += component.n_sizes
 
     # compute integrated dust properties
-    def eff_grain_props(self, ObsData):
+    def eff_grain_props(self, ObsData,
+                        predict_all=False):
         # storage for results
         _cabs = np.zeros(self.components[0].n_wavelengths)
         _csca = np.zeros(self.components[0].n_wavelengths)
         _natoms = {}
 
-        if ObsData.fit_ir_emission:
+        if ObsData.fit_ir_emission or predict_all:
             _emission = np.zeros(self.components[0].n_wavelengths_emission)
 
-        if ObsData.fit_scat_a:
+        if ObsData.fit_scat_a or predict_all:
             # _albedo = np.zeros(self.components[0].n_wavelengths_scat_a)
             _scat_a_cext = np.zeros(self.components[0].n_wavelengths_scat_a)
             _scat_a_csca = np.zeros(self.components[0].n_wavelengths_scat_a)
 
-        if ObsData.fit_scat_g:
+        if ObsData.fit_scat_g or predict_all:
             _g = np.zeros(self.components[0].n_wavelengths_scat_g)
             _scat_g_csca = np.zeros(self.components[0].n_wavelengths_scat_g)
 
         # loop over components and accumulate the answer
         for component in self.components:
-            results = component.eff_grain_props(ObsData)
+            results = component.eff_grain_props(ObsData,
+                                                predict_all=predict_all)
 
             # add the component info to the total values
             _tcabs = results['cabs']
@@ -97,17 +99,17 @@ class DustModel():
                 else:
                     _natoms[aname] = _tnatoms[aname]
 
-            if ObsData.fit_ir_emission:
+            if ObsData.fit_ir_emission or predict_all:
                 _temission = results['emission']
                 _emission += _temission
 
-            if ObsData.fit_scat_a:
+            if ObsData.fit_scat_a or predict_all:
                 _tscat_a_cext = results['scat_a_cext']
                 _tscat_a_csca = results['scat_a_csca']
                 _scat_a_cext += _tscat_a_cext
                 _scat_a_csca += _tscat_a_csca
 
-            if ObsData.fit_scat_g:
+            if ObsData.fit_scat_g or predict_all:
                 _tg = results['g']
                 _tscat_g_csca = results['scat_g_csca']
                 _g += _tscat_g_csca*_tg
@@ -118,13 +120,13 @@ class DustModel():
         results['csca'] = _csca
         results['natoms'] = _natoms
 
-        if ObsData.fit_ir_emission:
+        if ObsData.fit_ir_emission or predict_all:
             results['emission'] = _emission
 
-        if ObsData.fit_scat_a:
+        if ObsData.fit_scat_a or predict_all:
             results['albedo'] = _scat_a_csca/_scat_a_cext
 
-        if ObsData.fit_scat_g:
+        if ObsData.fit_scat_g or predict_all:
             results['g'] = _g/_scat_g_csca
 
         return results
@@ -195,7 +197,7 @@ class DustModel():
             hdulist.append(tbhdu)
 
         # output the resulting observable parameters
-        results = self.eff_grain_props(ObsData)
+        results = self.eff_grain_props(ObsData, predict_all=True)
         cabs = results['cabs']
         csca = results['csca']
         natoms = results['natoms']
@@ -219,36 +221,34 @@ class DustModel():
         all_cols_ext = [col1, col2]
 
         # emission
-        if ObsData.fit_ir_emission:
-            emission = results['emission']
-            col1 = fits.Column(name='WAVE', format='E',
-                               array=self.components[0].wavelengths_emission)
-            col2 = fits.Column(name='EMIS', format='E',
-                               array=emission)
-            all_cols_emis = [col1, col2]
+        # if ObsData.fit_ir_emission:
+        emission = results['emission']
+        col1 = fits.Column(name='WAVE', format='E',
+                           array=self.components[0].wavelengths_emission)
+        col2 = fits.Column(name='EMIS', format='E',
+                           array=emission)
+        all_cols_emis = [col1, col2]
 
         # albedo
-        if ObsData.fit_scat_a:
-            albedo = results['albedo']
-            tvals = self.components[0].wavelengths_scat_a
-            col1 = fits.Column(name='WAVE', format='E',
-                               array=tvals)
-            col2 = fits.Column(name='ALBEDO', format='E',
-                               array=albedo)
-            all_cols_albedo = [col1, col2]
+        albedo = results['albedo']
+        tvals = self.components[0].wavelengths_scat_a
+        col1 = fits.Column(name='WAVE', format='E',
+                           array=tvals)
+        col2 = fits.Column(name='ALBEDO', format='E',
+                           array=albedo)
+        all_cols_albedo = [col1, col2]
 
         # g
-        if ObsData.fit_scat_g:
-            g = results['g']
-            tvals = self.components[0].wavelengths_scat_g
-            col1 = fits.Column(name='WAVE', format='E',
-                               array=tvals)
-            col2 = fits.Column(name='G', format='E',
-                               array=g)
-            all_cols_g = [col1, col2]
+        g = results['g']
+        tvals = self.components[0].wavelengths_scat_g
+        col1 = fits.Column(name='WAVE', format='E',
+                           array=tvals)
+        col2 = fits.Column(name='G', format='E',
+                           array=g)
+        all_cols_g = [col1, col2]
 
         for k, component in enumerate(self.components):
-            results = component.eff_grain_props(ObsData)
+            results = component.eff_grain_props(ObsData, predict_all=True)
             tcabs = results['cabs']
             tcsca = results['csca']
             # tnatoms = results['natoms']
@@ -257,23 +257,20 @@ class DustModel():
                                array=1.086*(tcabs+tcsca))
             all_cols_ext.append(tcol)
 
-            if ObsData.fit_ir_emission:
-                temission = results['emission']
-                tcol = fits.Column(name='EMIS'+str(k+1), format='E',
-                                   array=temission)
-                all_cols_emis.append(tcol)
+            temission = results['emission']
+            tcol = fits.Column(name='EMIS'+str(k+1), format='E',
+                               array=temission)
+            all_cols_emis.append(tcol)
 
-            if ObsData.fit_scat_a:
-                talbedo = results['albedo']
-                tcol = fits.Column(name='ALBEDO'+str(k+1), format='E',
-                                   array=talbedo)
-                all_cols_albedo.append(tcol)
+            talbedo = results['albedo']
+            tcol = fits.Column(name='ALBEDO'+str(k+1), format='E',
+                               array=talbedo)
+            all_cols_albedo.append(tcol)
 
-            if ObsData.fit_scat_g:
-                tg = results['g']
-                tcol = fits.Column(name='G'+str(k+1), format='E',
-                                   array=tg)
-                all_cols_g.append(tcol)
+            tg = results['g']
+            tcol = fits.Column(name='G'+str(k+1), format='E',
+                               array=tg)
+            all_cols_g.append(tcol)
 
         # now output the results
         #    extinction
@@ -284,26 +281,23 @@ class DustModel():
         hdulist.append(tbhdu)
 
         #    emission
-        if ObsData.fit_ir_emission:
-            cols = fits.ColDefs(all_cols_emis)
-            tbhdu = fits.BinTableHDU.from_columns(cols)
-            tbhdu.header.set('EXTNAME', 'Emission',
-                             'emission MJy/sr/H atom units')
-            hdulist.append(tbhdu)
+        cols = fits.ColDefs(all_cols_emis)
+        tbhdu = fits.BinTableHDU.from_columns(cols)
+        tbhdu.header.set('EXTNAME', 'Emission',
+                         'emission MJy/sr/H atom units')
+        hdulist.append(tbhdu)
 
         #    albedo
-        if ObsData.fit_scat_a:
-            cols = fits.ColDefs(all_cols_albedo)
-            tbhdu = fits.BinTableHDU.from_columns(cols)
-            tbhdu.header.set('EXTNAME', 'Albedo', 'dust scattering albedo')
-            hdulist.append(tbhdu)
+        cols = fits.ColDefs(all_cols_albedo)
+        tbhdu = fits.BinTableHDU.from_columns(cols)
+        tbhdu.header.set('EXTNAME', 'Albedo', 'dust scattering albedo')
+        hdulist.append(tbhdu)
 
         #    g
-        if ObsData.fit_scat_g:
-            cols = fits.ColDefs(all_cols_g)
-            tbhdu = fits.BinTableHDU.from_columns(cols)
-            tbhdu.header.set('EXTNAME', 'G',
-                             'dust scattering phase function asymmetry')
-            hdulist.append(tbhdu)
+        cols = fits.ColDefs(all_cols_g)
+        tbhdu = fits.BinTableHDU.from_columns(cols)
+        tbhdu.header.set('EXTNAME', 'G',
+                         'dust scattering phase function asymmetry')
+        hdulist.append(tbhdu)
 
         hdulist.writeto(filename, overwrite=True)
