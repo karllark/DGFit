@@ -304,16 +304,16 @@ if __name__ == "__main__":
     print('# params = ', ndim)
     if args.fast:
         print('using the fast params')
-        nwalkers = 2*ndim
+        nwalkers = 4*ndim
         nsteps = 100
         burn = 50
     elif args.slow:
         print('using the slow params')
-        nwalkers = 2*ndim
+        nwalkers = 4*ndim
         nsteps = 10000
         burn = 5000
     else:
-        nwalkers = 2*ndim
+        nwalkers = 4*ndim
         nsteps = 1000
         burn = 500
 
