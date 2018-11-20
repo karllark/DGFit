@@ -3,8 +3,8 @@ from __future__ import print_function
 import argparse
 
 import numpy as np
-import matplotlib.pyplot as pyplot
-import matplotlib
+# import matplotlib.pyplot as pyplot
+# import matplotlib
 
 import corner
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     nparam = len(samples_data[0, :]) - 1
     samples = samples_data[:, 1:nparam+1]
 
-    samples = np.log10(samples[:, ::5])
+    # samples = np.log10(samples[:, ::5])
     print(samples.shape)
 
     fig = corner.corner(samples)
