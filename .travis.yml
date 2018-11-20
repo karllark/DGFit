@@ -83,9 +83,6 @@ matrix:
 
         # Now try Astropy dev with the latest Python and LTS with Python 2.7 and 3.x.
         - os: linux
-          env: ASTROPY_VERSION=development
-               EVENT_TYPE='pull_request push cron'
-        - os: linux
           env: PYTHON_VERSION=2.7 ASTROPY_VERSION=lts
         - os: linux
           env: ASTROPY_VERSION=lts
@@ -112,6 +109,15 @@ matrix:
           env: MAIN_CMD='pycodestyle DGFit --count' SETUP_CMD=''
 
     allow_failures:
+        - os: linux
+          env: ASTROPY_VERSION=development
+               EVENT_TYPE='pull_request push cron'
+
+        # Try numpy pre-release
+        - os: linux
+          env: NUMPY_VERSION=prerelease
+               EVENT_TYPE='pull_request push cron'
+
         # Do a PEP8 test with pycodestyle
         # (allow to fail unless your code completely compliant)
         - os: linux
