@@ -252,26 +252,23 @@ class DustGrains():
         self.cabs = np.empty((self.n_sizes, self.n_wavelengths))
         self.csca = np.empty((self.n_sizes, self.n_wavelengths))
 
-        if ObsData.fit_ir_emission:
-            self.wavelengths_emission = ObsData.ir_emission_waves
-            self.n_wavelengths_emission = len(self.wavelengths_emission)
-            self.emission = np.empty((self.n_sizes,
-                                      self.n_wavelengths_emission))
+        self.wavelengths_emission = ObsData.ir_emission_waves
+        self.n_wavelengths_emission = len(self.wavelengths_emission)
+        self.emission = np.empty((self.n_sizes,
+                                  self.n_wavelengths_emission))
 
-        if ObsData.fit_scat_a:
-            self.wavelengths_scat_a = ObsData.scat_a_waves
-            self.n_wavelengths_scat_a = len(self.wavelengths_scat_a)
-            self.scat_a_cext = np.empty((self.n_sizes,
-                                         self.n_wavelengths_scat_a))
-            self.scat_a_csca = np.empty((self.n_sizes,
-                                         self.n_wavelengths_scat_a))
+        self.wavelengths_scat_a = ObsData.scat_a_waves
+        self.n_wavelengths_scat_a = len(self.wavelengths_scat_a)
+        self.scat_a_cext = np.empty((self.n_sizes,
+                                     self.n_wavelengths_scat_a))
+        self.scat_a_csca = np.empty((self.n_sizes,
+                                     self.n_wavelengths_scat_a))
 
-        if ObsData.fit_scat_a:
-            self.wavelengths_scat_g = ObsData.scat_g_waves
-            self.n_wavelengths_scat_g = len(self.wavelengths_scat_g)
-            self.scat_g = np.empty((self.n_sizes, self.n_wavelengths_scat_g))
-            self.scat_g_csca = np.empty((self.n_sizes,
-                                         self.n_wavelengths_scat_g))
+        self.wavelengths_scat_g = ObsData.scat_g_waves
+        self.n_wavelengths_scat_g = len(self.wavelengths_scat_g)
+        self.scat_g = np.empty((self.n_sizes, self.n_wavelengths_scat_g))
+        self.scat_g_csca = np.empty((self.n_sizes,
+                                     self.n_wavelengths_scat_g))
 
         # loop over the sizes and generate grain info on the observed data grid
         for i in range(self.n_sizes):
@@ -282,20 +279,18 @@ class DustGrains():
             self.cabs[i, :] = cabs_interp(self.wavelengths)
             self.csca[i, :] = csca_interp(self.wavelengths)
 
-            if ObsData.fit_scat_a:
-                self.scat_a_cext[i, :] = cext_interp(self.wavelengths_scat_a)
-                self.scat_a_csca[i, :] = csca_interp(self.wavelengths_scat_a)
+            self.scat_a_cext[i, :] = cext_interp(self.wavelengths_scat_a)
+            self.scat_a_csca[i, :] = csca_interp(self.wavelengths_scat_a)
 
-            if ObsData.fit_scat_g:
-                g_interp = interp1d(DustGrain.wavelengths,
-                                    DustGrain.scat_g[i, :])
-                self.scat_g[i, :] = g_interp(self.wavelengths_scat_g)
-                self.scat_g_csca[i, :] = csca_interp(self.wavelengths_scat_g)
+            g_interp = interp1d(DustGrain.wavelengths,
+                                DustGrain.scat_g[i, :])
+            self.scat_g[i, :] = g_interp(self.wavelengths_scat_g)
+            self.scat_g_csca[i, :] = csca_interp(self.wavelengths_scat_g)
 
-            if ObsData.fit_ir_emission:
-                emission_interp = interp1d(DustGrain.wavelengths_emission,
-                                           DustGrain.emission[i, :])
-                self.emission[i, :] = emission_interp(self.wavelengths_emission)
+            emission_interp = interp1d(DustGrain.wavelengths_emission,
+                                       DustGrain.emission[i, :])
+            self.emission[i, :] = emission_interp(
+                self.wavelengths_emission)
 
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.

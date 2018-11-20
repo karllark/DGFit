@@ -32,20 +32,25 @@ def DGFit_cmdparser():
     parser.add_argument("--sizedisttype", default='bins',
                         choices=['bins', 'MRN'],
                         help='Size distribution type')
+    parser.add_argument("--fitobs", nargs='+', default='all',
+                        choices=['extinction', 'iremission',
+                                 'abundance', 'albedo', 'g',
+                                 'all'],
+                        help='Which observations to fit')
     parser.add_argument("-f", "--fast",
                         help="Use minimal walkers, steps, burns to debug code",
                         action="store_true")
     parser.add_argument("-s", "--slow",
                         help="Use lots of walkers, n_steps, n_burn",
                         action="store_true")
-    parser.add_argument("--nburn", metavar=int, default=500,
+    parser.add_argument("--nburn", type=int, default=500,
                         help="Number of samples for burn")
-    parser.add_argument("--nsteps", metavar=int, default=1000,
+    parser.add_argument("--nsteps", type=int, default=1000,
                         help="Number of samples for full run")
     parser.add_argument("--limit_abund", action="store_true",
                         help="Limit based on abundances")
     parser.add_argument("--usemin", action="store_true",
-                        help="Find min before EMCEE")
+                        help="Find min before EMCEE (does not work yet)")
     parser.add_argument("-r", "--read", default=None,
                         help="Read size distribution from disk")
     parser.add_argument("-t", "--tag", default='dgfit_test',
@@ -60,7 +65,42 @@ def DGFit_cmdparser():
     return parser
 
 
-# main fitting code
+def set_obs_for_fitting(obdata, fitobs):
+    """
+    parse the requested list of observations for fitting and set the
+    appropriate variables
+    """
+
+    fitobs_list = []
+    if not (obsdata.fit_extinction and
+            (('extinction' in fitobs) or ('all' in fitobs))):
+        obsdata.fit_extinction = False
+    else:
+        fitobs_list.append('extinction')
+    if not (obsdata.fit_abundance and
+            (('abundance' in fitobs) or ('all' in fitobs))):
+        obsdata.fit_abundance = False
+    else:
+        fitobs_list.append('abundance')
+    if not (obsdata.fit_ir_emission and
+            (('iremission' in fitobs) or ('all' in fitobs))):
+        obsdata.fit_ir_emission = False
+    else:
+        fitobs_list.append('ir_emission')
+    if not (obsdata.fit_scat_a and
+            (('albedo' in fitobs) or ('all' in fitobs))):
+        obsdata.fit_scat_a = False
+    else:
+        fitobs_list.append('scat albedo')
+    if not (obsdata.fit_scat_g and
+            (('g' in fitobs) or ('all' in fitobs))):
+        obsdata.fit_scat_g = False
+    else:
+        fitobs_list.append('scat g')
+
+    return fitobs_list
+
+
 if __name__ == "__main__":
 
     parser = DGFit_cmdparser()
@@ -105,6 +145,9 @@ if __name__ == "__main__":
                           '%s/dust_scat.dat' % path,
                           ext_tags=['band', 'iue', 'fuse'],
                           scat_path='%s/Scat_Data/' % path)
+
+    # determine what to fit based on what exists and the commandline args
+    fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
 
     # get the dust model on the full wavelength grid
     dustmodel_full = DustModel()
@@ -167,10 +210,6 @@ if __name__ == "__main__":
         # need to set dust model size distribution
         dgfit_model.set_size_dist(p0, dustmodel)
 
-        obsdata.fit_abundance = False
-        # obsdata.fit_ir_emission = False
-        obsdata.fit_scat_a = False
-        obsdata.fit_scat_g = False
     else:
         print('Size distribution not known')
         exit()
@@ -186,6 +225,7 @@ if __name__ == "__main__":
     ndim = len(p0)
     nwalkers = 2*ndim
 
+    print('fitting ', fitobs_list)
     print('# params = %i' % ndim)
     print('# walkers = %i' % nwalkers)
     print("# burn = %i" % burn)

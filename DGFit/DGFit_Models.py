@@ -176,10 +176,10 @@ def _mrn_size_model(a, params):
     sizedist = A*a^-alpha
     """
     sizedist = params[0]*np.power(a, -1.0*params[1])
-    # indxs, = np.where(np.logical_or(a < params[2],
-    #                                 a > params[3]))
-    # if len(indxs) > 0:
-    #    sizedist[indxs] = 0.0
+    indxs, = np.where(np.logical_or(a < params[2],
+                                    a > params[3]))
+    if len(indxs) > 0:
+        sizedist[indxs] = 0.0
 
     return(sizedist)
 
@@ -248,7 +248,9 @@ class DGFit_MRN():
         """
         self.ndim = len(p0)
         self.nwalkers = nwalkers
-        # Initial ball should be in log space
+        # Initial ball
+        # delts = np.array([1.0, 0.01, 1e-8, 1e-5, 1.0, 0.01, 1e-8, 1e-5])
+        # p = [p0 + delts*np.random.normal(0., 1., self.ndim)
         p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
              for k in range(self.nwalkers)]
 
