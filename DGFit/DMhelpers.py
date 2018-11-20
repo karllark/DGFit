@@ -4,10 +4,11 @@ import math
 import numpy as np
 
 
-__all__ = ['DGFit_bins', 'DGFit_MRN']
+__all__ = ['lnprob_all', 'get_percentile_vals',
+           'mrn_size_model']
 
 
-def _lnprob_all(obsdata, dustmodel):
+def lnprob_all(obsdata, dustmodel):
     """
     Compute the ln(prob) for the dust grain size and composition
     distribution as defined in the dustmodel
@@ -72,7 +73,7 @@ def _lnprob_all(obsdata, dustmodel):
         return lnp
 
 
-def _get_percentile_vals(chain, ndim):
+def get_percentile_vals(chain, ndim):
     """
     Compute the 50% +/- 33% values from the samples
     """
@@ -163,7 +164,7 @@ class DGFit_bins():
         dustmodel.save(oname, obsdata)
 
 
-def _mrn_size_model(a, params):
+def mrn_size_model(a, params):
     """
     MRN size distribution
 

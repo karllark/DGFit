@@ -1,31 +1,55 @@
-#!/usr/bin/env python
-#
-# dustmodel_props object
-#  dust model properites
-#
-# Started: Jan 2015 (KDG)
-
-from __future__ import print_function
-
 import numpy as np
 from astropy.io import fits
 
 from DGFit.DustGrains import DustGrains
+from DGFit.DMhelpers import (lnprob_all,
+                             get_percentile_vals,
+                             mrn_size_model)
 
-__all__ = ["DustModel"]
+__all__ = ["DustModelBase",
+           "MRNDustModel"]
 
 
-# Object for the proprerties of dust grain with a specific composition
-class DustModel():
+class DustModelBase():
+    """
+    Base for full dust model including size and composition distributions
+    Includes the physical properties of the individual dust grains
+
+    Attributes
+    ----------
+    origin : string
+        origin of the dust grain physical properties
+        allowed values are 'files' and 'onobsdata'
+    n_components : int
+        number of dust grain components
+    components : array of DustGrain objects
+        one DustGrain object per component
+    sizedisttype : string
+        functional form of component size distributions
+    """
     def __init__(self):
         self.origin = None
+        self.n_components = 0
+        self.components = []
+        self.sizedisttype = None
 
-    def predict_full_grid(self, componentnames, path='./',
-                          min_wave=0., max_wave=1e6,
-                          min_wave_emission=0., max_wave_emission=1e6):
+    def predict_full_grid(self, componentnames, path='./'):
+        """
+        Read in the precomputed dust grain physical properties from files.
+
+        Parameters
+        ----------
+        componentnames : list of strings
+            names of dust grain materials
+        path : type
+            path to files
+
+        Returns
+        -------
+        updated class variables
+        """
         self.origin = 'files'
         self.n_components = len(componentnames)
-        self.components = []
         # get the basic grain data
         for componentname in componentnames:
             cur_DG = DustGrains()
@@ -33,19 +57,30 @@ class DustModel():
                               path=path)
             self.components.append(cur_DG)
 
-    # calculate the dust grain properties in the observed data space
-    #   basically, transform the unifrom dust grain grid to the
-    #   the nonuniform spectroscipic and band integrated grids
-    #   of the observed data
-    # this is caching the dust grains predictions to make the fitting faster
-    def predict_observed_data(self, DustModel, ObsData):
+    def predict_on_observed_data(self, full_dustmodel, observeddata):
+        """
+        Calculate the dust grain properties on the observed
+        wavelength grid.  Uses an existing DustModel based
+        on the full precomputed files and an ObsData object
+        to get the wavelength grid.  Makes the fitting faster
+        to only do this transformation once.
 
-        self.origin = 'obsdata'
-        self.n_components = DustModel.n_components
-        self.components = []
-        for component in DustModel.components:
+        Parameters
+        ----------
+        full_dustmodel : DustModel object
+            full dust model based on input files
+        observeddata: ObsData object
+            observed data to use for transformation
+
+        Returns
+        -------
+        updated class variables
+        """
+        self.origin = 'onobsdata'
+        self.n_components = full_dustmodel.n_components
+        for component in full_dustmodel.components:
             cur_DG = DustGrains()
-            cur_DG.from_object(component, ObsData)
+            cur_DG.from_object(component, observeddata)
             self.components.append(cur_DG)
 
     # set the size distributions
@@ -301,3 +336,185 @@ class DustModel():
         hdulist.append(tbhdu)
 
         hdulist.writeto(filename, overwrite=True)
+
+
+class MRNDustModel(DustModelBase):
+    """
+    Dust model that uses powerlaw size distributions with min/max
+    sizes (MRN).
+    """
+    sizedisttype = 'MRN'
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the ln(prob) given the model parameters
+
+        MRN model paramters for each component are
+            A = amplitude
+            alpha = negative of the power law exponent
+            amin = min grain size
+            amax = max grain size
+
+        Parameters
+        ----------
+        params : array of floats 4 x n_components
+            parameters of the MRN model
+        obsdata : ObsData object
+            observed data for fitting
+        dustmodel : DustModel object
+            must be passed explicitly as the fitters
+            require a static method (is this true?)
+
+        Returns
+        -------
+        lnprob : float
+            natural log of the probability the input parameters
+            describe the data
+        """
+        k1 = 0
+        n_mrn_params = 4
+        lnp_bound = 0.0
+        for component in dustmodel.components:
+            k2 = k1 + n_mrn_params
+            cparams = params[k1:k2]
+            component.size_dist[:] = mrn_size_model(component.sizes[:],
+                                                    cparams)
+            k1 += n_mrn_params
+            # check that amin < amax (params 3 & 4)
+            if cparams[2] > cparams[3]:
+                lnp_bound = -1e20
+            # check that the amin and amax are within the bounds
+            # of the dustmodel
+            if cparams[2] < component.sizes[0]:
+                lnp_bound = -1e20
+            if cparams[3] > component.sizes[-1]:
+                lnp_bound = -1e20
+            # keep the normalization always positive
+            if cparams[0] < 0.0:
+                lnp_bound = -1e20
+            if cparams[1] < 0.0:
+                lnp_bound = -1e20
+
+        if lnp_bound < 0.0:
+            return lnp_bound
+        else:
+            return lnprob_all(obsdata, dustmodel) + lnp_bound
+
+    def set_size_dist(self, params):
+        """
+        Set the size distributions of the components based
+        on the input parameters
+
+        Parameters
+        ----------
+        params : array of floats
+            MRN parameters (4 per component)
+
+        Returns
+        -------
+        updated size_distributions of the componenets
+        """
+        k1 = 0
+        n_mrn_params = 4
+        for component in self.components:
+            k2 = k1 + n_mrn_params
+            cparams = params[k1:k2]
+            component.size_dist[:] = mrn_size_model(component.sizes[:],
+                                                    cparams)
+            k1 += n_mrn_params
+
+    def initial_walkers(self, p0, nwalkers):
+        """
+        Setup the walkers based on the initial parameters p0.
+        Specific to MCMC fitters (e.g., emcee).
+
+        Parameters
+        ----------
+        p0 : type
+            Description of parameter `p0`.
+        nwalkers : type
+            Description of parameter `nwalkers`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+        """
+        self.ndim = len(p0)
+        self.nwalkers = nwalkers
+        # Initial ball
+        # delts = np.array([1.0, 0.01, 1e-8, 1e-5, 1.0, 0.01, 1e-8, 1e-5])
+        # p = [p0 + delts*np.random.normal(0., 1., self.ndim)
+        p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
+             for k in range(self.nwalkers)]
+
+        return p
+
+    def save_percentile_vals(self, oname, sampler, obsdata,
+                             cur_step=None):
+        """
+        Save the percentile values using the sampler chain
+
+        Parameters
+        ----------
+        oname : type
+            Description of parameter `oname`.
+        sampler : type
+            Description of parameter `sampler`.
+        obsdata : type
+            Description of parameter `obsdata`.
+        cur_step : type
+            Description of parameter `cur_step`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
+        if cur_step is None:
+            cur_step = sampler.chain.shape[1]
+        fin_param_50p, fin_param_punc, fin_param_munc = \
+            get_percentile_vals(sampler.chain[:, 0:cur_step+1, :], self.ndim)
+        self.set_size_dist(fin_param_50p)
+
+        # save the final size distributions
+        self.save(oname, obsdata)
+
+    def save_best_vals(self, oname, sampler, obsdata,
+                       cur_step=None):
+        """
+        Save the best fit values using the sampler chain
+
+        Parameters
+        ----------
+        oname : type
+            Description of parameter `oname`.
+        sampler : type
+            Description of parameter `sampler`.
+        obsdata : type
+            Description of parameter `obsdata`.
+        cur_step : type
+            Description of parameter `cur_step`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+        """
+        # get the best fit values
+        max_lnp = -1e20
+        if cur_step is None:
+            cur_step = len(sampler.lnprobability[0])
+        for k in range(self.nwalkers):
+            tmax_lnp = np.max(sampler.lnprobability[k, 0:cur_step])
+            if tmax_lnp > max_lnp:
+                max_lnp = tmax_lnp
+                indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
+                fit_params_best = sampler.chain[k, indxs[0], :]
+
+        self.set_size_dist(fit_params_best)
+
+        # save the best fit size distributions
+        self.save(oname, obsdata)
