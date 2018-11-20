@@ -14,7 +14,9 @@ text needed
 
 Reference API
 =============
-.. toctree::
-   :maxdepth: 1
 
-   DGFit/reference_api.rst
+.. automodapi:: DGFit.ObsData
+
+.. automodapi:: DGFit.DustGrains
+
+.. automodapi:: DGFit.DustModel
