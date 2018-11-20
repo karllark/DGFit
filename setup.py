@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+# Note: This file needs to be Python 2 / <3.6 compatible, so that the nice
+# "This package only supports Python 3.x+" error prints without syntax errors etc.
 
 import glob
 import os
 import sys
-
 try:
     from configparser import ConfigParser
 except ImportError:
@@ -16,12 +17,12 @@ conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
 PACKAGENAME = metadata.get('package_name', 'DGFit')
-DESCRIPTION = metadata.get('description', 'dust grain fitter')
+DESCRIPTION = metadata.get('description', 'Dust Grain Fitter')
 AUTHOR = metadata.get('author', 'Karl Gordon')
 AUTHOR_EMAIL = metadata.get('author_email', '')
 LICENSE = metadata.get('license', 'unknown')
-URL = metadata.get('url', 'http://astropy.org')
-__minimum_python_version__ = metadata.get("minimum_python_version", "2.7")
+URL = metadata.get('url', 'https://dgfit.readthedocs.io')
+__minimum_python_version__ = metadata.get("minimum_python_version", "3.5")
 
 # Enforce Python version check - this is the same check as in __init__.py but
 # this one has to happen before importing ah_bootstrap.
@@ -34,11 +35,7 @@ if sys.version_info < tuple((int(val) for val in __minimum_python_version__.spli
 import ah_bootstrap
 from setuptools import setup
 
-# A dirty hack to get around some early import/configurations ambiguities
-if sys.version_info[0] >= 3:
-    import builtins
-else:
-    import __builtin__ as builtins
+import builtins
 builtins._ASTROPY_SETUP_ = True
 
 from astropy_helpers.setup_helpers import (register_commands, get_debug_option,
@@ -76,7 +73,7 @@ else:
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP440 compatible (http://www.python.org/dev/peps/pep-0440)
-VERSION = metadata.get('version', '0.0.dev0')
+VERSION = metadata.get('version', '0.0.dev')
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
