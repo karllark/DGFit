@@ -10,7 +10,8 @@ import numpy as np
 
 import emcee
 
-from DGFit.DustModel import (DustModelBase, MRNDustModel)
+from DGFit.DustModel import (DustModelBase,
+                             MRNDustModel, BinsDustModel)
 from DGFit.ObsData import ObsData
 
 
@@ -158,6 +159,9 @@ if __name__ == "__main__":
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == 'bins':
+        dustmodel = BinsDustModel()
+        dustmodel.predict_on_observed_data(dustmodel_full, obsdata)
+
         # replace the default size distribution with one from a file
         if args.read is not None:
             dustmodel.sizedist_from_file(args.read)
@@ -190,11 +194,8 @@ if __name__ == "__main__":
         for k in range(1, dustmodel.n_components):
             p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
 
-        # define the fitting model
-        dgfit_model = DGFit_bins()
-
     else:
-        print('Size distribution not known')
+        print('Size distribution choice not known')
         exit()
 
     # save the starting model
