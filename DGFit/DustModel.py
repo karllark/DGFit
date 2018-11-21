@@ -6,15 +6,17 @@ from DGFit.DMhelpers import (lnprob_all,
                              get_percentile_vals,
                              mrn_size_model)
 
-__all__ = ['DustModelBase',
-           'MRNDustModel',
-           'BinsDustModel']
+__all__ = ['DustModel',
+           'MRNDustModel']
 
 
-class DustModelBase():
+class DustModel():
     """
-    Base for full dust model including size and composition distributions
-    Includes the physical properties of the individual dust grains
+    Full dust model including arbirary size and composition distributions.
+    Includes the physical properties of the individual dust grains.
+
+    Dust model that has each bin as an independent variable in the
+    grain size distribution providing a truly arbitrary specification.
 
     Attributes
     ----------
@@ -32,7 +34,77 @@ class DustModelBase():
         self.origin = None
         self.n_components = 0
         self.components = []
-        self.sizedisttype = None
+        self.sizedisttype = 'bins'
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+
+        # make sure the size distributions are all positve
+        lnp_bound = 0.0
+        for param in params:
+            if param < 0.0:
+                lnp_bound = -1e20
+            # return -np.inf
+
+        # update the size distributions
+        #  the input params are the concatenated size distributions
+        dustmodel.set_size_dist(params)
+
+        return lnprob_all(obsdata, dustmodel) + lnp_bound
+
+    def initial_walkers(self, p0, nwalkers):
+        """
+        Setup the walkers based on the initial parameters p0
+        """
+        self.ndim = len(p0)
+        self.nwalkers = nwalkers
+        # Initial ball should be in log space
+        p = [10**(np.log10(p0) + 1.*np.random.uniform(-1, 1., self.ndim))
+             for k in range(self.nwalkers)]
+
+        # ensure that all the walkers start with positive values
+        for pc in p:
+            for pcs in pc:
+                if pcs <= 0.0:
+                    pcs = 1e-20
+
+        return p
+
+    def save_percentile_vals(self, oname, sampler, obsdata,
+                             cur_step=None):
+        """
+        Save the percentile values using the sampler chain
+        """
+        if cur_step is None:
+            cur_step = sampler.chain.shape[1]
+        fin_size_dist_50p, fin_size_dist_punc, fin_size_dist_munc = \
+            get_percentile_vals(sampler.chain[:, 0:cur_step+1, :], self.ndim)
+        self.set_size_dist(fin_size_dist_50p)
+
+        # save the final size distributions
+        self.save(oname, obsdata,
+                  size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
+
+    def save_best_vals(self, oname, sampler, obsdata,
+                       cur_step=None):
+        """
+        Save the best fit values using the sampler chain
+        """
+        # get the best fit values
+        max_lnp = -1e20
+        if cur_step is None:
+            cur_step = len(sampler.lnprobability[0])
+        for k in range(self.nwalkers):
+            tmax_lnp = np.max(sampler.lnprobability[k, 0:cur_step])
+            if tmax_lnp > max_lnp:
+                max_lnp = tmax_lnp
+                indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
+                fit_params_best = sampler.chain[k, indxs[0], :]
+
+        self.set_size_dist(fit_params_best)
+
+        # save the best fit size distributions
+        self.save(oname, obsdata)
 
     def predict_full_grid(self, componentnames, path='./'):
         """
@@ -339,90 +411,14 @@ class DustModelBase():
         hdulist.writeto(filename, overwrite=True)
 
 
-class BinsDustModel(DustModelBase):
-    """
-    Dust model that has each bin as an independent variable in the
-    grain size distribution providing a truely arbitrary specification.
-    """
-    sizedisttype = 'bins'
-
-    @staticmethod
-    def lnprob(params, obsdata, dustmodel):
-
-        # make sure the size distributions are all positve
-        lnp_bound = 0.0
-        for param in params:
-            if param < 0.0:
-                lnp_bound = -1e20
-            # return -np.inf
-
-        # update the size distributions
-        #  the input params are the concatenated size distributions
-        dustmodel.set_size_dist(params)
-
-        return lnprob_all(obsdata, dustmodel) + lnp_bound
-
-    def initial_walkers(self, p0, nwalkers):
-        """
-        Setup the walkers based on the initial parameters p0
-        """
-        self.ndim = len(p0)
-        self.nwalkers = nwalkers
-        # Initial ball should be in log space
-        p = [10**(np.log10(p0) + 1.*np.random.uniform(-1, 1., self.ndim))
-             for k in range(self.nwalkers)]
-
-        # ensure that all the walkers start with positive values
-        for pc in p:
-            for pcs in pc:
-                if pcs <= 0.0:
-                    pcs = 1e-20
-
-        return p
-
-    def save_percentile_vals(self, oname, sampler, obsdata,
-                             cur_step=None):
-        """
-        Save the percentile values using the sampler chain
-        """
-        if cur_step is None:
-            cur_step = sampler.chain.shape[1]
-        fin_size_dist_50p, fin_size_dist_punc, fin_size_dist_munc = \
-            get_percentile_vals(sampler.chain[:, 0:cur_step+1, :], self.ndim)
-        self.set_size_dist(fin_size_dist_50p)
-
-        # save the final size distributions
-        self.save(oname, obsdata,
-                  size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc])
-
-    def save_best_vals(self, oname, sampler, obsdata,
-                       cur_step=None):
-        """
-        Save the best fit values using the sampler chain
-        """
-        # get the best fit values
-        max_lnp = -1e20
-        if cur_step is None:
-            cur_step = len(sampler.lnprobability[0])
-        for k in range(self.nwalkers):
-            tmax_lnp = np.max(sampler.lnprobability[k, 0:cur_step])
-            if tmax_lnp > max_lnp:
-                max_lnp = tmax_lnp
-                indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
-                fit_params_best = sampler.chain[k, indxs[0], :]
-
-        self.set_size_dist(fit_params_best)
-
-        # save the best fit size distributions
-        self.save(oname, obsdata)
-
-
-class MRNDustModel(DustModelBase):
+class MRNDustModel(DustModel):
     """
     Dust model that uses powerlaw size distributions with min/max
     sizes (MRN).
     """
-    sizedisttype = 'MRN'
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.sizedisttype = 'MRN'
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):

@@ -1,7 +1,7 @@
 
-from ..DGFit_Models import DGFit_MRN
+from ..DustModel import MRNDustModel
 
 
 def test_mrn_initialize():
-    dgmod = DGFit_MRN()
-    assert dgmod.type == 'MRN'
+    dmod = MRNDustModel()
+    assert dmod.sizedisttype == 'MRN'
