@@ -10,8 +10,7 @@ import numpy as np
 
 import emcee
 
-from DGFit.DustModel import (DustModelBase,
-                             MRNDustModel, BinsDustModel)
+from DGFit.DustModel import (DustModel, MRNDustModel)
 from DGFit.ObsData import ObsData
 
 
@@ -140,7 +139,7 @@ if __name__ == "__main__":
     fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
 
     # get the dust model on the full wavelength grid
-    dustmodel_full = DustModelBase()
+    dustmodel_full = DustModel()
     dustmodel_full.predict_full_grid(['astro-silicates', 'astro-carbonaceous'],
                                      path='DGFit/data/indiv_grain/')
 
@@ -159,7 +158,7 @@ if __name__ == "__main__":
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == 'bins':
-        dustmodel = BinsDustModel()
+        dustmodel = DustModel()
         dustmodel.predict_on_observed_data(dustmodel_full, obsdata)
 
         # replace the default size distribution with one from a file

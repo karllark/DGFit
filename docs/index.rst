@@ -78,3 +78,4 @@ Reference API
 .. automodapi:: DGFit.DustGrains
 
 .. automodapi:: DGFit.DustModel
+    :inherited-members:
