@@ -36,6 +36,8 @@ def DGFit_cmdparser():
                         help="Number of samples for burn")
     parser.add_argument("--nsteps", type=int, default=1000,
                         help="Number of samples for full run")
+    parser.add_argument("--chain", action="store_true",
+                        help="Store the gain in an ascii file")
     parser.add_argument("--limit_abund", action="store_true",
                         help="Limit based on abundances")
     parser.add_argument("--usemin", action="store_true",
@@ -97,7 +99,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # set the basename of the output
-    basename = args.tag
+    basename = "%s_%s" % (args.tag, args.sizedisttype)
 
     # save the start time
     start_time = time.clock()
@@ -140,14 +142,14 @@ if __name__ == "__main__":
 
     # get the dust model on the full wavelength grid
     dustmodel_full = DustModel()
-    dustmodel_full.predict_full_grid(['astro-silicates', 'astro-carbonaceous'],
-                                     path='DGFit/data/indiv_grain/')
+    dustmodel_full.read_grain_files(['astro-silicates', 'astro-carbonaceous'],
+                                    path='DGFit/data/indiv_grain/')
 
     sizedisttype = args.sizedisttype
     if sizedisttype == 'MRN':
         # define the fitting model
         dustmodel = MRNDustModel()
-        dustmodel.predict_on_observed_data(dustmodel_full, obsdata)
+        dustmodel.grains_on_obs(dustmodel_full, obsdata)
 
         # initial guesses at parameters
         #    starting range is 0.001 to 1 micron
@@ -159,7 +161,7 @@ if __name__ == "__main__":
 
     elif sizedisttype == 'bins':
         dustmodel = DustModel()
-        dustmodel.predict_on_observed_data(dustmodel_full, obsdata)
+        dustmodel.grains_on_obs(dustmodel_full, obsdata)
 
         # replace the default size distribution with one from a file
         if args.read is not None:
@@ -198,7 +200,7 @@ if __name__ == "__main__":
         exit()
 
     # save the starting model
-    dustmodel.save(basename + '_sizedist_start.fits', obsdata)
+    dustmodel.save_results(basename + '_sizedist_start.fits', obsdata)
 
     # setup time
     setup_time = time.clock()
@@ -227,9 +229,10 @@ if __name__ == "__main__":
                                     threads=int(args.cpus))
 
     # incrementally save the full chain (burn+run) to a file
-    inc_prog_fname = "%s_chain.dat" % basename
-    f = open(inc_prog_fname, "w")
-    f.close()
+    if args.chain:
+        inc_prog_fname = "%s_chain.dat" % basename
+        f = open(inc_prog_fname, "w")
+        f.close()
 
     # burn in the walkers
     # pos, prob, state = sampler.run_mcmc(p, burn)
@@ -239,12 +242,13 @@ if __name__ == "__main__":
         n = int((width+1) * float(i) / burn)
         sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
 
-        position = result[0]
-        f = open(inc_prog_fname, "a")
-        for k in range(position.shape[0]):
-            pos_str = " ".join(str(e) for e in position[k])
-            f.write("{0:4d} {1:s}\n".format(k, pos_str))
-        f.close()
+        if args.chain:
+            position = result[0]
+            f = open(inc_prog_fname, "a")
+            for k in range(position.shape[0]):
+                pos_str = " ".join(str(e) for e in position[k])
+                f.write("{0:4d} {1:s}\n".format(k, pos_str))
+            f.close()
 
     sys.stdout.write("\n")
 
@@ -267,21 +271,22 @@ if __name__ == "__main__":
         sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
 
         # incrementally save the chain
-        position = result[0]
-        f = open(inc_prog_fname, "a")
-        for k in range(position.shape[0]):
-            pos_str = " ".join(str(e) for e in position[k])
-            f.write("{0:4d} {1:s}\n".format(k, pos_str))
-        f.close()
+        if args.chain:
+            position = result[0]
+            f = open(inc_prog_fname, "a")
+            for k in range(position.shape[0]):
+                pos_str = " ".join(str(e) for e in position[k])
+                f.write("{0:4d} {1:s}\n".format(k, pos_str))
+            f.close()
 
         # output the size distribution
         if i > targ_out:
             oname = '%s_sizedist_%i.fits' % (basename, targ_out)
-            dustmodel.save_percentile_vals(oname, sampler,
-                                           obsdata, cur_step=i)
+            dustmodel.save_50percentile_results(oname, sampler,
+                                                obsdata, cur_step=i)
             oname = '%s_sizedist_best_%i.fits' % (basename, targ_out)
-            dustmodel.save_best_vals(oname, sampler, obsdata,
-                                     cur_step=i)
+            dustmodel.save_best_results(oname, sampler, obsdata,
+                                        cur_step=i)
             targ_out += int(save_frac*nsteps)
 
     sys.stdout.write("\n")
@@ -291,8 +296,8 @@ if __name__ == "__main__":
 
     # best fit dust params
     oname = '%s_sizedist_best_fin.fits' % (basename)
-    dustmodel.save_best_vals(oname, sampler, obsdata)
+    dustmodel.save_best_results(oname, sampler, obsdata)
 
     # 50p dust params
     oname = '%s_sizedist_fin.fits' % (basename)
-    dustmodel.save_percentile_vals(oname, sampler, obsdata)
+    dustmodel.save_50percentile_results(oname, sampler, obsdata)
