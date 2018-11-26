@@ -8,6 +8,8 @@
 from scipy.special import erf
 import numpy as np
 
+from DGFit.DustModel import WDDustModel
+
 
 def WGsizedist_graphite(a, bC_input, Cg, a_tg, a_cg, alpha_g, beta_g):
     # a in Angstrom and assumed to always be > 3.5 A
@@ -92,15 +94,20 @@ if __name__ == "__main__":
     beta_g = np.array([-0.0648, -0.0382, -0.111, -0.125,
                        -0.132, -0.322, -0.165])
 
+    dmodel = WDDustModel()
+
     # get the size distributions and plot
     for i in range(len(bC)):
-        sizedist_graphite = WGsizedist_graphite(a,
-                                                bC[i],
-                                                Cg[i],
-                                                atg[i],
-                                                acg[i],
-                                                alpha_g[i],
-                                                beta_g[i])
+        params = [Cg[i], atg[i], alpha_g[i], beta_g[i], acg[i], bC[i]]
+        print(params)
+        sizedist_graphite = dmodel.compute_size_dist(a, params)
+#        sizedist_graphite = WGsizedist_graphite(a,
+#                                                bC[i],
+#                                                Cg[i],
+#                                                atg[i],
+#                                                acg[i],
+#                                                alpha_g[i],
+#                                                beta_g[i])
 
         ax[0].plot(a*1e-4, sizedist_graphite*np.power(1e-8*a, 4.0)*1e29)
         ax[1].plot(a*1e-4, sizedist_graphite)

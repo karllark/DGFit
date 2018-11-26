@@ -1,5 +1,7 @@
 import math
 import numpy as np
+from scipy.special import erf
+
 from astropy.io import fits
 
 from DGFit.DustGrains import DustGrains
@@ -61,7 +63,7 @@ class DustModel():
         # set the number of size distribution parametres
         if self.n_components > 0:
             self.n_params = []
-            for k, component in enumerate(self.components):
+            for component in self.components:
                 self.n_params.append(component.n_sizes)
 
     def read_grain_files(self, componentnames, path='./'):
@@ -665,13 +667,12 @@ class MRNDustModel(DustModel):
     Dust model that uses powerlaw size distributions with min/max
     sizes (MRN).
 
-    Same attributes as the parent DustModel class.
+    Same keywords and attributes as the parent DustModel class.
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sizedisttype = 'MRN'
         self.n_params = [4]*self.n_components
-        print(self.n_params)
 
     def compute_size_dist(self, x, params):
         """
@@ -798,85 +799,33 @@ class WDDustModel(DustModel):
     """
     Dust model that uses the Weingartner & Draine (2001) size distributions.
 
-    Same attributes as the parent DustModel class.
+    Same kewyords and attributes as the parent DustModel class.
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.sizedisttype = 'WD'
-        # carbonaceous first, then silicates
-        self.n_params = [6, 4]
 
-    def sizedist_carbonaceous(a, params):
-        """Short summary.
-
-        Parameters
-        ----------
-        a : floats
-            grain radii (in Anstroms)
-        params : floats
-            Parameters of graphite size distribution
-            bC_input, Cg, a_tg, a_cg, alpha_g, beta_g
-
-        Returns
-        -------
-        type
-            Description of returned object.
-
-        """
-        bC_input, Cg, a_tg, a_cg, alpha_g, beta_g = params
-
-        # a in Angstrom and assumed to always be > 3.5 A
-
-        # very small gain size distribution
-        a0 = np.array([3.5, 30.])   # in A
-        bC = np.array([0.75, 0.25])*bC_input
-        sigma = 0.4
-        rho = 2.24  # in g/cm^3 for graphite
-        mC = 12.0107*1.660e-24
-
-        Da = 0.0
-        for i in range(2):
-            Bi = ((3.0/(np.power(2.0*np.pi, 1.5)))
-                  * (np.exp(-4.5*np.power(sigma, 2.0))
-                  / (rho*np.power(1e-8*a0[i], 3.0)*sigma))
-                  * (bC[i]*mC/(1.0 + erf((3.0*sigma/np.sqrt(2.0))
-                                         + np.log(a0[i]/3.5)/(sigma*np.sqrt(2.0)))
-                               )))
-
-            Da += (Bi/(1e-8*a))*np.exp(-0.5*np.power(np.log(a/a0[i])/sigma, 2.0))
-
-        # larger grain size distribution
-        if beta_g >= 0.0:
-            Fa = 1.0 + beta_g*a/a_tg
-        else:
-            Fa = 1.0/(1.0 - beta_g*a/a_tg)
-
-        Ga = np.full((len(a)), 1.0)
-        indxs, = np.where(a > a_tg)
-        Ga[indxs] = np.exp(-1.0*np.power((a[indxs] - a_tg)/a_cg, 3.0))
-
-        graphite_sd = Da + (Cg/(1e-8*a))*np.power(a/a_tg, alpha_g)*Fa*Ga
-
-        return graphite_sd
+        # set the number of size distribution parametres
+        if self.n_components > 0:
+            self.n_params = []
+            for component in self.components:
+                print(component.name)
+                if component.name == 'astro-silicates':
+                    self.n_params.append(4)
+                elif component.name == 'astro-carbonaceous':
+                    self.n_params.append(6)
+                else:
+                    raise ValueError('%s grain material note supported'
+                                     % component.name)
 
     def compute_size_dist(self, x, params):
         """
         Compute the size distribution for the input sizes.
-        Powerlaw size distribution (aka MRN size distribution)
-
-        sizedist = A*a^-alpha
-
-        where
-            a = grain size,
-            A = amplitude,
-            alpha = exponent of power law,
-            amin = min grain size,
-            amax = max grain size,
 
         Parameters
         ----------
         x : floats
-            grains sizes
+            grain sizes
         params : floats
             Size distribution parameters
 
@@ -885,11 +834,54 @@ class WDDustModel(DustModel):
         floats
             Size distribution as a function of x
         """
-        sizedist = params[0]*np.power(x, -1.0*params[1])
-        indxs, = np.where(np.logical_or(x < params[2],
-                                        x > params[3]))
-        if len(indxs) > 0:
-            sizedist[indxs] = 0.0
+        # input grain sizes are in microns, needed in Angstroms
+        a = x*1e4
+
+        if len(params) == 6:
+            # carbonaceous
+            C, a_t, alpha, beta, a_c, input_bC = params
+        else:
+            # silicates
+            C, a_t, alpha, beta = params
+            a_c = 0.1e4
+            input_bC = None
+
+        # larger grain size distribution
+        # same for silicates and carbonaceous grains
+        if beta >= 0.0:
+            Fa = 1.0 + beta*a/a_t
+        else:
+            Fa = 1.0/(1.0 - beta*a/a_t)
+
+        Ga = np.full((len(a)), 1.0)
+        indxs, = np.where(a > a_t)
+        Ga[indxs] = np.exp(-1.0*np.power((a[indxs] - a_t)/a_c, 3.0))
+
+        sizedist = (C/(1e-8*a))*np.power(a/a_t, alpha)*Fa*Ga
+
+        # very small gain size distribution
+        # only for carbonaceous grains
+        if input_bC is not None:
+            a0 = np.array([3.5, 30.])   # in A
+            bC = np.array([0.75, 0.25])*input_bC
+            sigma = 0.4
+            rho = 2.24  # in g/cm^3 for graphite
+            mC = 12.0107*1.660e-24
+
+            Da = 0.0
+            for i in range(2):
+                Bi = ((3.0/(np.power(2.0*np.pi, 1.5)))
+                      * (np.exp(-4.5*np.power(sigma, 2.0))
+                      / (rho*np.power(1e-8*a0[i], 3.0)*sigma))
+                      * (bC[i]*mC
+                         / (1.0
+                            + erf((3.0*sigma/np.sqrt(2.0))
+                                  + np.log(a0[i]/3.5)/(sigma*np.sqrt(2.0))))))
+
+                Da += (Bi/(1e-8*a))*np.exp(-0.5*np.power(np.log(a/a0[i])/sigma,
+                                                         2.0))
+
+            sizedist += Da
 
         return sizedist
 
@@ -898,16 +890,10 @@ class WDDustModel(DustModel):
         """
         Compute the ln(prob) given the model parameters
 
-        MRN model paramters for each component are
-            A = amplitude
-            alpha = negative of the power law exponent
-            amin = min grain size
-            amax = max grain size
-
         Parameters
         ----------
-        params : array of floats 4 x n_components
-            parameters of the MRN model
+        params : array of floats 4
+            parameters of the WD model
         obsdata : ObsData object
             observed data for fitting
         dustmodel : DustModel object
@@ -923,27 +909,14 @@ class WDDustModel(DustModel):
         # priors
         k1 = 0
         lnp_bound = 0.0
-        for component in dustmodel.components:
+        for k, component in enumerate(dustmodel.components):
             # get the parameters for the current component
-            k2 = k1 + dustmodel.n_params
+            k2 = k1 + dustmodel.n_params[k]
             cparams = params[k1:k2]
-            k1 += dustmodel.n_params
-
-            # check that amin < amax (params 3 & 4)
-            if cparams[2] > cparams[3]:
-                lnp_bound = -1e20
-
-            # check that the amin and amax are within the bounds
-            # of the dustmodel
-            if cparams[2] < component.sizes[0]:
-                lnp_bound = -1e20
-            if cparams[3] > component.sizes[-1]:
-                lnp_bound = -1e20
+            k1 += dustmodel.n_params[k]
 
             # keep the normalization always positive
             if cparams[0] < 0.0:
-                lnp_bound = -1e20
-            if cparams[1] < 0.0:
                 lnp_bound = -1e20
 
         if lnp_bound < 0.0:
@@ -971,9 +944,6 @@ class WDDustModel(DustModel):
         """
         self.ndim = len(p0)
         self.nwalkers = nwalkers
-        # Initial ball
-        # delts = np.array([1.0, 0.01, 1e-8, 1e-5, 1.0, 0.01, 1e-8, 1e-5])
-        # p = [p0 + delts*np.random.normal(0., 1., self.ndim)
         p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
              for k in range(self.nwalkers)]
 
