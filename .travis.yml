@@ -117,6 +117,10 @@ matrix:
 
     allow_failures:
         - os: linux
+          env: SETUP_CMD='build_docs -w'
+               CONDA_DEPENDENCIES=$CONDA_DEPENDENCIES_DOC
+
+        - os: linux
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
 
