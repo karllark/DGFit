@@ -10,7 +10,7 @@ import numpy as np
 
 import emcee
 
-from DGFit.DustModel import (DustModel, MRNDustModel)
+from DGFit.DustModel import (DustModel, MRNDustModel, WDDustModel)
 from DGFit.ObsData import ObsData
 
 
@@ -19,7 +19,7 @@ def DGFit_cmdparser():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--sizedisttype", default='MRN',
-                        choices=['bins', 'MRN'],
+                        choices=['bins', 'MRN', 'WD'],
                         help='Size distribution type')
     parser.add_argument("--fitobs", nargs='+', default='all',
                         choices=['extinction', 'iremission',
@@ -155,6 +155,22 @@ if __name__ == "__main__":
         #    starting range is 0.001 to 1 micron
         p0 = [1e-25, 3.5, 1e-7, 1e-3,
               1e-25, 3.5, 1e-7, 1e-3]
+
+        # need to set dust model size distribution
+        dustmodel.set_size_dist(p0)
+
+    elif sizedisttype == 'WD':
+        dustmodel = WDDustModel(dustmodel=dustmodel_full,
+                                obsdata=obsdata)
+
+        # initial guesses at parameters
+        p0 = []
+        for component in dustmodel.components:
+            if component.name == 'astro-silicates':
+                p0 += [1.33e-12, 0.171e4, -1.41, -11.5]
+            else:
+                p0 += [4.15e-11, 0.00837e4, -1.91, -0.125, 0.499e4, 3.0e-5]
+        print(p0)
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
