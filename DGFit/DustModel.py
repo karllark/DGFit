@@ -386,6 +386,8 @@ class DustModel():
         Save fitting results to a file.  Results include the
         size distribution and all predicted observations.
 
+        Creates a FITS file with the results
+
         Parameters
         ----------
         filename : str
@@ -394,10 +396,6 @@ class DustModel():
             All the observed data (may not be needed)
         size_dist_uncs : floats
             Uncertainties on the size distributions
-
-        Results
-        -------
-        Creates a FITS file with the results
         """
         # write a small primary header
         pheader = fits.Header()
@@ -575,6 +573,8 @@ class DustModel():
         Compute the 50th percentile paramaters, set the size
         distribution, and save the results
 
+        Creates a FITS file with the results
+
         Parameters
         ----------
         oname : str
@@ -585,10 +585,6 @@ class DustModel():
             All the observed data (may not be needed)
         cur_step : int
             Current step number
-
-        Results
-        -------
-        Creates a FITS file with the results
         """
         if cur_step is None:
             cur_step = sampler.chain.shape[1]
@@ -608,6 +604,8 @@ class DustModel():
         Compute the best fit paramaters, set the size
         distribution, and save the results
 
+        Creates a FITS file with the results
+
         Parameters
         ----------
         oname : str
@@ -618,10 +616,6 @@ class DustModel():
             All the observed data (may not be needed)
         cur_step : int
             Current step number
-
-        Results
-        -------
-        Creates a FITS file with the results
         """
         # get the best fit values
         max_lnp = -1e20
@@ -644,9 +638,11 @@ class MRNDustModel(DustModel):
     """
     Dust model that uses powerlaw size distributions with min/max
     sizes (MRN).
+
+    Same attributes as the parent DustModel class.
     """
-    def __init__(self, **kwds):
-        super().__init__(**kwds)
+    def __init__(self):
+        super().__init__()
         self.sizedisttype = 'MRN'
         self.n_params = 4
 
@@ -658,10 +654,11 @@ class MRNDustModel(DustModel):
         sizedist = A*a^-alpha
 
         where
-            A = amplitude
-            alpha = exponent of power law
-            amin = min grain size
-            amax = max grain size
+            a = grain size,
+            A = amplitude,
+            alpha = exponent of power law,
+            amin = min grain size,
+            amax = max grain size,
 
         Parameters
         ----------
