@@ -12,6 +12,7 @@ User Documentation
    :maxdepth: 2
 
    Running DGFit <DGFit/running_dgfit.rst>
+   Size Distributions <DGFit/size_distributions.rst>
 
 Installation
 ============
