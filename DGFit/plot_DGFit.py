@@ -25,6 +25,8 @@ def get_krange(x, logaxis=False, in_range=[0]):
     if logaxis:
         min_x = np.log10(min_x)
         max_x = np.log10(max_x)
+        if not np.isfinite(min_x):
+            min_x = max_x - 10.
 
     delta = max_x - min_x
     prange[0] = min_x - 0.1*delta
