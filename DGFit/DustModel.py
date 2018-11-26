@@ -5,7 +5,8 @@ from astropy.io import fits
 from DGFit.DustGrains import DustGrains
 
 __all__ = ['DustModel',
-           'MRNDustModel']
+           'MRNDustModel',
+           'WDDustModel']
 
 
 class DustModel():
@@ -15,6 +16,18 @@ class DustModel():
 
     Dust model that has each bin as an independent variable in the
     grain size distribution providing a truly arbitrary specification.
+
+    Parameters
+    ----------
+    componentnames : str list, optional
+        if set, then read in the grain information from files
+    path : str, optional
+        path to grain files
+    dustmodel : DustModel object, optional
+        if set, create the grain info on the obsdata wavelengths using
+        the input dustmodel grain information
+    obsdata : ObsData object, optional
+        observed data information
 
     Attributes
     ----------
@@ -27,13 +40,29 @@ class DustModel():
         one DustGrain object per component
     sizedisttype : string
         functional form of component size distributions
+    n_params : ints
+        number of size distribution parameters per grain component
     """
-    def __init__(self):
+    def __init__(self,
+                 componentnames=None, path='./',
+                 dustmodel=None, obsdata=None):
         self.origin = None
         self.n_components = 0
         self.components = []
         self.sizedisttype = 'bins'
         self.n_params = None
+
+        # populate the grain info
+        if componentnames is not None:
+            self.read_grain_files(componentnames, path=path)
+        elif dustmodel is not None:
+            self.grains_on_obs(dustmodel, obsdata)
+
+        # set the number of size distribution parametres
+        if self.n_components > 0:
+            self.n_params = []
+            for k, component in enumerate(self.components):
+                self.n_params.append(component.n_sizes)
 
     def read_grain_files(self, componentnames, path='./'):
         """
@@ -125,11 +154,8 @@ class DustModel():
 
         """
         k1 = 0
-        for component in self.components:
-            if self.n_params is None:
-                delta_val = component.n_sizes
-            else:
-                delta_val = self.n_params
+        for k, component in enumerate(self.components):
+            delta_val = self.n_params[k]
             k2 = k1 + delta_val
             component.size_dist[:] = self.compute_size_dist(component.sizes[:],
                                                             params[k1:k2])
@@ -641,10 +667,197 @@ class MRNDustModel(DustModel):
 
     Same attributes as the parent DustModel class.
     """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sizedisttype = 'MRN'
+        self.n_params = [4]*self.n_components
+        print(self.n_params)
+
+    def compute_size_dist(self, x, params):
+        """
+        Compute the size distribution for the input sizes.
+        Powerlaw size distribution (aka MRN size distribution)
+
+        sizedist = A*a^-alpha
+
+        where
+            a = grain size,
+            A = amplitude,
+            alpha = exponent of power law,
+            amin = min grain size,
+            amax = max grain size,
+
+        Parameters
+        ----------
+        x : floats
+            grains sizes
+        params : floats
+            Size distribution parameters
+
+        Returns
+        -------
+        floats
+            Size distribution as a function of x
+        """
+        sizedist = params[0]*np.power(x, -1.0*params[1])
+        indxs, = np.where(np.logical_or(x < params[2],
+                                        x > params[3]))
+        if len(indxs) > 0:
+            sizedist[indxs] = 0.0
+
+        return sizedist
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the ln(prob) given the model parameters
+
+        MRN model paramters for each component are
+            A = amplitude
+            alpha = negative of the power law exponent
+            amin = min grain size
+            amax = max grain size
+
+        Parameters
+        ----------
+        params : array of floats 4 x n_components
+            parameters of the MRN model
+        obsdata : ObsData object
+            observed data for fitting
+        dustmodel : DustModel object
+            must be passed explicitly as the fitters
+            require a static method (is this true?)
+
+        Returns
+        -------
+        lnprob : float
+            natural log of the probability the input parameters
+            describe the data
+        """
+        # priors
+        k1 = 0
+        lnp_bound = 0.0
+        for k, component in enumerate(dustmodel.components):
+            # get the parameters for the current component
+            k2 = k1 + dustmodel.n_params[k]
+            cparams = params[k1:k2]
+            k1 += dustmodel.n_params[k]
+
+            # check that amin < amax (params 3 & 4)
+            if cparams[2] > cparams[3]:
+                lnp_bound = -1e20
+
+            # check that the amin and amax are within the bounds
+            # of the dustmodel
+            if cparams[2] < component.sizes[0]:
+                lnp_bound = -1e20
+            if cparams[3] > component.sizes[-1]:
+                lnp_bound = -1e20
+
+            # keep the normalization always positive
+            if cparams[0] < 0.0:
+                lnp_bound = -1e20
+            if cparams[1] < 0.0:
+                lnp_bound = -1e20
+
+        if lnp_bound < 0.0:
+            return lnp_bound
+        else:
+            dustmodel.set_size_dist(params)
+            return dustmodel.lnprob_generic(obsdata) + lnp_bound
+
+    def initial_walkers(self, p0, nwalkers):
+        """
+        Setup the walkers based on the initial parameters p0
+        Specific to MCMC fitters (e.g., emcee).
+
+        Parameters
+        ----------
+        p0 : floats
+            Initial values of the parameters
+        nwalkers : int
+            Number of walkers to initialize
+
+        Returns
+        -------
+        array of floats
+            concatenated set of initial walker positions
+        """
+        self.ndim = len(p0)
+        self.nwalkers = nwalkers
+        # Initial ball
+        # delts = np.array([1.0, 0.01, 1e-8, 1e-5, 1.0, 0.01, 1e-8, 1e-5])
+        # p = [p0 + delts*np.random.normal(0., 1., self.ndim)
+        p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
+             for k in range(self.nwalkers)]
+
+        return p
+
+
+class WDDustModel(DustModel):
+    """
+    Dust model that uses the Weingartner & Draine (2001) size distributions.
+
+    Same attributes as the parent DustModel class.
+    """
     def __init__(self):
         super().__init__()
-        self.sizedisttype = 'MRN'
-        self.n_params = 4
+        self.sizedisttype = 'WD'
+        # carbonaceous first, then silicates
+        self.n_params = [6, 4]
+
+    def sizedist_carbonaceous(a, params):
+        """Short summary.
+
+        Parameters
+        ----------
+        a : floats
+            grain radii (in Anstroms)
+        params : floats
+            Parameters of graphite size distribution
+            bC_input, Cg, a_tg, a_cg, alpha_g, beta_g
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
+        bC_input, Cg, a_tg, a_cg, alpha_g, beta_g = params
+
+        # a in Angstrom and assumed to always be > 3.5 A
+
+        # very small gain size distribution
+        a0 = np.array([3.5, 30.])   # in A
+        bC = np.array([0.75, 0.25])*bC_input
+        sigma = 0.4
+        rho = 2.24  # in g/cm^3 for graphite
+        mC = 12.0107*1.660e-24
+
+        Da = 0.0
+        for i in range(2):
+            Bi = ((3.0/(np.power(2.0*np.pi, 1.5)))
+                  * (np.exp(-4.5*np.power(sigma, 2.0))
+                  / (rho*np.power(1e-8*a0[i], 3.0)*sigma))
+                  * (bC[i]*mC/(1.0 + erf((3.0*sigma/np.sqrt(2.0))
+                                         + np.log(a0[i]/3.5)/(sigma*np.sqrt(2.0)))
+                               )))
+
+            Da += (Bi/(1e-8*a))*np.exp(-0.5*np.power(np.log(a/a0[i])/sigma, 2.0))
+
+        # larger grain size distribution
+        if beta_g >= 0.0:
+            Fa = 1.0 + beta_g*a/a_tg
+        else:
+            Fa = 1.0/(1.0 - beta_g*a/a_tg)
+
+        Ga = np.full((len(a)), 1.0)
+        indxs, = np.where(a > a_tg)
+        Ga[indxs] = np.exp(-1.0*np.power((a[indxs] - a_tg)/a_cg, 3.0))
+
+        graphite_sd = Da + (Cg/(1e-8*a))*np.power(a/a_tg, alpha_g)*Fa*Ga
+
+        return graphite_sd
 
     def compute_size_dist(self, x, params):
         """

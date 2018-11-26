@@ -141,15 +141,15 @@ if __name__ == "__main__":
     fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
 
     # get the dust model on the full wavelength grid
-    dustmodel_full = DustModel()
-    dustmodel_full.read_grain_files(['astro-silicates', 'astro-carbonaceous'],
-                                    path='DGFit/data/indiv_grain/')
+    compnames = ['astro-silicates', 'astro-carbonaceous']
+    dustmodel_full = DustModel(componentnames=compnames,
+                               path='DGFit/data/indiv_grain/')
 
     sizedisttype = args.sizedisttype
     if sizedisttype == 'MRN':
         # define the fitting model
-        dustmodel = MRNDustModel()
-        dustmodel.grains_on_obs(dustmodel_full, obsdata)
+        dustmodel = MRNDustModel(dustmodel=dustmodel_full,
+                                 obsdata=obsdata)
 
         # initial guesses at parameters
         #    starting range is 0.001 to 1 micron
@@ -160,8 +160,8 @@ if __name__ == "__main__":
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == 'bins':
-        dustmodel = DustModel()
-        dustmodel.grains_on_obs(dustmodel_full, obsdata)
+        dustmodel = DustModel(dustmodel=dustmodel_full,
+                              obsdata=obsdata)
 
         # replace the default size distribution with one from a file
         if args.read is not None:
