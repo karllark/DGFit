@@ -488,7 +488,6 @@ class DustModel():
 
             # save the parameter values
             if self.parameters:
-                print(self.parameters[component.name])
                 for cparam in self.parameters[component.name].items():
                     tbhdu.header.set(cparam[0], cparam[1],
                                      'parameters of size distribution model')
@@ -1016,6 +1015,13 @@ class WDDustModel(DustModel):
             # keep the normalization always positive
             if cparams[0] < 0.0:
                 lnp_bound = -1e20
+            if cparams[1] < 0.0:
+                lnp_bound = -1e20
+            if len(cparams) == 6:
+                if cparams[4] < 0.0:
+                    lnp_bound = -1e20
+                if cparams[5] < 0.0:
+                    lnp_bound = -1e20
 
         if lnp_bound < 0.0:
             return lnp_bound
