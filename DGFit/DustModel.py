@@ -44,6 +44,11 @@ class DustModel():
         functional form of component size distributions
     n_params : ints
         number of size distribution parameters per grain component
+    parameters : dict
+        Dictonary of parameters with an entry for each composition
+        each entry is then a dictonary giving the value by parameter name.
+        For the bins case, the dictonary is empty as the parameters is
+        the size distribution.
     """
     def __init__(self,
                  componentnames=None, path='./',
@@ -53,6 +58,7 @@ class DustModel():
         self.components = []
         self.sizedisttype = 'bins'
         self.n_params = None
+        self.parameters = {}
 
         # populate the grain info
         if componentnames is not None:
@@ -138,6 +144,21 @@ class DustModel():
             Size distribution as a function of x
         """
         return params
+
+    def set_size_dist_parameters(self, params):
+        """
+        Set the size distribution parameters in the object dictonary.
+        For the bins case, this does nothing.  Allows for
+        other functional forms of the size distribution with minimal new code.
+
+        Parameters
+        ----------
+        params : floats
+            Size distribution parameters
+            For the arbitrary bins case, the parameters are the number
+            of grains per size distribution
+        """
+        pass
 
     def set_size_dist(self, params):
         """
@@ -432,7 +453,9 @@ class DustModel():
         for k, component in enumerate(self.components):
             pheader.set('CNAME'+str(k), component.name,
                         'name of dust grain component')
-        pheader.add_comment('Dust Model reuslts written by DustModel.py')
+        pheader.set('SDMODEL', self.sizedisttype,
+                    'type of size  distribution')
+        pheader.add_comment('Dust Model results written by DustModel.py')
         pheader.add_comment('written by Karl D. Gordon')
         pheader.add_comment('kgordon@stsci.edu')
         phdu = fits.PrimaryHDU(header=pheader)
@@ -462,6 +485,13 @@ class DustModel():
             tbhdu = fits.BinTableHDU.from_columns(all_cols)
             tbhdu.header.set('EXTNAME', component.name,
                              'dust grain component name')
+
+            # save the parameter values
+            if self.parameters:
+                print(self.parameters[component.name])
+                for cparam in self.parameters[component.name].items():
+                    tbhdu.header.set(cparam[0], cparam[1],
+                                     'parameters of size distribution model')
 
             hdulist.append(tbhdu)
 
@@ -621,6 +651,10 @@ class DustModel():
                                      self.ndim)
         self.set_size_dist(fin_size_dist_50p)
 
+        # save the model parameters for the size distribution
+        # set here so that the saved results have the right info
+        self.set_size_dist_parameters(fin_size_dist_50p)
+
         # save the final size distributions
         self.save_results(oname, obsdata,
                           size_dist_uncs=[fin_size_dist_punc,
@@ -661,6 +695,8 @@ class DustModel():
         # save the best fit size distributions
         self.save_results(oname, obsdata)
 
+# ================================================================
+
 
 class MRNDustModel(DustModel):
     """
@@ -673,6 +709,11 @@ class MRNDustModel(DustModel):
         super().__init__(**kwargs)
         self.sizedisttype = 'MRN'
         self.n_params = [4]*self.n_components
+        for component in self.components:
+            self.parameters[component.name] = {'C': 1e-25,
+                                               'alpha': 3.5,
+                                               'a_min': 1e-7,
+                                               'a_max': 1e-3}
 
     def compute_size_dist(self, x, params):
         """
@@ -707,6 +748,25 @@ class MRNDustModel(DustModel):
             sizedist[indxs] = 0.0
 
         return sizedist
+
+    def set_size_dist_parameters(self, params):
+        """
+        Set the size distribution parameters in the object dictonary.
+
+        Parameters
+        ----------
+        params : floats
+            Size distribution parameters
+        """
+        k1 = 0
+        for k, component in enumerate(self.components):
+            k2 = k1 + self.n_params[k]
+            cparams = params[k1:k2]
+            k1 += self.n_params[k]
+            self.parameters[component.name] = {'C': cparams[0],
+                                               'alpha': cparams[1],
+                                               'a_min': cparams[2],
+                                               'a_max': cparams[3]}
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):
@@ -794,6 +854,8 @@ class MRNDustModel(DustModel):
 
         return p
 
+# ================================================================
+
 
 class WDDustModel(DustModel):
     """
@@ -809,11 +871,20 @@ class WDDustModel(DustModel):
         if self.n_components > 0:
             self.n_params = []
             for component in self.components:
-                print(component.name)
                 if component.name == 'astro-silicates':
                     self.n_params.append(4)
+                    self.parameters['astro-silicates'] = {'C_s': 1.33e-12,
+                                                          'a_ts': 0.171e4,
+                                                          'alpha_s': -1.41,
+                                                          'beta_s': -11.5}
                 elif component.name == 'astro-carbonaceous':
                     self.n_params.append(6)
+                    self.parameters['astro-carbonaceous'] = {'C_g': 4.15e-11,
+                                                             'a_tg': 0.00837e4,
+                                                             'alpha_g': -1.91,
+                                                             'beta_g': -0.125,
+                                                             'a_cg': 0.499e4,
+                                                             'b_C': 3.0e-5}
                 else:
                     raise ValueError('%s grain material note supported'
                                      % component.name)
@@ -834,8 +905,8 @@ class WDDustModel(DustModel):
         floats
             Size distribution as a function of x
         """
-        # input grain sizes are in microns, needed in Angstroms
-        a = x*1e4
+        # input grain sizes are in cm, needed in Angstroms
+        a = x*1e8
 
         if len(params) == 6:
             # carbonaceous
@@ -884,6 +955,33 @@ class WDDustModel(DustModel):
             sizedist += Da
 
         return sizedist
+
+    def set_size_dist_parameters(self, params):
+        """
+        Set the size distribution parameters in the object dictonary.
+
+        Parameters
+        ----------
+        params : floats
+            Size distribution parameters
+        """
+        k1 = 0
+        for k, component in enumerate(self.components):
+            k2 = k1 + self.n_params[k]
+            cparams = params[k1:k2]
+            k1 += self.n_params[k]
+            if component.name == 'astro-silicates':
+                self.parameters['astro-silicates'] = {'C_s': cparams[0],
+                                                      'a_ts': cparams[1],
+                                                      'alpha_s': cparams[2],
+                                                      'beta_s': cparams[3]}
+            else:
+                self.parameters['astro-carbonaceous'] = {'C_g': cparams[0],
+                                                         'a_tg': cparams[1],
+                                                         'alpha_g': cparams[2],
+                                                         'beta_g': cparams[3],
+                                                         'a_cg': cparams[4],
+                                                         'b_C': cparams[5]}
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):
@@ -944,7 +1042,10 @@ class WDDustModel(DustModel):
         """
         self.ndim = len(p0)
         self.nwalkers = nwalkers
-        p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
+        # some parameters are negative, so need to be handled
+        psigns = np.sign(p0)
+        p = [psigns*(10**(np.log10(np.absolute(p0))
+                     + 0.1*np.random.uniform(-1, 1., self.ndim)))
              for k in range(self.nwalkers)]
 
         return p
