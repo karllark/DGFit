@@ -100,17 +100,18 @@ if __name__ == "__main__":
     for i in range(len(bC)):
         params = [Cg[i], atg[i], alpha_g[i], beta_g[i], acg[i], bC[i]]
         print(params)
-        sizedist_graphite = dmodel.compute_size_dist(a, params)
-#        sizedist_graphite = WGsizedist_graphite(a,
-#                                                bC[i],
-#                                                Cg[i],
-#                                                atg[i],
-#                                                acg[i],
-#                                                alpha_g[i],
-#                                                beta_g[i])
+        dm_sizedist_graphite = dmodel.compute_size_dist(a*1e-8, params)
+        sizedist_graphite = WGsizedist_graphite(a,
+                                                bC[i],
+                                                Cg[i],
+                                                atg[i],
+                                                acg[i],
+                                                alpha_g[i],
+                                                beta_g[i])
 
         ax[0].plot(a*1e-4, sizedist_graphite*np.power(1e-8*a, 4.0)*1e29)
         ax[1].plot(a*1e-4, sizedist_graphite)
+        ax[1].plot(a*1e-4, dm_sizedist_graphite, 'k--')
 
     ax[0].set_xscale('log')
     ax[0].set_yscale('log')

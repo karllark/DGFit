@@ -153,8 +153,11 @@ if __name__ == "__main__":
 
         # initial guesses at parameters
         #    starting range is 0.001 to 1 micron
-        p0 = [1e-25, 3.5, 1e-7, 1e-3,
-              1e-25, 3.5, 1e-7, 1e-3]
+        p0 = []
+        for component in dustmodel.components:
+            cparams = dustmodel.parameters[component.name]
+            p0 += [cparams['C'], cparams['alpha'],
+                   cparams['a_min'], cparams['a_max']]
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
@@ -167,10 +170,14 @@ if __name__ == "__main__":
         p0 = []
         for component in dustmodel.components:
             if component.name == 'astro-silicates':
-                p0 += [1.33e-12, 0.171e4, -1.41, -11.5]
+                cparams = dustmodel.parameters['astro-silicates']
+                p0 += [cparams['C_s'], cparams['a_ts'],
+                       cparams['alpha_s'], cparams['beta_s']]
             else:
-                p0 += [4.15e-11, 0.00837e4, -1.91, -0.125, 0.499e4, 3.0e-5]
-        print(p0)
+                cparams = dustmodel.parameters['astro-carbonaceous']
+                p0 += [cparams['C_g'], cparams['a_tg'],
+                       cparams['alpha_g'], cparams['beta_g'],
+                       cparams['a_cg'], cparams['b_C']]
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
