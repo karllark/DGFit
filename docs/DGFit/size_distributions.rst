@@ -34,4 +34,5 @@ WD
 
 `Weingartner & Draine (2001)
 <https://ui.adsabs.harvard.edu//#abs/2001ApJ...548..296W/abstract>`_
-size distributions ...
+size distributions are defined in equations 4 (carbonaceous grains)
+& 5 (silicate grains) of the paper.
