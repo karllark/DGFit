@@ -36,6 +36,8 @@ def DGFit_cmdparser():
                         help="Number of samples for burn")
     parser.add_argument("--nsteps", type=int, default=1000,
                         help="Number of samples for full run")
+    parser.add_argument("--everynth", type=int, default=5,
+                        help="Use every nth grain size")
     parser.add_argument("--chain", action="store_true",
                         help="Store the gain in an ascii file")
     parser.add_argument("--limit_abund", action="store_true",
@@ -143,7 +145,8 @@ if __name__ == "__main__":
     # get the dust model on the full wavelength grid
     compnames = ['astro-silicates', 'astro-carbonaceous']
     dustmodel_full = DustModel(componentnames=compnames,
-                               path='DGFit/data/indiv_grain/')
+                               path='DGFit/data/indiv_grain/',
+                               every_nth=args.everynth)
 
     sizedisttype = args.sizedisttype
     if sizedisttype == 'MRN':

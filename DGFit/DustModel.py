@@ -52,7 +52,8 @@ class DustModel():
     """
     def __init__(self,
                  componentnames=None, path='./',
-                 dustmodel=None, obsdata=None):
+                 dustmodel=None, obsdata=None,
+                 every_nth=5):
         self.origin = None
         self.n_components = 0
         self.components = []
@@ -62,7 +63,8 @@ class DustModel():
 
         # populate the grain info
         if componentnames is not None:
-            self.read_grain_files(componentnames, path=path)
+            self.read_grain_files(componentnames, path=path,
+                                  every_nth=every_nth)
         elif dustmodel is not None:
             self.grains_on_obs(dustmodel, obsdata)
 
@@ -72,7 +74,8 @@ class DustModel():
             for component in self.components:
                 self.n_params.append(component.n_sizes)
 
-    def read_grain_files(self, componentnames, path='./'):
+    def read_grain_files(self, componentnames, path='./',
+                         every_nth=5):
         """
         Read in the precomputed dust grain physical properties from files
         for each grain component.
@@ -83,6 +86,8 @@ class DustModel():
             names of dust grain materials
         path : type
             path to files
+        every_nth : int
+            Only use every nth size, faster fitting
 
         Returns
         -------
@@ -94,7 +99,7 @@ class DustModel():
         for componentname in componentnames:
             cur_DG = DustGrains()
             cur_DG.from_files(componentname,
-                              path=path)
+                              path=path, every_nth=every_nth)
             self.components.append(cur_DG)
 
     def grains_on_obs(self, full_dustmodel, observeddata):
