@@ -26,10 +26,15 @@ size distribution is a powerlaw of the form:
     w(a) & = 0 \quad\quad\quad & a < a_{min} \quad \mathrm{or} \quad a > a_{max} \\
   \end{eqnarray}
 
-where :math:`C` is the amplitude, :math:`a` is the grain radius, and
-:math:`\alpha` is the powerlaw index.
+where :math:`C` is the amplitude, :math:`a` is the grain radius,
+:math:`\alpha` is the powerlaw index, and :math:`a_{min}`/:math:`a_{max}`
+give the min/max grain radii.  A plot of an MRN size distribution
+with :math:`C = 1\times 10^{-25}`, :math:`\alpha = 3.5`,
+:math:`a_{min} = 3.5\times 10^{-4}~\mu m`,
+and :math:`a_{max} = 2~\mu m` is shown below.
 
 .. plot::
+
     import numpy as np
     import matplotlib.pyplot as plt
 
@@ -48,10 +53,14 @@ where :math:`C` is the amplitude, :math:`a` is the grain radius, and
 
     sizedist = dmodel.compute_size_dist(a, cparams)
 
-    ax.plot(a, sizedist)
+    # plot the nonzero sizedistribution values
+    indxs, = np.where(sizedist > 0)
+    ax.plot(a[indxs]*1e4, sizedist[indxs])
 
-    # ax.set_xlabel('$x$ [$\mu m^{-1}$]')
-    # ax.set_ylabel('$A(x)/A(V)$')
+    ax.set_xlabel('$a$ [$\mu m$]')
+    ax.set_ylabel('$n_H^{-1} \quad dn/da$')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
 
     # ax.legend(loc='best')
     plt.tight_layout()
