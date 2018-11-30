@@ -22,7 +22,7 @@ size distribution is a powerlaw of the form:
 
 .. math::
   \frac{dn}{da} = \left\{
-    \begin{array}
+    \begin{array}{ll}
     C a ^{-\alpha} & a_{min} \leq a \leq a_{max} \\
     0 & a < a_{min} \\
     0 & a > a_{max} \\
