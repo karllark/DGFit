@@ -10,7 +10,7 @@ import numpy as np
 
 import emcee
 
-from DGFit.DustModel import (DustModel, MRNDustModel)
+from DGFit.DustModel import (DustModel, MRNDustModel, WDDustModel)
 from DGFit.ObsData import ObsData
 
 
@@ -19,7 +19,7 @@ def DGFit_cmdparser():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--sizedisttype", default='MRN',
-                        choices=['bins', 'MRN'],
+                        choices=['bins', 'MRN', 'WD'],
                         help='Size distribution type')
     parser.add_argument("--fitobs", nargs='+', default='all',
                         choices=['extinction', 'iremission',
@@ -36,6 +36,8 @@ def DGFit_cmdparser():
                         help="Number of samples for burn")
     parser.add_argument("--nsteps", type=int, default=1000,
                         help="Number of samples for full run")
+    parser.add_argument("--everynth", type=int, default=5,
+                        help="Use every nth grain size")
     parser.add_argument("--chain", action="store_true",
                         help="Store the gain in an ascii file")
     parser.add_argument("--limit_abund", action="store_true",
@@ -141,27 +143,51 @@ if __name__ == "__main__":
     fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
 
     # get the dust model on the full wavelength grid
-    dustmodel_full = DustModel()
-    dustmodel_full.read_grain_files(['astro-silicates', 'astro-carbonaceous'],
-                                    path='DGFit/data/indiv_grain/')
+    compnames = ['astro-silicates', 'astro-carbonaceous']
+    dustmodel_full = DustModel(componentnames=compnames,
+                               path='DGFit/data/indiv_grain/',
+                               every_nth=args.everynth)
 
     sizedisttype = args.sizedisttype
     if sizedisttype == 'MRN':
         # define the fitting model
-        dustmodel = MRNDustModel()
-        dustmodel.grains_on_obs(dustmodel_full, obsdata)
+        dustmodel = MRNDustModel(dustmodel=dustmodel_full,
+                                 obsdata=obsdata)
 
         # initial guesses at parameters
         #    starting range is 0.001 to 1 micron
-        p0 = [1e-25, 3.5, 1e-7, 1e-3,
-              1e-25, 3.5, 1e-7, 1e-3]
+        p0 = []
+        for component in dustmodel.components:
+            cparams = dustmodel.parameters[component.name]
+            p0 += [cparams['C'], cparams['alpha'],
+                   cparams['a_min'], cparams['a_max']]
+
+        # need to set dust model size distribution
+        dustmodel.set_size_dist(p0)
+
+    elif sizedisttype == 'WD':
+        dustmodel = WDDustModel(dustmodel=dustmodel_full,
+                                obsdata=obsdata)
+
+        # initial guesses at parameters
+        p0 = []
+        for component in dustmodel.components:
+            if component.name == 'astro-silicates':
+                cparams = dustmodel.parameters['astro-silicates']
+                p0 += [cparams['C_s'], cparams['a_ts'],
+                       cparams['alpha_s'], cparams['beta_s']]
+            else:
+                cparams = dustmodel.parameters['astro-carbonaceous']
+                p0 += [cparams['C_g'], cparams['a_tg'],
+                       cparams['alpha_g'], cparams['beta_g'],
+                       cparams['a_cg'], cparams['b_C']]
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == 'bins':
-        dustmodel = DustModel()
-        dustmodel.grains_on_obs(dustmodel_full, obsdata)
+        dustmodel = DustModel(dustmodel=dustmodel_full,
+                              obsdata=obsdata)
 
         # replace the default size distribution with one from a file
         if args.read is not None:
