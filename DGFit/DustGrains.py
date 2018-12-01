@@ -37,7 +37,8 @@ class DustGrains():
         """
         self.origin = None
 
-    def from_files(self, componentname, path='./'):
+    def from_files(self, componentname, path='./',
+                   every_nth=5):
         """
         Read in precomputed dust grain information from files.
 
@@ -46,9 +47,10 @@ class DustGrains():
         componentname : 'string'
             Name that givesn the dust composition
             [astro-silicates, astro-carbonacenous, astro-graphite]
-
         path : 'string'
             Path to the location of the dust grain files
+        every_nth : int
+            Only use every nth size, faster fitting
         """
 
         self.origin = 'files'
@@ -132,8 +134,9 @@ class DustGrains():
             print("path = " + path)
             exit()
 
-        # temp code to just pick every 5th size
-        tindxs = np.arange(0, len(filelist), 5)
+        # code to just pick every nth grain size
+        # makes the fitting faster, but the size distributions coarser
+        tindxs = np.arange(0, len(filelist), every_nth)
         sfilelist = sorted(filelist, key=lambda file: file[1])
         filelist = []
         for k in tindxs:
