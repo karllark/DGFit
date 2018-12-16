@@ -15,6 +15,10 @@ DGFit
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
+.. image:: https://img.shields.io/lgtm/grade/python/g/karllark/DGFit.svg?logo=lgtm&logoWidth=18
+    :target: https://lgtm.com/projects/g/karllark/DGFit/context:python
+    :alt: Language grade: Python
+
 DGFit derives dust grain size and composition distributions based on
 fitting the observed properties of interstellar dust.
 
