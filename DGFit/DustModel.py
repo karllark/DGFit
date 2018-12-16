@@ -11,7 +11,7 @@ __all__ = ['DustModel',
            'WDDustModel']
 
 
-class DustModel():
+class DustModel(object):
     """
     Full dust model including arbirary size and composition distributions.
     Includes the physical properties of the individual dust grains.
@@ -427,12 +427,6 @@ class DustModel():
         p = [10**(np.log10(p0) + 1.*np.random.uniform(-1, 1., self.ndim))
              for k in range(self.nwalkers)]
 
-        # ensure that all the walkers start with positive values
-        for pc in p:
-            for pcs in pc:
-                if pcs <= 0.0:
-                    pcs = 1e-20
-
         return p
 
     def save_results(self, filename, OD, size_dist_uncs=[0]):
@@ -486,7 +480,6 @@ class DustModel():
                 all_cols.append(col4)
             k1 += component.n_sizes
 
-            cols = fits.ColDefs(all_cols)
             tbhdu = fits.BinTableHDU.from_columns(all_cols)
             tbhdu.header.set('EXTNAME', component.name,
                              'dust grain component name')

@@ -121,8 +121,6 @@ def plot_dgfit_abundances(ax, hdu, obsdata, colors=['r', 'b', 'g'],
 def plot_dgfit_extinction(ax, hdu, obsdata, colors=['r', 'b', 'g'],
                           fontsize=12, comps=True):
 
-    yrange = [0.0, 0.0]
-
     ax.plot(hdu.data['WAVE'], hdu.data['EXT'], colors[0]+'-')
     yrange = get_krange(hdu.data['EXT'], logaxis=True)
     if comps:
@@ -150,8 +148,6 @@ def plot_dgfit_extinction(ax, hdu, obsdata, colors=['r', 'b', 'g'],
 def plot_dgfit_emission(ax, hdu, obsdata, colors=['r', 'b', 'g'],
                         fontsize=12, comps=True):
 
-    yrange = [0.0, 0.0]
-
     ax.plot(hdu.data['WAVE'], hdu.data['EMIS'], colors[0]+'-')
     yrange = get_krange(hdu.data['EMIS'], logaxis=True)
     if comps:
@@ -178,8 +174,6 @@ def plot_dgfit_emission(ax, hdu, obsdata, colors=['r', 'b', 'g'],
 # plot the dust scattering albedo
 def plot_dgfit_albedo(ax, hdu, obsdata, colors=['r', 'b', 'g'],
                       fontsize=12, comps=True):
-
-    yrange = [0.0, 0.0]
 
     ax.plot(hdu.data['WAVE'], hdu.data['ALBEDO'], colors[0]+'-')
     yrange = get_krange(hdu.data['ALBEDO'])
