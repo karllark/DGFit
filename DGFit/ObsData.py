@@ -16,7 +16,7 @@ __all__ = ["ObsData"]
 
 
 # Object for the observed dust data
-class ObsData():
+class ObsData(object):
     """
     ObsData Class
 

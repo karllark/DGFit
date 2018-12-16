@@ -19,7 +19,7 @@ __all__ = ["DustGrains"]
 
 
 # Object for the proprerties of dust grain with a specific composition
-class DustGrains():
+class DustGrains(object):
     """
     DustGrains Class
 
@@ -103,7 +103,6 @@ class DustGrains():
 
         # get the filenames of this component for all sizes
         filelist = []
-        sizenum = -1
         for file in glob.glob(path+"INDIV-GRAINS-FAKE-FIT_c_*"
                               + componentname + "*.dat"):
             m = re.search('_s_(.+?).dat', file)
