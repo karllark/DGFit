@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-from DGFit.ObsData import ObsData
-from DGFit.DustModel import DustModel
+from dgfit.obsdata import ObsData
+from dgfit.dustmodel import DustModel
 
 if __name__ == "__main__":
 

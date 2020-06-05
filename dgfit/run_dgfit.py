@@ -10,8 +10,8 @@ import numpy as np
 
 import emcee
 
-from DGFit.DustModel import (DustModel, MRNDustModel, WDDustModel)
-from DGFit.ObsData import ObsData
+from dgfit.dustmodel import (DustModel, MRNDustModel, WDDustModel)
+from dgfit.obsdata import ObsData
 
 
 def DGFit_cmdparser():
