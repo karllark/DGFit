@@ -31,14 +31,14 @@ class DustGrains(object):
     origin : 'string'
 
     """
+
     def __init__(self):
         """
         Simple initialization allowing for multiple origins of data
         """
         self.origin = None
 
-    def from_files(self, componentname, path='./',
-                   every_nth=5):
+    def from_files(self, componentname, path="./", every_nth=5):
         """
         Read in precomputed dust grain information from files.
 
@@ -53,79 +53,93 @@ class DustGrains(object):
             Only use every nth size, faster fitting
         """
 
-        self.origin = 'files'
+        self.origin = "files"
 
         # min/max wavelengths for storage
         #    set here in case later we want to pass them via the function call
-        min_wave = 0.
-        max_wave = 1e6,
-        min_wave_emission = 0.
+        min_wave = 0.0
+        max_wave = (1e6,)
+        min_wave_emission = 0.0
         max_wave_emission = 1e6
 
         # check that the component name is allowed
         # _allowed_components = ['astro-silicates','astro-graphite',
         #                        'astro-carbonaceous','astro-PAH']
-        _allowed_components = ['astro-silicates', 'astro-carbonaceous',
-                               'astro-graphite']
+        _allowed_components = [
+            "astro-silicates",
+            "astro-carbonaceous",
+            "astro-graphite",
+        ]
         if componentname not in _allowed_components:
-            print(componentname + ' not one of the allowed grain components')
+            print(componentname + " not one of the allowed grain components")
             print(_allowed_components)
             exit()
 
         # set useful quantities for each composition
-        if componentname == 'astro-silicates':   # from WD01
+        if componentname == "astro-silicates":  # from WD01
             self.density = 3.5  # g/cm^3
-            self.atomic_composition = 'MgFeSiO4'
-            self.atomic_comp_names = ['Mg', 'Fe', 'Si', 'O']
+            self.atomic_composition = "MgFeSiO4"
+            self.atomic_comp_names = ["Mg", "Fe", "Si", "O"]
             self.atomic_comp_number = np.array([1, 1, 1, 4])
-            self.atomic_comp_masses = np.array([24.305, 55.845, 28.0855,
-                                                15.994])*1.660e-24  # in grams
-        elif componentname == 'astro-carbonaceous':  # from WD01
+            self.atomic_comp_masses = (
+                np.array([24.305, 55.845, 28.0855, 15.994]) * 1.660e-24
+            )  # in grams
+        elif componentname == "astro-carbonaceous":  # from WD01
             self.density = 2.24  # g/cm^3
-            self.atomic_composition = 'C'
-            self.atomic_comp_names = ['C']
+            self.atomic_composition = "C"
+            self.atomic_comp_names = ["C"]
             self.atomic_comp_number = np.array([1])
-            self.atomic_comp_masses = np.array([12.0107])*1.660e-24  # in grams
+            self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
 
-        elif componentname == 'astro-graphite':  # need origin (copy)
+        elif componentname == "astro-graphite":  # need origin (copy)
             self.density = 2.24  # g/cm^3
-            self.atomic_composition = 'C'
-            self.atomic_comp_names = ['C']
+            self.atomic_composition = "C"
+            self.atomic_comp_names = ["C"]
             self.atomic_comp_number = np.array([1])
-            self.atomic_comp_masses = np.array([12.0107])*1.660e-24  # in grams
+            self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
 
         # useful quantities
-        self.mass_per_mol_comp = np.sum(self.atomic_comp_masses
-                                        * self.atomic_comp_number)
-        self.col_den_constant = ((4./3.)*math.pi*self.density
-                                 * (self.atomic_comp_number
-                                    / self.mass_per_mol_comp))
+        self.mass_per_mol_comp = np.sum(
+            self.atomic_comp_masses * self.atomic_comp_number
+        )
+        self.col_den_constant = (
+            (4.0 / 3.0)
+            * math.pi
+            * self.density
+            * (self.atomic_comp_number / self.mass_per_mol_comp)
+        )
 
         # get the filenames of this component for all sizes
         filelist = []
-        for file in glob.glob(path+"INDIV-GRAINS-FAKE-FIT_c_*"
-                              + componentname + "*.dat"):
-            m = re.search('_s_(.+?).dat', file)
+        for file in glob.glob(
+            path + "INDIV-GRAINS-FAKE-FIT_c_*" + componentname + "*.dat"
+        ):
+            m = re.search("_s_(.+?).dat", file)
             if m:
                 found = m.group(1)
                 sizenum = found
 
                 # get the grain size
-                f = open(file, 'r')
+                f = open(file, "r")
                 firstline = f.readline()
-                space_pos = firstline.find(' ', 5)
+                space_pos = firstline.find(" ", 5)
                 secondline = f.readline()
-                colon_pos = secondline.find(':')
+                colon_pos = secondline.find(":")
                 f.close()
 
-                if secondline[colon_pos+2:colon_pos+5] == 'Yes':
+                if secondline[colon_pos + 2 : colon_pos + 5] == "Yes":
                     stochastic_heating = True
                 else:
                     stochastic_heating = False
 
-                filelist.append((file, int(sizenum),
-                                 float(firstline[1:space_pos]),
-                                 stochastic_heating))
+                filelist.append(
+                    (
+                        file,
+                        int(sizenum),
+                        float(firstline[1:space_pos]),
+                        stochastic_heating,
+                    )
+                )
 
         # check if any files were found
         if len(filelist) == 0:
@@ -151,51 +165,52 @@ class DustGrains(object):
         # loop over the files from the smallest to the largest sizes
         for k, file in enumerate(sorted(filelist, key=lambda file: file[1])):
             # read in the table of grain properties for this size
-            t = Table.read(file[0], format='ascii.commented_header',
-                           header_start=-1)
+            t = Table.read(file[0], format="ascii.commented_header", header_start=-1)
 
             # setup more variables now that we know the number of wavelengths
             if k == 0:
                 # generate the indices to crop the wavelength to the
                 #      desired range
-                gindxs, = np.where((t['Wavelength'] >= min_wave) &
-                                   (t['Wavelength'] <= max_wave))
-                egindxs, = np.where((t['Wavelength'] >= min_wave_emission) &
-                                    (t['Wavelength'] <= max_wave_emission))
-                self.wavelengths = np.array(t['Wavelength'][gindxs])
-                self.wavelengths_emission = np.array(t['Wavelength'][egindxs])
+                (gindxs,) = np.where(
+                    (t["Wavelength"] >= min_wave) & (t["Wavelength"] <= max_wave)
+                )
+                (egindxs,) = np.where(
+                    (t["Wavelength"] >= min_wave_emission)
+                    & (t["Wavelength"] <= max_wave_emission)
+                )
+                self.wavelengths = np.array(t["Wavelength"][gindxs])
+                self.wavelengths_emission = np.array(t["Wavelength"][egindxs])
                 self.n_wavelengths = len(self.wavelengths)
                 self.n_wavelengths_emission = len(self.wavelengths_emission)
                 self.cext = np.empty((self.n_sizes, self.n_wavelengths))
                 self.cabs = np.empty((self.n_sizes, self.n_wavelengths))
                 self.csca = np.empty((self.n_sizes, self.n_wavelengths))
                 self.scat_g = np.empty((self.n_sizes, self.n_wavelengths))
-                self.emission = np.empty((self.n_sizes,
-                                          self.n_wavelengths_emission))
+                self.emission = np.empty((self.n_sizes, self.n_wavelengths_emission))
 
             # store the info
             self.sizes[k] = file[2]
             self.stochastic_heating[k] = file[3]
-            self.cext[k, :] = t['CExt'][gindxs]
-            self.csca[k, :] = t['CSca'][gindxs]
-            self.cabs[k, :] = t['CAbs'][gindxs]
-            self.scat_g[k, :] = t['G'][gindxs]
+            self.cext[k, :] = t["CExt"][gindxs]
+            self.csca[k, :] = t["CSca"][gindxs]
+            self.cabs[k, :] = t["CAbs"][gindxs]
+            self.scat_g[k, :] = t["G"][gindxs]
             if file[3]:
-                self.emission[k, :] = t['StEmission'][egindxs]
+                self.emission[k, :] = t["StEmission"][egindxs]
             else:
-                self.emission[k, :] = t['EqEmission'][egindxs]
+                self.emission[k, :] = t["EqEmission"][egindxs]
 
             # convert emission from ergs/(s cm sr) to Jy/sr
             #   wavelengths in microns
             #      convert from cm^-1 to Hz^-1
-            self.emission[k, :] *= (self.wavelengths_emission)**2/2.998e10
+            self.emission[k, :] *= (self.wavelengths_emission) ** 2 / 2.998e10
             self.emission[k, :] /= 1e-19  # convert from ergs/(s Hz) to Jy
             self.emission[k, :] *= 1e-6  # convert from Jy/sr to MJy/sr
             # convert from m^-2 to cm^-2
             self.emission[k, :] *= 1e-4
 
             # default size distributions
-            self.size_dist[k] = self.sizes[k]**(-4.0)
+            self.size_dist[k] = self.sizes[k] ** (-4.0)
 
         # aliases for albedo and g calculations
         #    here they are on the same wavelength grid
@@ -228,7 +243,7 @@ class DustGrains(object):
         ObsData: ObsData object
            contains all the observed data to be fit
         """
-        self.origin = 'object'
+        self.origin = "object"
 
         # copy the basic information on the grain
         self.density = DustGrain.density
@@ -256,21 +271,17 @@ class DustGrains(object):
 
         self.wavelengths_emission = ObsData.ir_emission_waves
         self.n_wavelengths_emission = len(self.wavelengths_emission)
-        self.emission = np.empty((self.n_sizes,
-                                  self.n_wavelengths_emission))
+        self.emission = np.empty((self.n_sizes, self.n_wavelengths_emission))
 
         self.wavelengths_scat_a = ObsData.scat_a_waves
         self.n_wavelengths_scat_a = len(self.wavelengths_scat_a)
-        self.scat_a_cext = np.empty((self.n_sizes,
-                                     self.n_wavelengths_scat_a))
-        self.scat_a_csca = np.empty((self.n_sizes,
-                                     self.n_wavelengths_scat_a))
+        self.scat_a_cext = np.empty((self.n_sizes, self.n_wavelengths_scat_a))
+        self.scat_a_csca = np.empty((self.n_sizes, self.n_wavelengths_scat_a))
 
         self.wavelengths_scat_g = ObsData.scat_g_waves
         self.n_wavelengths_scat_g = len(self.wavelengths_scat_g)
         self.scat_g = np.empty((self.n_sizes, self.n_wavelengths_scat_g))
-        self.scat_g_csca = np.empty((self.n_sizes,
-                                     self.n_wavelengths_scat_g))
+        self.scat_g_csca = np.empty((self.n_sizes, self.n_wavelengths_scat_g))
 
         # loop over the sizes and generate grain info on the observed data grid
         for i in range(self.n_sizes):
@@ -284,21 +295,19 @@ class DustGrains(object):
             self.scat_a_cext[i, :] = cext_interp(self.wavelengths_scat_a)
             self.scat_a_csca[i, :] = csca_interp(self.wavelengths_scat_a)
 
-            g_interp = interp1d(DustGrain.wavelengths,
-                                DustGrain.scat_g[i, :])
+            g_interp = interp1d(DustGrain.wavelengths, DustGrain.scat_g[i, :])
             self.scat_g[i, :] = g_interp(self.wavelengths_scat_g)
             self.scat_g_csca[i, :] = csca_interp(self.wavelengths_scat_g)
 
-            emission_interp = interp1d(DustGrain.wavelengths_emission,
-                                       DustGrain.emission[i, :])
-            self.emission[i, :] = emission_interp(
-                self.wavelengths_emission)
+            emission_interp = interp1d(
+                DustGrain.wavelengths_emission, DustGrain.emission[i, :]
+            )
+            self.emission[i, :] = emission_interp(self.wavelengths_emission)
 
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.
     # these are normalized to NHI (assumption)
-    def eff_grain_props(self, ObsData,
-                        predict_all=False):
+    def eff_grain_props(self, ObsData, predict_all=False):
         """
         Calculate the grain properties integrated over the size distribution
         for a single grain composition.
@@ -346,50 +355,66 @@ class DustGrains(object):
         _effcsca = np.empty(self.n_wavelengths)
 
         # do a very simple integration (later this could be made more complex)
-        deltas = 0.5*(self.sizes[1:self.n_sizes] -
-                      self.sizes[0:self.n_sizes-1])
-        sizedist1 = self.size_dist[0:self.n_sizes-1]
-        sizedist2 = self.size_dist[1:self.n_sizes]
+        deltas = 0.5 * (self.sizes[1 : self.n_sizes] - self.sizes[0 : self.n_sizes - 1])
+        sizedist1 = self.size_dist[0 : self.n_sizes - 1]
+        sizedist2 = self.size_dist[1 : self.n_sizes]
         for i in range(self.n_wavelengths):
-            _effcabs[i] = np.sum(deltas*((self.cabs[0:self.n_sizes-1, i]
-                                          * sizedist1) +
-                                         (self.cabs[1:self.n_sizes, i]
-                                          * sizedist2)))
-            _effcsca[i] = np.sum(deltas*((self.csca[0:self.n_sizes-1, i]
-                                          * sizedist1) +
-                                         (self.csca[1:self.n_sizes, i]
-                                          * sizedist2)))
+            _effcabs[i] = np.sum(
+                deltas
+                * (
+                    (self.cabs[0 : self.n_sizes - 1, i] * sizedist1)
+                    + (self.cabs[1 : self.n_sizes, i] * sizedist2)
+                )
+            )
+            _effcsca[i] = np.sum(
+                deltas
+                * (
+                    (self.csca[0 : self.n_sizes - 1, i] * sizedist1)
+                    + (self.csca[1 : self.n_sizes, i] * sizedist2)
+                )
+            )
 
             # *not* faster to use numexpr (tested in 2015)
 
-        results['cabs'] = _effcabs
-        results['csca'] = _effcsca
+        results["cabs"] = _effcabs
+        results["csca"] = _effcsca
 
         # compute the number of atoms/NHI
         _natoms = np.empty(len(self.atomic_comp_names))
         for i in range(len(self.atomic_comp_names)):
-            _natoms[i] = np.sum(deltas*(((self.sizes[0:self.n_sizes-1]**3)
-                                         * self.size_dist[0:self.n_sizes-1]
-                                         * self.col_den_constant[i]) +
-                                        ((self.sizes[1:self.n_sizes]**3)
-                                         * self.size_dist[1:self.n_sizes]
-                                         * self.col_den_constant[i])))
+            _natoms[i] = np.sum(
+                deltas
+                * (
+                    (
+                        (self.sizes[0 : self.n_sizes - 1] ** 3)
+                        * self.size_dist[0 : self.n_sizes - 1]
+                        * self.col_den_constant[i]
+                    )
+                    + (
+                        (self.sizes[1 : self.n_sizes] ** 3)
+                        * self.size_dist[1 : self.n_sizes]
+                        * self.col_den_constant[i]
+                    )
+                )
+            )
 
         # convert to N(N) per 1e6 N(HI)
         _natoms *= 1e6
 
-        results['natoms'] = dict(zip(self.atomic_comp_names, _natoms))
+        results["natoms"] = dict(zip(self.atomic_comp_names, _natoms))
 
         # compute the integrated emission spectrum
         if ObsData.fit_ir_emission or predict_all:
             _emission = np.empty(self.n_wavelengths_emission)
             for i in range(self.n_wavelengths_emission):
-                _emission[i] = np.sum(deltas*(
-                    (self.emission[0:self.n_sizes-1, i]
-                     * sizedist1) +
-                    (self.emission[1:self.n_sizes, i]
-                     * sizedist2)))
-            results['emission'] = _emission
+                _emission[i] = np.sum(
+                    deltas
+                    * (
+                        (self.emission[0 : self.n_sizes - 1, i] * sizedist1)
+                        + (self.emission[1 : self.n_sizes, i] * sizedist2)
+                    )
+                )
+            results["emission"] = _emission
 
         # scattering parameters a & g
         if ObsData.fit_scat_a or predict_all:
@@ -401,20 +426,24 @@ class DustGrains(object):
             _effscat_a_csca = np.empty(n_waves_scat_a)
 
             for i in range(n_waves_scat_a):
-                _effscat_a_cext[i] = np.sum(deltas*(
-                        (scat_a_cext[0:self.n_sizes-1, i]
-                         * sizedist1) +
-                        (scat_a_cext[1:self.n_sizes, i]
-                         * sizedist2)))
-                _effscat_a_csca[i] = np.sum(deltas*(
-                        (scat_a_csca[0:self.n_sizes-1, i]
-                         * sizedist1) +
-                        (scat_a_csca[1:self.n_sizes, i]
-                         * sizedist2)))
+                _effscat_a_cext[i] = np.sum(
+                    deltas
+                    * (
+                        (scat_a_cext[0 : self.n_sizes - 1, i] * sizedist1)
+                        + (scat_a_cext[1 : self.n_sizes, i] * sizedist2)
+                    )
+                )
+                _effscat_a_csca[i] = np.sum(
+                    deltas
+                    * (
+                        (scat_a_csca[0 : self.n_sizes - 1, i] * sizedist1)
+                        + (scat_a_csca[1 : self.n_sizes, i] * sizedist2)
+                    )
+                )
 
-            results['albedo'] = _effscat_a_csca/_effscat_a_cext
-            results['scat_a_cext'] = _effscat_a_cext
-            results['scat_a_csca'] = _effscat_a_csca
+            results["albedo"] = _effscat_a_csca / _effscat_a_cext
+            results["scat_a_cext"] = _effscat_a_cext
+            results["scat_a_csca"] = _effscat_a_csca
 
         if ObsData.fit_scat_g or predict_all:
             n_waves_scat_g = self.n_wavelengths_scat_g
@@ -424,20 +453,30 @@ class DustGrains(object):
             _effscat_g_csca = np.empty(n_waves_scat_g)
 
             for i in range(n_waves_scat_g):
-                _effg[i] = np.sum(deltas*(
-                        (self.scat_g[0:self.n_sizes-1, i]
-                         * scat_g_csca[0:self.n_sizes-1, i]
-                         * sizedist1) +
-                        (self.scat_g[1:self.n_sizes, i]
-                         * scat_g_csca[1:self.n_sizes, i]
-                         * sizedist2)))
-                _effscat_g_csca[i] = np.sum(deltas*(
-                        (scat_g_csca[0:self.n_sizes-1, i]
-                         * sizedist1) +
-                        (scat_g_csca[1:self.n_sizes, i]
-                         * sizedist2)))
-            results['g'] = _effg/_effscat_g_csca
-            results['scat_g_csca'] = _effscat_g_csca
+                _effg[i] = np.sum(
+                    deltas
+                    * (
+                        (
+                            self.scat_g[0 : self.n_sizes - 1, i]
+                            * scat_g_csca[0 : self.n_sizes - 1, i]
+                            * sizedist1
+                        )
+                        + (
+                            self.scat_g[1 : self.n_sizes, i]
+                            * scat_g_csca[1 : self.n_sizes, i]
+                            * sizedist2
+                        )
+                    )
+                )
+                _effscat_g_csca[i] = np.sum(
+                    deltas
+                    * (
+                        (scat_g_csca[0 : self.n_sizes - 1, i] * sizedist1)
+                        + (scat_g_csca[1 : self.n_sizes, i] * sizedist2)
+                    )
+                )
+            results["g"] = _effg / _effscat_g_csca
+            results["scat_g_csca"] = _effscat_g_csca
 
         # return the results as a tuple of arrays
         return results

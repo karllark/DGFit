@@ -6,9 +6,7 @@ from astropy.io import fits
 
 from dgfit.dustgrains import DustGrains
 
-__all__ = ['DustModel',
-           'MRNDustModel',
-           'WDDustModel']
+__all__ = ["DustModel", "MRNDustModel", "WDDustModel"]
 
 
 class DustModel(object):
@@ -50,21 +48,20 @@ class DustModel(object):
         For the bins case, the dictonary is empty as the parameters is
         the size distribution.
     """
-    def __init__(self,
-                 componentnames=None, path='./',
-                 dustmodel=None, obsdata=None,
-                 every_nth=5):
+
+    def __init__(
+        self, componentnames=None, path="./", dustmodel=None, obsdata=None, every_nth=5
+    ):
         self.origin = None
         self.n_components = 0
         self.components = []
-        self.sizedisttype = 'bins'
+        self.sizedisttype = "bins"
         self.n_params = None
         self.parameters = {}
 
         # populate the grain info
         if componentnames is not None:
-            self.read_grain_files(componentnames, path=path,
-                                  every_nth=every_nth)
+            self.read_grain_files(componentnames, path=path, every_nth=every_nth)
         elif dustmodel is not None:
             self.grains_on_obs(dustmodel, obsdata)
 
@@ -74,8 +71,7 @@ class DustModel(object):
             for component in self.components:
                 self.n_params.append(component.n_sizes)
 
-    def read_grain_files(self, componentnames, path='./',
-                         every_nth=5):
+    def read_grain_files(self, componentnames, path="./", every_nth=5):
         """
         Read in the precomputed dust grain physical properties from files
         for each grain component.
@@ -93,13 +89,12 @@ class DustModel(object):
         -------
         updated class variables
         """
-        self.origin = 'files'
+        self.origin = "files"
         self.n_components = len(componentnames)
         # get the basic grain data
         for componentname in componentnames:
             cur_DG = DustGrains()
-            cur_DG.from_files(componentname,
-                              path=path, every_nth=every_nth)
+            cur_DG.from_files(componentname, path=path, every_nth=every_nth)
             self.components.append(cur_DG)
 
     def grains_on_obs(self, full_dustmodel, observeddata):
@@ -121,7 +116,7 @@ class DustModel(object):
         -------
         updated class variables
         """
-        self.origin = 'onobsdata'
+        self.origin = "onobsdata"
         self.n_components = full_dustmodel.n_components
         for component in full_dustmodel.components:
             cur_DG = DustGrains()
@@ -185,12 +180,12 @@ class DustModel(object):
         for k, component in enumerate(self.components):
             delta_val = self.n_params[k]
             k2 = k1 + delta_val
-            component.size_dist[:] = self.compute_size_dist(component.sizes[:],
-                                                            params[k1:k2])
+            component.size_dist[:] = self.compute_size_dist(
+                component.sizes[:], params[k1:k2]
+            )
             k1 += delta_val
 
-    def eff_grain_props(self, OD,
-                        predict_all=False):
+    def eff_grain_props(self, OD, predict_all=False):
         """
         Compute the effective grain properties of the ensemble of grain
         sizes and compositions.
@@ -226,16 +221,15 @@ class DustModel(object):
             _scat_g_csca = np.zeros(self.components[0].n_wavelengths_scat_g)
 
         for component in self.components:
-            results = component.eff_grain_props(OD,
-                                                predict_all=predict_all)
+            results = component.eff_grain_props(OD, predict_all=predict_all)
 
-            _tcabs = results['cabs']
-            _tcsca = results['csca']
+            _tcabs = results["cabs"]
+            _tcsca = results["csca"]
             _cabs += _tcabs
             _csca += _tcsca
 
             # for the depletions (# of atoms), a bit more careful work needed
-            _tnatoms = results['natoms']
+            _tnatoms = results["natoms"]
             for aname in _tnatoms.keys():
                 if aname in _natoms.keys():
                     _natoms[aname] += _tnatoms[aname]
@@ -243,34 +237,34 @@ class DustModel(object):
                     _natoms[aname] = _tnatoms[aname]
 
             if OD.fit_ir_emission or predict_all:
-                _temission = results['emission']
+                _temission = results["emission"]
                 _emission += _temission
 
             if OD.fit_scat_a or predict_all:
-                _tscat_a_cext = results['scat_a_cext']
-                _tscat_a_csca = results['scat_a_csca']
+                _tscat_a_cext = results["scat_a_cext"]
+                _tscat_a_csca = results["scat_a_csca"]
                 _scat_a_cext += _tscat_a_cext
                 _scat_a_csca += _tscat_a_csca
 
             if OD.fit_scat_g or predict_all:
-                _tg = results['g']
-                _tscat_g_csca = results['scat_g_csca']
-                _g += _tscat_g_csca*_tg
+                _tg = results["g"]
+                _tscat_g_csca = results["scat_g_csca"]
+                _g += _tscat_g_csca * _tg
                 _scat_g_csca += _tscat_g_csca
 
         results = {}
-        results['cabs'] = _cabs
-        results['csca'] = _csca
-        results['natoms'] = _natoms
+        results["cabs"] = _cabs
+        results["csca"] = _csca
+        results["natoms"] = _natoms
 
         if OD.fit_ir_emission or predict_all:
-            results['emission'] = _emission
+            results["emission"] = _emission
 
         if OD.fit_scat_a or predict_all:
-            results['albedo'] = _scat_a_csca/_scat_a_cext
+            results["albedo"] = _scat_a_csca / _scat_a_cext
 
         if OD.fit_scat_g or predict_all:
-            results['g'] = _g/_scat_g_csca
+            results["g"] = _g / _scat_g_csca
 
         return results
 
@@ -286,16 +280,18 @@ class DustModel(object):
             one component per extension
         """
         for k, component in enumerate(self.components):
-            fitsdata = fits.getdata(filename, k+1)
+            fitsdata = fits.getdata(filename, k + 1)
 
             # interpolate, otherwise assume exact match in sizes
             #   might want to add some checking here for robustness
             if len(component.size_dist) != len(fitsdata[:][1]):
-                component.size_dist = 10**np.interp(np.log10(component.sizes),
-                                                    np.log10(fitsdata['SIZE']),
-                                                    np.log10(fitsdata['DIST']))
+                component.size_dist = 10 ** np.interp(
+                    np.log10(component.sizes),
+                    np.log10(fitsdata["SIZE"]),
+                    np.log10(fitsdata["DIST"]),
+                )
             else:
-                component.size_dist = fitsdata['DIST']
+                component.size_dist = fitsdata["DIST"]
 
     def lnprob_generic(self, obsdata):
         """
@@ -318,44 +314,49 @@ class DustModel(object):
         # compute the ln(prob) for A(l)/N(HI)
         lnp_alnhi = 0.0
         if obsdata.fit_extinction:
-            cabs = results['cabs']
-            csca = results['csca']
+            cabs = results["cabs"]
+            csca = results["csca"]
             cext = cabs + csca
-            dust_alnhi = 1.086*cext
-            lnp_alnhi = -0.5*np.sum(((obsdata.ext_alnhi - dust_alnhi)
-                                     / obsdata.ext_alnhi_unc)**2)
+            dust_alnhi = 1.086 * cext
+            lnp_alnhi = -0.5 * np.sum(
+                ((obsdata.ext_alnhi - dust_alnhi) / obsdata.ext_alnhi_unc) ** 2
+            )
         # lnp_alnhi /= obsdata.n_wavelengths
 
         # compute the ln(prob) for the depletions
         lnp_dep = 0.0
         if obsdata.fit_abundance:
-            natoms = results['natoms']
+            natoms = results["natoms"]
             for atomname in natoms.keys():
-                lnp_dep = ((natoms[atomname] -
-                            obsdata.abundance[atomname][0])
-                           / obsdata.abundance[atomname][1])**2
+                lnp_dep = (
+                    (natoms[atomname] - obsdata.abundance[atomname][0])
+                    / obsdata.abundance[atomname][1]
+                ) ** 2
             lnp_dep *= -0.5
 
         # compute the ln(prob) for IR emission
         lnp_emission = 0.0
         if obsdata.fit_ir_emission:
-            emission = results['emission']
-            lnp_emission = -0.5*np.sum((((obsdata.ir_emission - emission)
-                                        / (obsdata.ir_emission_unc))**2))
+            emission = results["emission"]
+            lnp_emission = -0.5 * np.sum(
+                (((obsdata.ir_emission - emission) / (obsdata.ir_emission_unc)) ** 2)
+            )
 
         # compute the ln(prob) for the dust albedo
         lnp_albedo = 0.0
         if obsdata.fit_scat_a:
-            albedo = results['albedo']
-            lnp_albedo = -0.5*np.sum((((obsdata.scat_albedo - albedo)
-                                     / (obsdata.scat_albedo_unc))**2))
+            albedo = results["albedo"]
+            lnp_albedo = -0.5 * np.sum(
+                (((obsdata.scat_albedo - albedo) / (obsdata.scat_albedo_unc)) ** 2)
+            )
 
         # compute the ln(prob) for the dust g
         lnp_g = 0.0
         if obsdata.fit_scat_g:
-            g = results['g']
-            lnp_albedo = -0.5*np.sum((((obsdata.scat_g - g)
-                                       / (obsdata.scat_g_unc))**2))
+            g = results["g"]
+            lnp_albedo = -0.5 * np.sum(
+                (((obsdata.scat_g - g) / (obsdata.scat_g_unc)) ** 2)
+            )
 
         # combine the lnps
         lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
@@ -424,8 +425,10 @@ class DustModel(object):
         self.ndim = len(p0)
         self.nwalkers = nwalkers
         # Initial ball should be in log space
-        p = [10**(np.log10(p0) + 1.*np.random.uniform(-1, 1., self.ndim))
-             for k in range(self.nwalkers)]
+        p = [
+            10 ** (np.log10(p0) + 1.0 * np.random.uniform(-1, 1.0, self.ndim))
+            for k in range(self.nwalkers)
+        ]
 
         return p
 
@@ -447,16 +450,15 @@ class DustModel(object):
         """
         # write a small primary header
         pheader = fits.Header()
-        pheader.set('NCOMPS', len(self.components),
-                    'number of dust grain components')
+        pheader.set("NCOMPS", len(self.components), "number of dust grain components")
         for k, component in enumerate(self.components):
-            pheader.set('CNAME'+str(k), component.name,
-                        'name of dust grain component')
-        pheader.set('SDMODEL', self.sizedisttype,
-                    'type of size  distribution')
-        pheader.add_comment('Dust Model results written by DustModel.py')
-        pheader.add_comment('written by Karl D. Gordon')
-        pheader.add_comment('kgordon@stsci.edu')
+            pheader.set(
+                "CNAME" + str(k), component.name, "name of dust grain component"
+            )
+        pheader.set("SDMODEL", self.sizedisttype, "type of size  distribution")
+        pheader.add_comment("Dust Model results written by DustModel.py")
+        pheader.add_comment("written by Karl D. Gordon")
+        pheader.add_comment("kgordon@stsci.edu")
         phdu = fits.PrimaryHDU(header=pheader)
 
         hdulist = fits.HDUList([phdu])
@@ -464,136 +466,130 @@ class DustModel(object):
         # output the dust grain size distribution
         k1 = 0
         for component in self.components:
-            col1 = fits.Column(name='SIZE', format='E',
-                               array=component.sizes)
-            col2 = fits.Column(name='DIST', format='E',
-                               array=component.size_dist)
+            col1 = fits.Column(name="SIZE", format="E", array=component.sizes)
+            col2 = fits.Column(name="DIST", format="E", array=component.size_dist)
             all_cols = [col1, col2]
 
             k2 = k1 + component.n_sizes
             if len(size_dist_uncs) > 1:
-                col3 = fits.Column(name='DISTPUNC', format='E',
-                                   array=size_dist_uncs[0][k1:k2])
+                col3 = fits.Column(
+                    name="DISTPUNC", format="E", array=size_dist_uncs[0][k1:k2]
+                )
                 all_cols.append(col3)
-                col4 = fits.Column(name='DISTMUNC', format='E',
-                                   array=size_dist_uncs[1][k1:k2])
+                col4 = fits.Column(
+                    name="DISTMUNC", format="E", array=size_dist_uncs[1][k1:k2]
+                )
                 all_cols.append(col4)
             k1 += component.n_sizes
 
             tbhdu = fits.BinTableHDU.from_columns(all_cols)
-            tbhdu.header.set('EXTNAME', component.name,
-                             'dust grain component name')
+            tbhdu.header.set("EXTNAME", component.name, "dust grain component name")
 
             # save the parameter values
             if self.parameters:
                 for cparam in self.parameters[component.name].items():
-                    tbhdu.header.set(cparam[0], cparam[1],
-                                     'parameters of size distribution model')
+                    tbhdu.header.set(
+                        cparam[0], cparam[1], "parameters of size distribution model"
+                    )
 
             hdulist.append(tbhdu)
 
         # output the resulting observable parameters
         results = self.eff_grain_props(OD, predict_all=True)
-        cabs = results['cabs']
-        csca = results['csca']
-        natoms = results['natoms']
+        cabs = results["cabs"]
+        csca = results["csca"]
+        natoms = results["natoms"]
 
         # natoms
-        col1 = fits.Column(name='NAME', format='A2',
-                           array=np.array(list(natoms.keys())))
-        col2 = fits.Column(name='ABUND', format='E',
-                           array=np.array(list(natoms.values())))
+        col1 = fits.Column(
+            name="NAME", format="A2", array=np.array(list(natoms.keys()))
+        )
+        col2 = fits.Column(
+            name="ABUND", format="E", array=np.array(list(natoms.values()))
+        )
         cols = fits.ColDefs([col1, col2])
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set('EXTNAME', 'Abundances',
-                         'abundances in units of # atoms/1e6 H atoms')
+        tbhdu.header.set(
+            "EXTNAME", "Abundances", "abundances in units of # atoms/1e6 H atoms"
+        )
         hdulist.append(tbhdu)
 
         # extinction
-        col1 = fits.Column(name='WAVE', format='E',
-                           array=self.components[0].wavelengths)
-        col2 = fits.Column(name='EXT', format='E',
-                           array=1.086*(cabs+csca))
+        col1 = fits.Column(
+            name="WAVE", format="E", array=self.components[0].wavelengths
+        )
+        col2 = fits.Column(name="EXT", format="E", array=1.086 * (cabs + csca))
         all_cols_ext = [col1, col2]
 
         # emission
         # if ObsData.fit_ir_emission:
-        emission = results['emission']
-        col1 = fits.Column(name='WAVE', format='E',
-                           array=self.components[0].wavelengths_emission)
-        col2 = fits.Column(name='EMIS', format='E',
-                           array=emission)
+        emission = results["emission"]
+        col1 = fits.Column(
+            name="WAVE", format="E", array=self.components[0].wavelengths_emission
+        )
+        col2 = fits.Column(name="EMIS", format="E", array=emission)
         all_cols_emis = [col1, col2]
 
         # albedo
-        albedo = results['albedo']
+        albedo = results["albedo"]
         tvals = self.components[0].wavelengths_scat_a
-        col1 = fits.Column(name='WAVE', format='E',
-                           array=tvals)
-        col2 = fits.Column(name='ALBEDO', format='E',
-                           array=albedo)
+        col1 = fits.Column(name="WAVE", format="E", array=tvals)
+        col2 = fits.Column(name="ALBEDO", format="E", array=albedo)
         all_cols_albedo = [col1, col2]
 
         # g
-        g = results['g']
+        g = results["g"]
         tvals = self.components[0].wavelengths_scat_g
-        col1 = fits.Column(name='WAVE', format='E',
-                           array=tvals)
-        col2 = fits.Column(name='G', format='E',
-                           array=g)
+        col1 = fits.Column(name="WAVE", format="E", array=tvals)
+        col2 = fits.Column(name="G", format="E", array=g)
         all_cols_g = [col1, col2]
 
         for k, component in enumerate(self.components):
             results = component.eff_grain_props(OD, predict_all=True)
-            tcabs = results['cabs']
-            tcsca = results['csca']
+            tcabs = results["cabs"]
+            tcsca = results["csca"]
             # tnatoms = results['natoms']
 
-            tcol = fits.Column(name='EXT'+str(k+1), format='E',
-                               array=1.086*(tcabs+tcsca))
+            tcol = fits.Column(
+                name="EXT" + str(k + 1), format="E", array=1.086 * (tcabs + tcsca)
+            )
             all_cols_ext.append(tcol)
 
-            temission = results['emission']
-            tcol = fits.Column(name='EMIS'+str(k+1), format='E',
-                               array=temission)
+            temission = results["emission"]
+            tcol = fits.Column(name="EMIS" + str(k + 1), format="E", array=temission)
             all_cols_emis.append(tcol)
 
-            talbedo = results['albedo']
-            tcol = fits.Column(name='ALBEDO'+str(k+1), format='E',
-                               array=talbedo)
+            talbedo = results["albedo"]
+            tcol = fits.Column(name="ALBEDO" + str(k + 1), format="E", array=talbedo)
             all_cols_albedo.append(tcol)
 
-            tg = results['g']
-            tcol = fits.Column(name='G'+str(k+1), format='E',
-                               array=tg)
+            tg = results["g"]
+            tcol = fits.Column(name="G" + str(k + 1), format="E", array=tg)
             all_cols_g.append(tcol)
 
         # now output the results
         #    extinction
         cols = fits.ColDefs(all_cols_ext)
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set('EXTNAME', 'Extinction',
-                         'extinction in A(lambda)/N(HI) units')
+        tbhdu.header.set("EXTNAME", "Extinction", "extinction in A(lambda)/N(HI) units")
         hdulist.append(tbhdu)
 
         #    emission
         cols = fits.ColDefs(all_cols_emis)
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set('EXTNAME', 'Emission',
-                         'emission MJy/sr/H atom units')
+        tbhdu.header.set("EXTNAME", "Emission", "emission MJy/sr/H atom units")
         hdulist.append(tbhdu)
 
         #    albedo
         cols = fits.ColDefs(all_cols_albedo)
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set('EXTNAME', 'Albedo', 'dust scattering albedo')
+        tbhdu.header.set("EXTNAME", "Albedo", "dust scattering albedo")
         hdulist.append(tbhdu)
 
         #    g
         cols = fits.ColDefs(all_cols_g)
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set('EXTNAME', 'G',
-                         'dust scattering phase function asymmetry')
+        tbhdu.header.set("EXTNAME", "G", "dust scattering phase function asymmetry")
         hdulist.append(tbhdu)
 
         hdulist.writeto(filename, overwrite=True)
@@ -616,14 +612,14 @@ class DustModel(object):
             (p50, p84-p50, p50-p16)
         """
         samples = chain.reshape((-1, ndim))
-        values = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
-                     zip(*np.percentile(samples, [16, 50, 84],
-                                        axis=0)))
+        values = map(
+            lambda v: (v[1], v[2] - v[1], v[1] - v[0]),
+            zip(*np.percentile(samples, [16, 50, 84], axis=0)),
+        )
         val_50p, punc, munc = zip(*values)
         return (val_50p, punc, munc)
 
-    def save_50percentile_results(self, oname, sampler, obsdata,
-                                  cur_step=None):
+    def save_50percentile_results(self, oname, sampler, obsdata, cur_step=None):
         """
         Compute the 50th percentile paramaters, set the size
         distribution, and save the results
@@ -643,9 +639,11 @@ class DustModel(object):
         """
         if cur_step is None:
             cur_step = sampler.chain.shape[1]
-        fin_size_dist_50p, fin_size_dist_punc, fin_size_dist_munc = \
-            self.get_percentile_vals(sampler.chain[:, 0:cur_step+1, :],
-                                     self.ndim)
+        (
+            fin_size_dist_50p,
+            fin_size_dist_punc,
+            fin_size_dist_munc,
+        ) = self.get_percentile_vals(sampler.chain[:, 0 : cur_step + 1, :], self.ndim)
         self.set_size_dist(fin_size_dist_50p)
 
         # save the model parameters for the size distribution
@@ -653,12 +651,11 @@ class DustModel(object):
         self.set_size_dist_parameters(fin_size_dist_50p)
 
         # save the final size distributions
-        self.save_results(oname, obsdata,
-                          size_dist_uncs=[fin_size_dist_punc,
-                                          fin_size_dist_munc])
+        self.save_results(
+            oname, obsdata, size_dist_uncs=[fin_size_dist_punc, fin_size_dist_munc]
+        )
 
-    def save_best_results(self, oname, sampler, obsdata,
-                          cur_step=None):
+    def save_best_results(self, oname, sampler, obsdata, cur_step=None):
         """
         Compute the best fit paramaters, set the size
         distribution, and save the results
@@ -684,13 +681,14 @@ class DustModel(object):
             tmax_lnp = np.max(sampler.lnprobability[k, 0:cur_step])
             if tmax_lnp > max_lnp:
                 max_lnp = tmax_lnp
-                indxs, = np.where(sampler.lnprobability[k] == tmax_lnp)
+                (indxs,) = np.where(sampler.lnprobability[k] == tmax_lnp)
                 fit_params_best = sampler.chain[k, indxs[0], :]
 
         self.set_size_dist(fit_params_best)
 
         # save the best fit size distributions
         self.save_results(oname, obsdata)
+
 
 # ================================================================
 
@@ -702,15 +700,18 @@ class MRNDustModel(DustModel):
 
     Same keywords and attributes as the parent DustModel class.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.sizedisttype = 'MRN'
-        self.n_params = [4]*self.n_components
+        self.sizedisttype = "MRN"
+        self.n_params = [4] * self.n_components
         for component in self.components:
-            self.parameters[component.name] = {'C': 1e-25,
-                                               'alpha': 3.5,
-                                               'a_min': 1e-7,
-                                               'a_max': 1e-3}
+            self.parameters[component.name] = {
+                "C": 1e-25,
+                "alpha": 3.5,
+                "a_min": 1e-7,
+                "a_max": 1e-3,
+            }
 
     def compute_size_dist(self, x, params):
         """
@@ -738,9 +739,8 @@ class MRNDustModel(DustModel):
         floats
             Size distribution as a function of x
         """
-        sizedist = params[0]*np.power(x, -1.0*params[1])
-        indxs, = np.where(np.logical_or(x < params[2],
-                                        x > params[3]))
+        sizedist = params[0] * np.power(x, -1.0 * params[1])
+        (indxs,) = np.where(np.logical_or(x < params[2], x > params[3]))
         if len(indxs) > 0:
             sizedist[indxs] = 0.0
 
@@ -760,10 +760,12 @@ class MRNDustModel(DustModel):
             k2 = k1 + self.n_params[k]
             cparams = params[k1:k2]
             k1 += self.n_params[k]
-            self.parameters[component.name] = {'C': cparams[0],
-                                               'alpha': cparams[1],
-                                               'a_min': cparams[2],
-                                               'a_max': cparams[3]}
+            self.parameters[component.name] = {
+                "C": cparams[0],
+                "alpha": cparams[1],
+                "a_min": cparams[2],
+                "a_max": cparams[3],
+            }
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):
@@ -846,10 +848,13 @@ class MRNDustModel(DustModel):
         # Initial ball
         # delts = np.array([1.0, 0.01, 1e-8, 1e-5, 1.0, 0.01, 1e-8, 1e-5])
         # p = [p0 + delts*np.random.normal(0., 1., self.ndim)
-        p = [10**(np.log10(p0) + 0.1*np.random.uniform(-1, 1., self.ndim))
-             for k in range(self.nwalkers)]
+        p = [
+            10 ** (np.log10(p0) + 0.1 * np.random.uniform(-1, 1.0, self.ndim))
+            for k in range(self.nwalkers)
+        ]
 
         return p
+
 
 # ================================================================
 
@@ -860,31 +865,37 @@ class WDDustModel(DustModel):
 
     Same kewyords and attributes as the parent DustModel class.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.sizedisttype = 'WD'
+        self.sizedisttype = "WD"
 
         # set the number of size distribution parametres
         if self.n_components > 0:
             self.n_params = []
             for component in self.components:
-                if component.name == 'astro-silicates':
+                if component.name == "astro-silicates":
                     self.n_params.append(4)
-                    self.parameters['astro-silicates'] = {'C_s': 1.33e-12,
-                                                          'a_ts': 0.171e4,
-                                                          'alpha_s': -1.41,
-                                                          'beta_s': -11.5}
-                elif component.name == 'astro-carbonaceous':
+                    self.parameters["astro-silicates"] = {
+                        "C_s": 1.33e-12,
+                        "a_ts": 0.171e4,
+                        "alpha_s": -1.41,
+                        "beta_s": -11.5,
+                    }
+                elif component.name == "astro-carbonaceous":
                     self.n_params.append(6)
-                    self.parameters['astro-carbonaceous'] = {'C_g': 4.15e-11,
-                                                             'a_tg': 0.00837e4,
-                                                             'alpha_g': -1.91,
-                                                             'beta_g': -0.125,
-                                                             'a_cg': 0.499e4,
-                                                             'b_C': 3.0e-5}
+                    self.parameters["astro-carbonaceous"] = {
+                        "C_g": 4.15e-11,
+                        "a_tg": 0.00837e4,
+                        "alpha_g": -1.91,
+                        "beta_g": -0.125,
+                        "a_cg": 0.499e4,
+                        "b_C": 3.0e-5,
+                    }
                 else:
-                    raise ValueError('%s grain material note supported'
-                                     % component.name)
+                    raise ValueError(
+                        "%s grain material note supported" % component.name
+                    )
 
     def compute_size_dist(self, x, params):
         """
@@ -903,7 +914,7 @@ class WDDustModel(DustModel):
             Size distribution as a function of x
         """
         # input grain sizes are in cm, needed in Angstroms
-        a = x*1e8
+        a = x * 1e8
 
         if len(params) == 6:
             # carbonaceous
@@ -917,37 +928,49 @@ class WDDustModel(DustModel):
         # larger grain size distribution
         # same for silicates and carbonaceous grains
         if beta >= 0.0:
-            Fa = 1.0 + beta*a/a_t
+            Fa = 1.0 + beta * a / a_t
         else:
-            Fa = 1.0/(1.0 - beta*a/a_t)
+            Fa = 1.0 / (1.0 - beta * a / a_t)
 
         Ga = np.full((len(a)), 1.0)
-        indxs, = np.where(a > a_t)
-        Ga[indxs] = np.exp(-1.0*np.power((a[indxs] - a_t)/a_c, 3.0))
+        (indxs,) = np.where(a > a_t)
+        Ga[indxs] = np.exp(-1.0 * np.power((a[indxs] - a_t) / a_c, 3.0))
 
-        sizedist = (C/(1e-8*a))*np.power(a/a_t, alpha)*Fa*Ga
+        sizedist = (C / (1e-8 * a)) * np.power(a / a_t, alpha) * Fa * Ga
 
         # very small gain size distribution
         # only for carbonaceous grains
         if input_bC is not None:
-            a0 = np.array([3.5, 30.])   # in A
-            bC = np.array([0.75, 0.25])*input_bC
+            a0 = np.array([3.5, 30.0])  # in A
+            bC = np.array([0.75, 0.25]) * input_bC
             sigma = 0.4
             rho = 2.24  # in g/cm^3 for graphite
-            mC = 12.0107*1.660e-24
+            mC = 12.0107 * 1.660e-24
 
             Da = 0.0
             for i in range(2):
-                Bi = ((3.0/(np.power(2.0*np.pi, 1.5)))
-                      * (np.exp(-4.5*np.power(sigma, 2.0))
-                      / (rho*np.power(1e-8*a0[i], 3.0)*sigma))
-                      * (bC[i]*mC
-                         / (1.0
-                            + erf((3.0*sigma/np.sqrt(2.0))
-                                  + np.log(a0[i]/3.5)/(sigma*np.sqrt(2.0))))))
+                Bi = (
+                    (3.0 / (np.power(2.0 * np.pi, 1.5)))
+                    * (
+                        np.exp(-4.5 * np.power(sigma, 2.0))
+                        / (rho * np.power(1e-8 * a0[i], 3.0) * sigma)
+                    )
+                    * (
+                        bC[i]
+                        * mC
+                        / (
+                            1.0
+                            + erf(
+                                (3.0 * sigma / np.sqrt(2.0))
+                                + np.log(a0[i] / 3.5) / (sigma * np.sqrt(2.0))
+                            )
+                        )
+                    )
+                )
 
-                Da += (Bi/(1e-8*a))*np.exp(-0.5*np.power(np.log(a/a0[i])/sigma,
-                                                         2.0))
+                Da += (Bi / (1e-8 * a)) * np.exp(
+                    -0.5 * np.power(np.log(a / a0[i]) / sigma, 2.0)
+                )
 
             sizedist += Da
 
@@ -967,18 +990,22 @@ class WDDustModel(DustModel):
             k2 = k1 + self.n_params[k]
             cparams = params[k1:k2]
             k1 += self.n_params[k]
-            if component.name == 'astro-silicates':
-                self.parameters['astro-silicates'] = {'C_s': cparams[0],
-                                                      'a_ts': cparams[1],
-                                                      'alpha_s': cparams[2],
-                                                      'beta_s': cparams[3]}
+            if component.name == "astro-silicates":
+                self.parameters["astro-silicates"] = {
+                    "C_s": cparams[0],
+                    "a_ts": cparams[1],
+                    "alpha_s": cparams[2],
+                    "beta_s": cparams[3],
+                }
             else:
-                self.parameters['astro-carbonaceous'] = {'C_g': cparams[0],
-                                                         'a_tg': cparams[1],
-                                                         'alpha_g': cparams[2],
-                                                         'beta_g': cparams[3],
-                                                         'a_cg': cparams[4],
-                                                         'b_C': cparams[5]}
+                self.parameters["astro-carbonaceous"] = {
+                    "C_g": cparams[0],
+                    "a_tg": cparams[1],
+                    "alpha_g": cparams[2],
+                    "beta_g": cparams[3],
+                    "a_cg": cparams[4],
+                    "b_C": cparams[5],
+                }
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):
@@ -1048,8 +1075,16 @@ class WDDustModel(DustModel):
         self.nwalkers = nwalkers
         # some parameters are negative, so need to be handled
         psigns = np.sign(p0)
-        p = [psigns*(10**(np.log10(np.absolute(p0))
-                     + 0.1*np.random.uniform(-1, 1., self.ndim)))
-             for k in range(self.nwalkers)]
+        p = [
+            psigns
+            * (
+                10
+                ** (
+                    np.log10(np.absolute(p0))
+                    + 0.1 * np.random.uniform(-1, 1.0, self.ndim)
+                )
+            )
+            for k in range(self.nwalkers)
+        ]
 
         return p
