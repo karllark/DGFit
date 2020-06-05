@@ -1,5 +1,5 @@
 
-from ..DustModel import MRNDustModel
+from dgfit.dustmodel import MRNDustModel
 
 
 def test_mrn_initialize():

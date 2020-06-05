@@ -4,7 +4,7 @@ from scipy.special import erf
 
 from astropy.io import fits
 
-from DGFit.DustGrains import DustGrains
+from dgfit.dustgrains import DustGrains
 
 __all__ = ['DustModel',
            'MRNDustModel',
