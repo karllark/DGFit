@@ -1,15 +1,17 @@
 DGFit
 -----
 
-.. image:: https://travis-ci.org/karllark/DGFit.svg?branch=master
-    :target: https://travis-ci.org/karllark/DGFit
-
 .. image:: https://readthedocs.org/projects/dgfit/badge/?version=latest
     :target: https://dgfit.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://coveralls.io/repos/github/karllark/DGFit/badge.svg?branch=master
-    :target: https://coveralls.io/github/karllark/DGFit?branch=master
+.. image:: https://github.com/karllark/dust_extinction/workflows/Python%20Tests/badge.svg
+   :target: https://github.com/karllark/dust_extinction/actions/
+   :alt: Test Status
+
+.. image:: https://codecov.io/gh/karllark/dust_extinction/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/karllark/dust_extinction
+   :alt: Test Coverage Status
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org

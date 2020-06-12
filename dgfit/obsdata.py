@@ -72,10 +72,16 @@ class ObsData(object):
     """
 
     # read in the data from files
-    def __init__(self, ext_filenames, avnhi_filename,
-                 abund_filename, ir_emis_filename,
-                 dust_scat_filename, ext_tags=None,
-                 scat_path="./"):
+    def __init__(
+        self,
+        ext_filenames,
+        avnhi_filename,
+        abund_filename,
+        ir_emis_filename,
+        dust_scat_filename,
+        ext_tags=None,
+        scat_path="./",
+    ):
 
         # extinction curve
         self.fit_extinction = True
@@ -86,18 +92,15 @@ class ObsData(object):
 
         if isinstance(ext_filenames, (list, tuple)):
             for i, filename in enumerate(ext_filenames):
-                t = Table.read(filename, format='ascii.commented_header')
-                self.ext_waves = np.concatenate([self.ext_waves,
-                                                 1.0/t['wave']])
-                self.ext_alav = np.concatenate([self.ext_alav,
-                                                t['A(l)/A(V)']])
-                self.ext_alav_unc = np.concatenate([self.ext_alav_unc,
-                                                    t['unc']])
+                t = Table.read(filename, format="ascii.commented_header")
+                self.ext_waves = np.concatenate([self.ext_waves, 1.0 / t["wave"]])
+                self.ext_alav = np.concatenate([self.ext_alav, t["A(l)/A(V)"]])
+                self.ext_alav_unc = np.concatenate([self.ext_alav_unc, t["unc"]])
                 if ext_tags is not None:
                     cur_tag = ext_tags[i]
                 else:
-                    cur_tag = 'Tag' + str(i+1)
-                self.ext_tags = self.ext_tags + len(t['wave'])*[cur_tag]
+                    cur_tag = "Tag" + str(i + 1)
+                self.ext_tags = self.ext_tags + len(t["wave"]) * [cur_tag]
         else:
             # assume it is a FITS file (need to add checks)
             hdulist = fits.open(ext_filenames)
@@ -107,18 +110,19 @@ class ObsData(object):
                 #  need to get a better file format for FITS extinction curves
                 #  units, etc.
                 trv = 3.65
-                ext = (t['EXT']/trv) + 1
-                ext_unc = t['UNC']/trv
+                ext = (t["EXT"] / trv) + 1
+                ext_unc = t["UNC"] / trv
 
                 # only keep positive measurements
-                gindxs, = np.where(ext > 0.0)
-                self.ext_waves = np.concatenate([self.ext_waves,
-                                                 t['WAVELENGTH'][gindxs]])
+                (gindxs,) = np.where(ext > 0.0)
+                self.ext_waves = np.concatenate(
+                    [self.ext_waves, t["WAVELENGTH"][gindxs]]
+                )
                 self.ext_alav = np.concatenate([self.ext_alav, ext[gindxs]])
-                self.ext_alav_unc = np.concatenate([self.ext_alav_unc,
-                                                    ext_unc[gindxs]])
-                self.ext_tags = self.ext_tags + \
-                    len(t['WAVELENGTH'])*[hdulist[i].header['EXTNAME']]
+                self.ext_alav_unc = np.concatenate([self.ext_alav_unc, ext_unc[gindxs]])
+                self.ext_tags = self.ext_tags + len(t["WAVELENGTH"]) * [
+                    hdulist[i].header["EXTNAME"]
+                ]
 
             hdulist.close()
 
@@ -130,43 +134,43 @@ class ObsData(object):
         self.ext_tags = np.array(self.ext_tags)[sindxs]
 
         # normalization from A(V) to N(HI)
-        t = Table.read(avnhi_filename,
-                       format='ascii.commented_header',
-                       header_start=-1)
-        self.avnhi = t['Av_to_NHI'][0]
-        self.avnhi_unc = t['unc'][0]
+        t = Table.read(avnhi_filename, format="ascii.commented_header", header_start=-1)
+        self.avnhi = t["Av_to_NHI"][0]
+        self.avnhi_unc = t["unc"][0]
 
         # change the extinction normalization from A(V) to N(HI)
-        self.ext_alnhi = self.ext_alav*self.avnhi
-        self.ext_alnhi_unc = (np.square(self.ext_alav_unc/self.ext_alav)
-                              + np.square(self.avnhi_unc/self.avnhi))
-        self.ext_alnhi_unc = self.ext_alnhi*np.sqrt(self.ext_alnhi_unc)
+        self.ext_alnhi = self.ext_alav * self.avnhi
+        self.ext_alnhi_unc = np.square(self.ext_alav_unc / self.ext_alav) + np.square(
+            self.avnhi_unc / self.avnhi
+        )
+        self.ext_alnhi_unc = self.ext_alnhi * np.sqrt(self.ext_alnhi_unc)
 
         # dust abundances
         self.fit_abundance = False
         if abund_filename is not None:
             self.fit_abundance = True
-            t = Table.read(abund_filename, format='ascii.commented_header')
+            t = Table.read(abund_filename, format="ascii.commented_header")
             self.abundance = {}
             self.total_abundance = {}
             for i in range(len(t)):
-                self.abundance[t['atom'][i]] = (t['abund'][i],
-                                                t['abund_unc'][i])
-                self.total_abundance[t['atom'][i]] = (t['total_abund'][i],
-                                                      t['total_abund_unc'][i])
+                self.abundance[t["atom"][i]] = (t["abund"][i], t["abund_unc"][i])
+                self.total_abundance[t["atom"][i]] = (
+                    t["total_abund"][i],
+                    t["total_abund_unc"][i],
+                )
 
         # diffuse IR emission spectrum
         self.fit_ir_emission = False
         if ir_emis_filename is not None:
             self.fit_ir_emission = True
-            t = Table.read(ir_emis_filename, format='ascii.commented_header')
-            self.ir_emission_waves = np.array(t['WAVE'])
-            self.ir_emission = np.array(t['SPEC'])/1e20
-            self.ir_emission_unc = np.array(t['ERROR'])/1e20
+            t = Table.read(ir_emis_filename, format="ascii.commented_header")
+            self.ir_emission_waves = np.array(t["WAVE"])
+            self.ir_emission = np.array(t["SPEC"]) / 1e20
+            self.ir_emission_unc = np.array(t["ERROR"]) / 1e20
             # check if any uncs are zero
-            gindxs, = np.where(self.ir_emission_unc == 0.0)
+            (gindxs,) = np.where(self.ir_emission_unc == 0.0)
             if len(gindxs) > 0:
-                self.ir_emission_unc[gindxs] = 0.1*self.ir_emission[gindxs]
+                self.ir_emission_unc[gindxs] = 0.1 * self.ir_emission[gindxs]
 
             # sort
             sindxs = np.argsort(self.ir_emission_waves)
@@ -180,10 +184,21 @@ class ObsData(object):
         if dust_scat_filename is not None:
             self.fit_scat_a = True
             self.fit_scat_g = True
-            files_dgl = ["mathis73", "morgan76", "lillie76", "toller81",
-                         "murthy93", "murthy95", "petersohn97", "witt97",
-                         "schiminovich01", "shalima04", "sujatha05",
-                         "sujatha07", "sujatha10"]
+            files_dgl = [
+                "mathis73",
+                "morgan76",
+                "lillie76",
+                "toller81",
+                "murthy93",
+                "murthy95",
+                "petersohn97",
+                "witt97",
+                "schiminovich01",
+                "shalima04",
+                "sujatha05",
+                "sujatha07",
+                "sujatha10",
+            ]
 
             scat_waves = []
             scat_albedo = []
@@ -192,24 +207,24 @@ class ObsData(object):
             scat_g_unc = []
             scat_ref = []
             for sfile in files_dgl:
-                f = open(scat_path + sfile + '.dat', 'r')
+                f = open(scat_path + sfile + ".dat", "r")
                 ref = f.readline().rstrip()
                 f.close()
 
-                t = Table.read(scat_path+sfile+'.dat',
-                               format='ascii',
-                               header_start=1)
+                t = Table.read(
+                    scat_path + sfile + ".dat", format="ascii", header_start=1
+                )
                 for k in range(len(t)):
-                    scat_waves.append(t['wave,'][k])
-                    scat_albedo.append(t['albedo,'][k])
-                    scat_albedo_unc.append(t['delta,'][k])
-                    scat_g.append(t['g,'][k])
-                    scat_g_unc.append(t['delta'][k])
+                    scat_waves.append(t["wave,"][k])
+                    scat_albedo.append(t["albedo,"][k])
+                    scat_albedo_unc.append(t["delta,"][k])
+                    scat_g.append(t["g,"][k])
+                    scat_g_unc.append(t["delta"][k])
                     scat_ref.append(ref)
 
             # remove all the measurements with zero uncertainty
-            gindxs, = np.where(np.array(scat_albedo_unc) > 0.0)
-            self.scat_a_waves = np.array(scat_waves)[gindxs]*1e-4
+            (gindxs,) = np.where(np.array(scat_albedo_unc) > 0.0)
+            self.scat_a_waves = np.array(scat_waves)[gindxs] * 1e-4
             self.scat_albedo = np.array(scat_albedo)[gindxs]
             self.scat_albedo_unc = np.array(scat_albedo_unc)[gindxs]
             self.scat_a_ref = np.array(scat_ref)[gindxs]
@@ -222,8 +237,8 @@ class ObsData(object):
             self.scat_a_ref = self.scat_a_ref[sindxs]
 
             # remove all the measurements with zero uncertainty
-            gindxs, = np.where(np.array(scat_g_unc) > 0.0)
-            self.scat_g_waves = np.array(scat_waves)[gindxs]*1e-4
+            (gindxs,) = np.where(np.array(scat_g_unc) > 0.0)
+            self.scat_g_waves = np.array(scat_waves)[gindxs] * 1e-4
             self.scat_g = np.array(scat_g)[gindxs]
             self.scat_g_unc = np.array(scat_g_unc)[gindxs]
             self.scat_g_ref = np.array(scat_ref)[gindxs]

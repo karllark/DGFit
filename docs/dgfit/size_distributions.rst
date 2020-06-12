@@ -41,7 +41,7 @@ and :math:`a_{max} = 2~\mu m` is shown below.
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from DGFit.DustModel import MRNDustModel
+    from dgfit.dustmodel import MRNDustModel
 
     fig, ax = plt.subplots()
 
@@ -77,7 +77,7 @@ by multiplying by :math:`a^4`.
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from DGFit.DustModel import MRNDustModel
+    from dgfit.dustmodel import MRNDustModel
 
     fig, ax = plt.subplots()
 
@@ -181,7 +181,7 @@ For the carbonaceous grains :math:`C = 4.15\times 10^{-11}`,
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from DGFit.DustModel import WDDustModel
+    from dgfit.dustmodel import WDDustModel
 
     fig, ax = plt.subplots()
 
@@ -227,7 +227,7 @@ by multiplying by :math:`a^4`.
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from DGFit.DustModel import WDDustModel
+    from dgfit.dustmodel import WDDustModel
 
     fig, ax = plt.subplots()
 
