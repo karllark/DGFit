@@ -5,12 +5,12 @@ DGFit
     :target: https://dgfit.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://github.com/karllark/dust_extinction/workflows/Python%20Tests/badge.svg
-   :target: https://github.com/karllark/dust_extinction/actions/
+.. image:: https://github.com/karllark/DGFit/workflows/Python%20Tests/badge.svg
+   :target: https://github.com/karllark/DGFit/actions/
    :alt: Test Status
 
-.. image:: https://codecov.io/gh/karllark/dust_extinction/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/karllark/dust_extinction
+.. image:: https://codecov.io/gh/karllark/DGFit/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/karllark/DGFit
    :alt: Test Coverage Status
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
