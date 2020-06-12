@@ -17,7 +17,7 @@ MRN
 ===
 
 The commonly used `Mathis, Rumpl, & Nordsieck (1977)
-<https://ui.adsabs.harvard.edu//#abs/1977ApJ...217..425M/abstract>`_
+<https://ui.adsabs.harvard.edu/abs/1977ApJ...217..425M/abstract>`_
 size distribution is a powerlaw of the form:
 
 .. math::
@@ -108,7 +108,7 @@ WD
 ==
 
 `Weingartner & Draine (2001)
-<https://ui.adsabs.harvard.edu//#abs/2001ApJ...548..296W/abstract>`_
+<https://ui.adsabs.harvard.edu/abs/2001ApJ...548..296W/abstract>`_
 size distributions are the referenced paper.  Combining the equations from
 the paper results in a general form that applies to both carbonaceous and
 silicate grains.  In the equation below, the first term provides a
