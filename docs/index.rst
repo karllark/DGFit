@@ -11,8 +11,8 @@ User Documentation
 .. toctree::
    :maxdepth: 2
 
-   Running DGFit <DGFit/running_dgfit.rst>
-   Size Distributions <DGFit/size_distributions.rst>
+   Running DGFit <dgfit/running_dgfit.rst>
+   Size Distributions <dgfit/size_distributions.rst>
 
 Installation
 ============
@@ -20,7 +20,7 @@ Installation
 .. toctree::
   :maxdepth: 2
 
-  How to install <DGFit/install.rst>
+  How to install <dgfit/install.rst>
 
 Repository
 ==========
@@ -74,9 +74,9 @@ contributors page on Github
 Reference API
 =============
 
-.. automodapi:: DGFit.ObsData
+.. automodapi:: dgfit.obsdata
 
-.. automodapi:: DGFit.DustGrains
+.. automodapi:: dgfit.dustgrains
 
-.. automodapi:: DGFit.DustModel
+.. automodapi:: dgfit.dustmodel
     :inherited-members:
