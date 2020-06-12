@@ -34,7 +34,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     DG = DustGrains()
-    DG.from_files(args.composition, path="DGFit/data/indiv_grain/")
+    DG.from_files(args.composition, path="dgfit/data/indiv_grain/")
 
     if args.obsdata:
         OD = ObsData(
