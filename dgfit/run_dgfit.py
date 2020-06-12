@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
     # get the observed data
     if args.smc:
-        path = "DGFit/data/smc_azv215"
+        path = "dgfit/data/smc_azv215"
         obsdata = ObsData(
             "%s/azv215_50p_ext.fits" % path,
             "%s/azv215_avnhi.dat" % path,
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             None,
         )
     else:
-        path = "DGFit/data/mw_rv31"
+        path = "dgfit/data/mw_rv31"
         obsdata = ObsData(
             [
                 "%s/MW_diffuse_Gordon09_band_ext.dat" % path,
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     compnames = ["astro-silicates", "astro-carbonaceous"]
     dustmodel_full = DustModel(
         componentnames=compnames,
-        path="DGFit/data/indiv_grain/",
+        path="dgfit/data/indiv_grain/",
         every_nth=args.everynth,
     )
 

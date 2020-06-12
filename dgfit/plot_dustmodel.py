@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
 
-    path = "DGFit/data/mw_rv31"
+    path = "dgfit/data/mw_rv31"
     OD = ObsData(
         [
             "%s/MW_diffuse_Gordon09_band_ext.dat" % path,
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # dustmodel = DustModel(['astro-silicates','astro-graphite'])
     DM = DustModel()
     DM.predict_full_grid(
-        ["astro-silicates", "astro-carbonaceous"], path="DGFit/data/indiv_grain/"
+        ["astro-silicates", "astro-carbonaceous"], path="dgfit/data/indiv_grain/"
     )
 
     if args.obsdata:
