@@ -1,16 +1,11 @@
 #!/usr/bin/env python
-#
-# plot_DGFit
-#
-# Started: Dec 2015 (KDG)
-
-from __future__ import print_function
 
 import argparse
 
 import numpy as np
 import matplotlib.pyplot as pyplot
 import matplotlib
+from matplotlib.ticker import ScalarFormatter
 
 from astropy.io import fits
 
@@ -20,13 +15,20 @@ from dgfit.obsdata import ObsData
 def get_krange(x, logaxis=False, in_range=[0]):
 
     prange = np.array([0.0, 0.0])
-    min_x = np.amin(x)
-    max_x = np.amax(x)
     if logaxis:
-        min_x = np.log10(min_x)
+        gindxs = x > 0
+        min_x = np.amin(x[gindxs])
+        max_x = np.amax(x[gindxs])
+    else:
+        min_x = np.amin(x)
+        max_x = np.amax(x)
+
+    if logaxis:
         max_x = np.log10(max_x)
-        if not np.isfinite(min_x):
+        if min_x <= 0.0:
             min_x = max_x - 10.0
+        else:
+            min_x = np.log10(min_x)
 
     delta = max_x - min_x
     prange[0] = min_x - 0.1 * delta
@@ -44,7 +46,14 @@ def get_krange(x, logaxis=False, in_range=[0]):
 
 # plot the size distributions
 def plot_dgfit_sizedist(
-    ax, hdulist, colors=["b", "g"], fontsize=12, multa4=True, plegend=True
+    ax,
+    hdulist,
+    colors=["b", "g"],
+    fontsize=12,
+    multa4=True,
+    plegend=True,
+    ltype="-",
+    alpha=1.0,
 ):
 
     if "DISTPUNC" in hdulist[1].data.names:
@@ -75,16 +84,28 @@ def plot_dgfit_sizedist(
             yrange = get_krange(yvals - yvals_munc, logaxis=True, in_range=yrange)
             yrange = get_krange(yvals + yvals_punc, logaxis=True, in_range=yrange)
 
-        ax.plot(xvals, yvals, colors[i] + "-", label=hdu.header["EXTNAME"])
+        gindxs = yvals > 0
+
+        ax.plot(
+            xvals[gindxs],
+            yvals[gindxs],
+            colors[i] + ltype,
+            label=hdu.header["EXTNAME"],
+            alpha=alpha,
+        )
         if plot_uncs:
             ax.errorbar(
-                xvals, yvals, fmt=colors[i] + "o", yerr=[yvals_munc, yvals_punc]
+                xvals[gindxs],
+                yvals[gindxs],
+                fmt=colors[i] + "o",
+                yerr=[yvals_munc[gindxs], yvals_punc[gindxs]],
+                alpha=alpha,
             )
 
     if multa4:
-        ylabel = r"$a^4 N_d(a)/N(HI)$"
+        ylabel = r"$a^4 N_d(a)/N(H)$"
     else:
-        ylabel = r"$N_d(a)/N(HI)$"
+        ylabel = r"$N_d(a)/N(H)$"
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -105,7 +126,7 @@ def plot_dgfit_abundances(ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12)
     n_atoms = len(atomnames)
     aindxs = np.arange(n_atoms)
     width = 0.5
-    ax.bar(aindxs + 0.25 * width, atomabund, width, color=colors[0])
+    ax.bar(aindxs + 0.75 * width, atomabund, width, color="r", alpha=0.15)
 
     ax.errorbar(
         aindxs + 0.75 * width,
@@ -114,26 +135,24 @@ def plot_dgfit_abundances(ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12)
         fmt="ko",
     )
 
-    ax.set_ylabel(r"$N(X)/[10^6 N(HI)]$", fontsize=fontsize)
+    ax.set_ylabel(r"$N(X)/[10^6 N(H)]$", fontsize=fontsize)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
 
 
 # plot the extinction curves (total and components)
 def plot_dgfit_extinction(
-    ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True
+    ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True, ltype="-"
 ):
 
-    ax.plot(hdu.data["WAVE"], hdu.data["EXT"], colors[0] + "-")
+    ax.plot(hdu.data["WAVE"], hdu.data["EXT"], colors[0] + ltype)
     yrange = get_krange(hdu.data["EXT"], logaxis=True)
     if comps:
         # linetypes = ['--', ':', '-.']
-        linetypes = ["-", "-", "-", "-", "-"]
+        # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
             ax.plot(
-                hdu.data["WAVE"],
-                hdu.data["EXT" + str(i + 1)],
-                colors[i + 1] + linetypes[i],
+                hdu.data["WAVE"], hdu.data["EXT" + str(i + 1)], colors[i + 1] + ltype,
             )
             yrange = get_krange(
                 hdu.data["EXT" + str(i + 1)], logaxis=True, in_range=yrange
@@ -145,7 +164,7 @@ def plot_dgfit_extinction(
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"$A(\lambda)/N(HI)$", fontsize=fontsize)
+    ax.set_ylabel(r"$A(\lambda)/N(H)$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
@@ -153,18 +172,16 @@ def plot_dgfit_extinction(
 
 # plot the emission spectra (total and components)
 def plot_dgfit_emission(
-    ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True
+    ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True, ltype="-"
 ):
 
-    ax.plot(hdu.data["WAVE"], hdu.data["EMIS"], colors[0] + "-")
+    ax.plot(hdu.data["WAVE"], hdu.data["EMIS"], colors[0] + ltype)
     yrange = get_krange(hdu.data["EMIS"], logaxis=True)
     if comps:
-        linetypes = ["-", "-", "-", "-", "-"]
+        # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
             ax.plot(
-                hdu.data["WAVE"],
-                hdu.data["EMIS" + str(i + 1)],
-                colors[i + 1] + linetypes[i],
+                hdu.data["WAVE"], hdu.data["EMIS" + str(i + 1)], colors[i + 1] + ltype,
             )
             yrange = get_krange(
                 hdu.data["EMIS" + str(i + 1)], logaxis=True, in_range=yrange
@@ -182,7 +199,7 @@ def plot_dgfit_emission(
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$", fontsize=fontsize)
+    ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(H)^{-1}]$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
@@ -190,18 +207,18 @@ def plot_dgfit_emission(
 
 # plot the dust scattering albedo
 def plot_dgfit_albedo(
-    ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True
+    ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True, ltype="-"
 ):
 
-    ax.plot(hdu.data["WAVE"], hdu.data["ALBEDO"], colors[0] + "-")
+    ax.plot(hdu.data["WAVE"], hdu.data["ALBEDO"], colors[0] + ltype)
     yrange = get_krange(hdu.data["ALBEDO"])
     if comps:
-        linetypes = ["-", "-", "-", "-", "-"]
+        # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["ALBEDO" + str(i + 1)],
-                colors[i + 1] + linetypes[i],
+                colors[i + 1] + ltype,
             )
             yrange = get_krange(hdu.data["ALBEDO" + str(i + 1)], in_range=yrange)
 
@@ -212,14 +229,15 @@ def plot_dgfit_albedo(
         fmt="ko",
         label="Observed",
     )
-    yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
+    # yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$albedo$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim([0.0, 1.0])
+    # ax.set_ylim(yrange)
 
 
 if __name__ == "__main__":
@@ -233,6 +251,9 @@ if __name__ == "__main__":
             + "(size distribution, extinction, etc.)"
         ),
     )
+    parser.add_argument(
+        "--start", help="include the starting model", action="store_true"
+    )
     parser.add_argument("--smc", help="use an SMC sightline", action="store_true")
     parser.add_argument(
         "-p", "--png", help="save figure as a png file", action="store_true"
@@ -244,7 +265,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # setup the plots
-    fontsize = 12
+    fontsize = 16
     font = {"size": fontsize}
 
     matplotlib.rc("font", **font)
@@ -288,6 +309,7 @@ if __name__ == "__main__":
     # plot the dust size distributions
     colors = ["b", "g"]
     plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, multa4=False)
+
     plot_dgfit_sizedist(ax[1, 0], hdulist, fontsize=fontsize, plegend=False)
 
     # plot the abundances
@@ -301,6 +323,36 @@ if __name__ == "__main__":
 
     # plot the resulting total and component emission spectra
     plot_dgfit_albedo(ax[1, 2], hdulist["ALBEDO"], OD, fontsize=fontsize)
+
+    if args.start:
+        hdulist2 = fits.open(args.filename.replace("best_fin", "start"))
+        plot_dgfit_sizedist(
+            ax[0, 0],
+            hdulist2,
+            fontsize=fontsize,
+            multa4=False,
+            plegend=False,
+            ltype="--",
+            alpha=0.5,
+        )
+        plot_dgfit_sizedist(
+            ax[1, 0], hdulist2, fontsize=fontsize, plegend=False, ltype="--", alpha=0.50
+        )
+        plot_dgfit_extinction(
+            ax[1, 1], hdulist2["EXTINCTION"], OD, fontsize=fontsize, ltype="--"
+        )
+        plot_dgfit_emission(
+            ax[0, 2], hdulist2["EMISSION"], OD, fontsize=fontsize, ltype="--"
+        )
+        plot_dgfit_albedo(
+            ax[1, 2], hdulist2["ALBEDO"], OD, fontsize=fontsize, ltype="--"
+        )
+
+    ax[0, 0].set_ylim(1e-14, 1e2)
+    ax[1, 0].set_ylim(1e-31, 3e-27)
+
+    ax[1, 2].xaxis.set_major_formatter(ScalarFormatter())
+    ax[1, 2].xaxis.set_minor_formatter(ScalarFormatter())
 
     pyplot.tight_layout()
 

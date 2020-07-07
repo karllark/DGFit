@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
         # replace the default size distribution with one from a file
         if args.read is not None:
-            dustmodel.sizedist_from_file(args.read)
+            dustmodel.read_sizedist_from_file(args.read)
 
         else:
             # check that the default size distributions give approximately
