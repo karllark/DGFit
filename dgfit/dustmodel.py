@@ -63,7 +63,10 @@ class DustModel(object):
         if componentnames is not None:
             self.read_grain_files(componentnames, path=path, every_nth=every_nth)
         elif dustmodel is not None:
-            self.grains_on_obs(dustmodel, obsdata)
+            if obsdata is not None:
+                self.grains_on_obs(dustmodel, obsdata)
+            else:
+                self.grains_on_model(dustmodel)
 
         # set the number of size distribution parametres
         if self.n_components > 0:
@@ -122,6 +125,28 @@ class DustModel(object):
             cur_DG = DustGrains()
             cur_DG.from_object(component, observeddata)
             self.components.append(cur_DG)
+
+    def grains_on_model(self, full_dustmodel):
+        """
+        Calculate the dust grain properties on the model grid
+        (simple copy). Uses an existing DustModel based
+        on the full precomputed files and an ObsData object
+        to get the wavelength grid.  Makes the fitting faster
+        to only do this transformation once.
+
+        Parameters
+        ----------
+        full_dustmodel : DustModel object
+            full dust model based on input files
+
+        Returns
+        -------
+        updated class variables
+        """
+        self.origin = "onmodel"
+        self.n_components = full_dustmodel.n_components
+        for component in full_dustmodel.components:
+            self.components.append(component)
 
     def compute_size_dist(self, x, params):
         """

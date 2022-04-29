@@ -46,7 +46,7 @@ if __name__ == "__main__":
         )
 
     # setup the plots
-    fontsize = 12
+    fontsize = 16
     font = {"size": fontsize}
 
     matplotlib.rc("font", **font)
