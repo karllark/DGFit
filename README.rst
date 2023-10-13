@@ -17,8 +17,8 @@ DGFit
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-.. image:: https://api.codacy.com/project/badge/Grade/748429f338714270bb5fffd87a0183b5
-   :target: https://www.codacy.com/manual/kgordon/DGFit?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=karllark/DGFit&amp;utm_campaign=Badge_Grade
+.. image:: https://app.codacy.com/project/badge/Grade/2049bdf41a0240b788d58a5f3e7de9ab
+   :target: https://app.codacy.com/gh/karllark/DGFit/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
    :alt: Codacy Status
 
 DGFit derives dust grain size and composition distributions based on
