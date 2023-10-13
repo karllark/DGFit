@@ -17,9 +17,9 @@ DGFit
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-.. image:: https://img.shields.io/lgtm/grade/python/g/karllark/DGFit.svg?logo=lgtm&logoWidth=18
-    :target: https://lgtm.com/projects/g/karllark/DGFit/context:python
-    :alt: Language grade: Python
+.. image:: https://api.codacy.com/project/badge/Grade/748429f338714270bb5fffd87a0183b5
+   :target: https://www.codacy.com/manual/kgordon/DGFit?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=karllark/DGFit&amp;utm_campaign=Badge_Grade
+   :alt: Codacy Status
 
 DGFit derives dust grain size and composition distributions based on
 fitting the observed properties of interstellar dust.
@@ -35,7 +35,7 @@ In Development!
 This code is currently in active development.  It is not currently
 fully functional.  Valid results are not expected at this stage.
 Once the code has provided valid results, a paper describing the details
-will be published (Gordon & Misselt, 201X, in prep.).
+will be published (Gordon & Misselt, 202X, in prep.).
 
 License
 -------
