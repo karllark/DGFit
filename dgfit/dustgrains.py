@@ -23,9 +23,6 @@ class DustGrains(object):
     """
     DustGrains Class
 
-    Parameters
-    ----------
-
     Attributes
     ----------
     origin : 'string'
