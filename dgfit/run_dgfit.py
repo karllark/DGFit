@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
+import pkg_resources
 import sys
 import time
 import argparse
@@ -15,7 +14,6 @@ from dgfit.obsdata import ObsData
 
 
 def DGFit_cmdparser():
-
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -111,16 +109,15 @@ def set_obs_for_fitting(obdata, fitobs):
 
 
 if __name__ == "__main__":
-
     parser = DGFit_cmdparser()
 
     args = parser.parse_args()
 
     # set the basename of the output
-    basename = "%s_%s" % (args.tag, args.sizedisttype)
+    basename = f"{args.tag}_{args.sizedisttype}"
 
     # save the start time
-    start_time = time.clock()
+    start_time = time.process_time()
 
     # emcee parameters
     if args.fast:
@@ -135,30 +132,34 @@ if __name__ == "__main__":
         burn = int(args.nburn)
         nsteps = int(args.nsteps)
 
+    # get the location of the provided data
+    data_path = pkg_resources.resource_filename("dgfit", "data/")
+
     # get the observed data
     if args.smc:
-        path = "dgfit/data/smc_azv215"
+        path = f"{data_path}/smc_azv215"
         obsdata = ObsData(
-            "%s/azv215_50p_ext.fits" % path,
-            "%s/azv215_avnhi.dat" % path,
-            "%s/SMC_AzV215_abundances.dat" % path,
+            f"{path}/azv215_50p_ext.fits",
+            f"{path}/azv215_avnhi.dat",
+            f"{path}/SMC_AzV215_abundances.dat",
             None,
             None,
         )
     else:
-        path = "dgfit/data/mw_rv31"
+
+        path = f"{data_path}/mw_rv31"
         obsdata = ObsData(
             [
-                "%s/MW_diffuse_Gordon09_band_ext.dat" % path,
-                "%s/MW_diffuse_Gordon09_iue_ext.dat" % path,
-                "%s/MW_diffuse_Gordon09_fuse_ext.dat" % path,
+                f"{path}/MW_diffuse_Gordon09_band_ext.dat",
+                f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
+                f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
             ],
-            "%s/MW_diffuse_Gordon09_avnhi.dat" % path,
-            "%s/MW_diffuse_Jenkins09_abundances.dat" % path,
-            "%s/MW_diffuse_Compiegne11_ir_emission.dat" % path,
-            "%s/dust_scat.dat" % path,
+            f"{path}/MW_diffuse_Gordon09_avnhi.dat",
+            f"{path}/MW_diffuse_Jenkins09_abundances.dat",
+            f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
+            f"{path}/dust_scat.dat",
             ext_tags=["band", "iue", "fuse"],
-            scat_path="%s/Scat_Data/" % path,
+            scat_path=f"{path}/Scat_Data/",
         )
 
     # determine what to fit based on what exists and the commandline args
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     compnames = ["astro-silicates", "astro-carbonaceous"]
     dustmodel_full = DustModel(
         componentnames=compnames,
-        path="dgfit/data/indiv_grain/",
+        path=f"{data_path}/indiv_grain/",
         every_nth=args.everynth,
     )
 
@@ -258,7 +259,7 @@ if __name__ == "__main__":
     dustmodel.save_results(basename + "_sizedist_start.fits", obsdata)
 
     # setup time
-    setup_time = time.clock()
+    setup_time = time.process_time()
     print("setup time taken: ", (setup_time - start_time) / 60.0, " min")
 
     # more emcee setup
@@ -347,7 +348,7 @@ if __name__ == "__main__":
 
     sys.stdout.write("\n")
 
-    emcee_time = time.clock()
+    emcee_time = time.process_time()
     print("emcee time taken: ", (emcee_time - setup_time) / 60.0, " min")
 
     # best fit dust params
