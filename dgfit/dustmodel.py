@@ -849,6 +849,7 @@ class MRNDustModel(DustModel):
             return lnp_bound
         else:
             dustmodel.set_size_dist(params)
+
             return dustmodel.lnprob_generic(obsdata) + lnp_bound
 
     def initial_walkers(self, p0, nwalkers):
