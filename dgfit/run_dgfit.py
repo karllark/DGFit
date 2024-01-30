@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import pkg_resources
 import sys
 import time
@@ -7,6 +5,7 @@ import argparse
 
 import numpy as np
 
+from scipy.optimize import minimize
 import emcee
 
 from dgfit.dustmodel import DustModel, MRNDustModel, WDDustModel
@@ -29,6 +28,9 @@ def DGFit_cmdparser():
         choices=["extinction", "iremission", "abundance", "albedo", "g", "all"],
         help="Which observations to fit",
     )
+
+    parser.add_argument("--mcmc", help="Do MCMC sampling using emcee package", action="store_true")
+
     parser.add_argument(
         "-f",
         "--fast",
@@ -75,7 +77,7 @@ def DGFit_cmdparser():
     return parser
 
 
-def set_obs_for_fitting(obdata, fitobs):
+def set_obs_for_fitting(obsdata, fitobs):
     """
     parse the requested list of observations for fitting and set the
     appropriate variables
@@ -108,7 +110,7 @@ def set_obs_for_fitting(obdata, fitobs):
     return fitobs_list
 
 
-if __name__ == "__main__":
+def main():
     parser = DGFit_cmdparser()
 
     args = parser.parse_args()
@@ -136,31 +138,20 @@ if __name__ == "__main__":
     data_path = pkg_resources.resource_filename("dgfit", "data/")
 
     # get the observed data
-    if args.smc:
-        path = f"{data_path}/smc_azv215"
-        obsdata = ObsData(
-            f"{path}/azv215_50p_ext.fits",
-            f"{path}/azv215_avnhi.dat",
-            f"{path}/SMC_AzV215_abundances.dat",
-            None,
-            None,
-        )
-    else:
-
-        path = f"{data_path}/mw_rv31"
-        obsdata = ObsData(
-            [
-                f"{path}/MW_diffuse_Gordon09_band_ext.dat",
-                f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
-                f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
-            ],
-            f"{path}/MW_diffuse_Gordon09_avnhi.dat",
-            f"{path}/MW_diffuse_Jenkins09_abundances.dat",
-            f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
-            f"{path}/dust_scat.dat",
-            ext_tags=["band", "iue", "fuse"],
-            scat_path=f"{path}/Scat_Data/",
-        )
+    path = f"{data_path}/mw_rv31"
+    obsdata = ObsData(
+        [
+            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
+            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
+            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
+        ],
+        f"{path}/MW_diffuse_Gordon09_avnhi.dat",
+        f"{path}/MW_diffuse_Jenkins09_abundances.dat",
+        f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
+        f"{path}/dust_scat.dat",
+        ext_tags=["band", "iue", "fuse"],
+        scat_path=f"{path}/Scat_Data/",
+    )
 
     # determine what to fit based on what exists and the commandline args
     fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
@@ -262,99 +253,112 @@ if __name__ == "__main__":
     setup_time = time.process_time()
     print("setup time taken: ", (setup_time - start_time) / 60.0, " min")
 
-    # more emcee setup
-    ndim = len(p0)
-    nwalkers = 2 * ndim
+    # do simple optimization to find the best fit
+    def nll(*args):
+        return -dustmodel.lnprob(*args)
+    soln = minimize(nll, p0, args=(obsdata, dustmodel), method="Nelder-Mead")
+    print(p0)
+    print(soln.x)
+    print(soln.message)
+    exit()
 
-    print("fitting ", fitobs_list)
-    print("# params = %i" % ndim)
-    print("# walkers = %i" % nwalkers)
-    print("# burn = %i" % burn)
-    print("# steps = %i" % nsteps)
+    if args.mcmc:
+        # more emcee setup
+        ndim = len(p0)
+        nwalkers = 2 * ndim
 
-    # setting up the walkers to start "near" the inital guess
-    p = dustmodel.initial_walkers(p0, nwalkers)
+        print("fitting ", fitobs_list)
+        print("# params = %i" % ndim)
+        print("# walkers = %i" % nwalkers)
+        print("# burn = %i" % burn)
+        print("# steps = %i" % nsteps)
 
-    # for pc in p:
-    #    print(dgfit_model.lnprob(pc, obsdata, dustmodel))
-    # exit()
+        # setting up the walkers to start "near" the inital guess
+        p = dustmodel.initial_walkers(p0, nwalkers)
 
-    # setup the sampler
-    sampler = emcee.EnsembleSampler(
-        nwalkers,
-        ndim,
-        dustmodel.lnprob,
-        args=(obsdata, dustmodel),
-        threads=int(args.cpus),
-    )
+        # for pc in p:
+        #    print(dgfit_model.lnprob(pc, obsdata, dustmodel))
+        # exit()
 
-    # incrementally save the full chain (burn+run) to a file
-    if args.chain:
-        inc_prog_fname = "%s_chain.dat" % basename
-        f = open(inc_prog_fname, "w")
-        f.close()
+        # setup the sampler
+        sampler = emcee.EnsembleSampler(
+            nwalkers,
+            ndim,
+            dustmodel.lnprob,
+            args=(obsdata, dustmodel),
+            threads=int(args.cpus),
+        )
 
-    # burn in the walkers
-    # pos, prob, state = sampler.run_mcmc(p, burn)
-    print("burn")
-    width = 60
-    for i, result in enumerate(sampler.sample(p, iterations=burn)):
-        n = int((width + 1) * float(i) / burn)
-        sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
-
+        # incrementally save the full chain (burn+run) to a file
         if args.chain:
-            position = result[0]
-            f = open(inc_prog_fname, "a")
-            for k in range(position.shape[0]):
-                pos_str = " ".join(str(e) for e in position[k])
-                f.write("{0:4d} {1:s}\n".format(k, pos_str))
+            inc_prog_fname = "%s_chain.dat" % basename
+            f = open(inc_prog_fname, "w")
             f.close()
 
-    sys.stdout.write("\n")
+        # burn in the walkers
+        # pos, prob, state = sampler.run_mcmc(p, burn)
+        print("burn")
+        width = 60
+        for i, result in enumerate(sampler.sample(p, iterations=burn)):
+            n = int((width + 1) * float(i) / burn)
+            sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
 
-    # decompose so the next sampling is done from the last position
-    pos, prob, state = result
+            if args.chain:
+                position = result[0]
+                f = open(inc_prog_fname, "a")
+                for k in range(position.shape[0]):
+                    pos_str = " ".join(str(e) for e in position[k])
+                    f.write("{0:4d} {1:s}\n".format(k, pos_str))
+                f.close()
 
-    # reset the sampler
-    sampler.reset()
+        sys.stdout.write("\n")
 
-    # do the full sampling
-    print("afterburn")
-    width = 60
-    save_frac = 0.1
-    if nsteps > 1000:
-        save_frac = 0.025
-    targ_out = int(save_frac * nsteps)
-    for i, result in enumerate(sampler.sample(pos, iterations=nsteps, rstate0=state)):
-        n = int((width + 1) * float(i) / nsteps)
-        sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
+        # decompose so the next sampling is done from the last position
+        pos, prob, state = result
 
-        # incrementally save the chain
-        if args.chain:
-            position = result[0]
-            f = open(inc_prog_fname, "a")
-            for k in range(position.shape[0]):
-                pos_str = " ".join(str(e) for e in position[k])
-                f.write("{0:4d} {1:s}\n".format(k, pos_str))
-            f.close()
+        # reset the sampler
+        sampler.reset()
 
-        # output the size distribution
-        if i > targ_out:
-            oname = "%s_sizedist_%i.fits" % (basename, targ_out)
-            dustmodel.save_50percentile_results(oname, sampler, obsdata, cur_step=i)
-            oname = "%s_sizedist_best_%i.fits" % (basename, targ_out)
-            dustmodel.save_best_results(oname, sampler, obsdata, cur_step=i)
-            targ_out += int(save_frac * nsteps)
+        # do the full sampling
+        print("afterburn")
+        width = 60
+        save_frac = 0.1
+        if nsteps > 1000:
+            save_frac = 0.025
+        targ_out = int(save_frac * nsteps)
+        for i, result in enumerate(sampler.sample(pos, iterations=nsteps, rstate0=state)):
+            n = int((width + 1) * float(i) / nsteps)
+            sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
 
-    sys.stdout.write("\n")
+            # incrementally save the chain
+            if args.chain:
+                position = result[0]
+                f = open(inc_prog_fname, "a")
+                for k in range(position.shape[0]):
+                    pos_str = " ".join(str(e) for e in position[k])
+                    f.write("{0:4d} {1:s}\n".format(k, pos_str))
+                f.close()
 
-    emcee_time = time.process_time()
-    print("emcee time taken: ", (emcee_time - setup_time) / 60.0, " min")
+            # output the size distribution
+            if i > targ_out:
+                oname = "%s_sizedist_%i.fits" % (basename, targ_out)
+                dustmodel.save_50percentile_results(oname, sampler, obsdata, cur_step=i)
+                oname = "%s_sizedist_best_%i.fits" % (basename, targ_out)
+                dustmodel.save_best_results(oname, sampler, obsdata, cur_step=i)
+                targ_out += int(save_frac * nsteps)
 
-    # best fit dust params
-    oname = "%s_sizedist_best_fin.fits" % (basename)
-    dustmodel.save_best_results(oname, sampler, obsdata)
+        sys.stdout.write("\n")
 
-    # 50p dust params
-    oname = "%s_sizedist_fin.fits" % (basename)
-    dustmodel.save_50percentile_results(oname, sampler, obsdata)
+        emcee_time = time.process_time()
+        print("emcee time taken: ", (emcee_time - setup_time) / 60.0, " min")
+
+        # best fit dust params
+        oname = "%s_sizedist_best_fin.fits" % (basename)
+        dustmodel.save_best_results(oname, sampler, obsdata)
+
+        # 50p dust params
+        oname = "%s_sizedist_fin.fits" % (basename)
+        dustmodel.save_50percentile_results(oname, sampler, obsdata)
+
+if __name__ == "__main__":
+    main()

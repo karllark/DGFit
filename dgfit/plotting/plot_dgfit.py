@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+import pkg_resources
 import argparse
 
 import numpy as np
@@ -13,7 +12,6 @@ from dgfit.obsdata import ObsData
 
 
 def get_krange(x, logaxis=False, in_range=[0]):
-
     prange = np.array([0.0, 0.0])
     if logaxis:
         gindxs = x > 0
@@ -55,7 +53,6 @@ def plot_dgfit_sizedist(
     ltype="-",
     alpha=1.0,
 ):
-
     if "DISTPUNC" in hdulist[1].data.names:
         plot_uncs = True
     else:
@@ -119,7 +116,6 @@ def plot_dgfit_sizedist(
 
 # plot the atomic abundances
 def plot_dgfit_abundances(ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12):
-
     # plot the dust abundances
     atomnames = hdu.data["NAME"]
     atomabund = hdu.data["ABUND"]
@@ -144,7 +140,6 @@ def plot_dgfit_abundances(ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12)
 def plot_dgfit_extinction(
     ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True, ltype="-"
 ):
-
     ax.plot(hdu.data["WAVE"], hdu.data["EXT"], colors[0] + ltype)
     yrange = get_krange(hdu.data["EXT"], logaxis=True)
     if comps:
@@ -152,7 +147,9 @@ def plot_dgfit_extinction(
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
             ax.plot(
-                hdu.data["WAVE"], hdu.data["EXT" + str(i + 1)], colors[i + 1] + ltype,
+                hdu.data["WAVE"],
+                hdu.data["EXT" + str(i + 1)],
+                colors[i + 1] + ltype,
             )
             yrange = get_krange(
                 hdu.data["EXT" + str(i + 1)], logaxis=True, in_range=yrange
@@ -174,14 +171,15 @@ def plot_dgfit_extinction(
 def plot_dgfit_emission(
     ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True, ltype="-"
 ):
-
     ax.plot(hdu.data["WAVE"], hdu.data["EMIS"], colors[0] + ltype)
     yrange = get_krange(hdu.data["EMIS"], logaxis=True)
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
             ax.plot(
-                hdu.data["WAVE"], hdu.data["EMIS" + str(i + 1)], colors[i + 1] + ltype,
+                hdu.data["WAVE"],
+                hdu.data["EMIS" + str(i + 1)],
+                colors[i + 1] + ltype,
             )
             yrange = get_krange(
                 hdu.data["EMIS" + str(i + 1)], logaxis=True, in_range=yrange
@@ -209,7 +207,6 @@ def plot_dgfit_emission(
 def plot_dgfit_albedo(
     ax, hdu, obsdata, colors=["r", "b", "g"], fontsize=12, comps=True, ltype="-"
 ):
-
     ax.plot(hdu.data["WAVE"], hdu.data["ALBEDO"], colors[0] + ltype)
     yrange = get_krange(hdu.data["ALBEDO"])
     if comps:
@@ -240,8 +237,7 @@ def plot_dgfit_albedo(
     # ax.set_ylim(yrange)
 
 
-if __name__ == "__main__":
-
+def main():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -280,31 +276,25 @@ if __name__ == "__main__":
     # open the DGFit results
     hdulist = fits.open(args.filename)
 
+    # get the location of the provided data
+    data_path = pkg_resources.resource_filename("dgfit", "data/")
+
     # get the observed data
-    if args.smc:
-        path = "dgfit/data/smc_azv215"
-        OD = ObsData(
-            "%s/azv215_50p_ext.fits" % path,
-            "%s/azv215_avnhi.dat" % path,
-            "%s/SMC_AzV215_abundances.dat" % path,
-            None,
-            None,
-        )
-    else:
-        path = "dgfit/data/mw_rv31"
-        OD = ObsData(
-            [
-                "%s/MW_diffuse_Gordon09_band_ext.dat" % path,
-                "%s/MW_diffuse_Gordon09_iue_ext.dat" % path,
-                "%s/MW_diffuse_Gordon09_fuse_ext.dat" % path,
-            ],
-            "%s/MW_diffuse_Gordon09_avnhi.dat" % path,
-            "%s/MW_diffuse_Jenkins09_abundances.dat" % path,
-            "%s/MW_diffuse_Compiegne11_ir_emission.dat" % path,
-            "%s/dust_scat.dat" % path,
-            ext_tags=["band", "iue", "fuse"],
-            scat_path="%s/Scat_Data/" % path,
-        )
+    path = "dgfit/data/mw_rv31"
+    path = f"{data_path}/mw_rv31"
+    OD = ObsData(
+        [
+            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
+            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
+            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
+        ],
+        f"{path}/MW_diffuse_Gordon09_avnhi.dat",
+        f"{path}/MW_diffuse_Jenkins09_abundances.dat",
+        f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
+        f"{path}/dust_scat.dat",
+        ext_tags=["band", "iue", "fuse"],
+        scat_path=f"{path}/Scat_Data/",
+    )
 
     # plot the dust size distributions
     colors = ["b", "g"]
@@ -367,3 +357,7 @@ if __name__ == "__main__":
         fig.savefig(basename + ".pdf")
     else:
         pyplot.show()
+
+
+if __name__ == "__main__":
+    main()
