@@ -61,7 +61,7 @@ fixes, code, or documentation (no git or GitHub experience necessary):
 
 * `Coding Guidelines <https://docs.astropy.org/en/stable/development/codeguide.html>`_
 
-* `Developer Documentation <https://docs.astropy.org/en/stable/index.html#developer-documentation>`_
+* `Developer Documentation <https://docs.astropy.org/en/latest/index_dev.html#developer-docs>`_
 
 For the complete list of contributors please see the `DGFit
 contributors page on Github
