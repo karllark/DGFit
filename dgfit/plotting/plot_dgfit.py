@@ -283,11 +283,12 @@ def main():
     path = "dgfit/data/mw_rv31"
     path = f"{data_path}/mw_rv31"
     OD = ObsData(
-        [
-            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
-            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
-            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
-        ],
+#        [
+#            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
+#            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
+#            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
+#        ],
+        [f"{path}/MW_diffuse_Gordon23_ext.dat"],
         f"{path}/MW_diffuse_Gordon09_avnhi.dat",
         f"{path}/MW_diffuse_Jenkins09_abundances.dat",
         f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
@@ -315,7 +316,7 @@ def main():
     plot_dgfit_albedo(ax[1, 2], hdulist["ALBEDO"], OD, fontsize=fontsize)
 
     if args.start:
-        hdulist2 = fits.open(args.filename.replace("best_fin", "start"))
+        hdulist2 = fits.open(args.filename.replace("best_optimizer", "start"))
         plot_dgfit_sizedist(
             ax[0, 0],
             hdulist2,

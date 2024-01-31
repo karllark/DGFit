@@ -17,7 +17,7 @@ def DGFit_cmdparser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--sizedisttype",
-        default="MRN",
+        default="WD",
         choices=["bins", "MRN", "WD"],
         help="Size distribution type",
     )
@@ -34,11 +34,11 @@ def DGFit_cmdparser():
     parser.add_argument(
         "-f",
         "--fast",
-        help="Use minimal walkers, steps, burns to debug code",
+        help="MCMC: Use minimal walkers, steps, burns to debug code",
         action="store_true",
     )
     parser.add_argument(
-        "-s", "--slow", help="Use lots of walkers, n_steps, n_burn", action="store_true"
+        "-s", "--slow", help="MCMC: Use lots of walkers, n_steps, n_burn", action="store_true"
     )
     parser.add_argument(
         "--nburn", type=int, default=500, help="Number of samples for burn"
@@ -47,10 +47,10 @@ def DGFit_cmdparser():
         "--nsteps", type=int, default=1000, help="Number of samples for full run"
     )
     parser.add_argument(
-        "--everynth", type=int, default=5, help="Use every nth grain size"
+        "--everynth", type=int, default=2, help="Use every nth grain size"
     )
     parser.add_argument(
-        "--chain", action="store_true", help="Store the gain in an ascii file"
+        "--chain", action="store_true", help="Store the chain in an ascii file"
     )
     parser.add_argument(
         "--limit_abund", action="store_true", help="Limit based on abundances"
@@ -72,7 +72,6 @@ def DGFit_cmdparser():
     parser.add_argument(
         "--nolarge", action="store_true", help="Deweight a > 0.5 micron by 1e-10"
     )
-    parser.add_argument("--smc", help="use an SMC sightline", action="store_true")
 
     return parser
 
@@ -140,11 +139,12 @@ def main():
     # get the observed data
     path = f"{data_path}/mw_rv31"
     obsdata = ObsData(
-        [
-            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
-            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
-            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
-        ],
+#        [
+#            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
+#            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
+#            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
+#        ],
+        [f"{path}/MW_diffuse_Gordon23_ext.dat"],
         f"{path}/MW_diffuse_Gordon09_avnhi.dat",
         f"{path}/MW_diffuse_Jenkins09_abundances.dat",
         f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
@@ -163,6 +163,8 @@ def main():
         path=f"{data_path}/indiv_grain/",
         every_nth=args.everynth,
     )
+
+    print(f"# of grain sizes = {len(dustmodel_full.components[0].sizes)}")
 
     sizedisttype = args.sizedisttype
     if sizedisttype == "MRN":
@@ -256,13 +258,20 @@ def main():
     # do simple optimization to find the best fit
     def nll(*args):
         return -dustmodel.lnprob(*args)
-    soln = minimize(nll, p0, args=(obsdata, dustmodel), method="Nelder-Mead")
-    print(p0)
-    print(soln.x)
-    print(soln.message)
-    exit()
+    soln = minimize(nll, p0, args=(obsdata, dustmodel),
+                    method="Nelder-Mead")
+    opt_params = soln.x
+    dustmodel.set_size_dist_parameters(opt_params)
+
+    oname = f"{basename}_sizedist_best_optimizer.fits"
+    # TODO: add saving of the size distribution parameters for the analytic forms
+    dustmodel.save_results(oname, obsdata)
+
+    opt_time = time.process_time()
+    print("optimizer time taken: ", (opt_time - setup_time) / 60.0, " min")
 
     if args.mcmc:
+        p0 = opt_params
         # more emcee setup
         ndim = len(p0)
         nwalkers = 2 * ndim
@@ -350,7 +359,7 @@ def main():
         sys.stdout.write("\n")
 
         emcee_time = time.process_time()
-        print("emcee time taken: ", (emcee_time - setup_time) / 60.0, " min")
+        print("emcee time taken: ", (emcee_time - opt_time) / 60.0, " min")
 
         # best fit dust params
         oname = "%s_sizedist_best_fin.fits" % (basename)
