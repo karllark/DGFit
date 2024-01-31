@@ -311,7 +311,7 @@ class DustGrains(object):
 
         Returns
         -------
-        A dictonary of:
+        A dictionary of:
 
         C(abs) : 'numpy.ndarray' named 'cabs'
            Absorption cross section
@@ -438,7 +438,10 @@ class DustGrains(object):
                     )
                 )
 
-            results["albedo"] = _effscat_a_csca / _effscat_a_cext
+            if np.sum(_effscat_a_cext) > 0.0:
+                results["albedo"] = _effscat_a_csca / _effscat_a_cext
+            else:
+                results["albedo"] = np.zeros(n_waves_scat_a)
             results["scat_a_cext"] = _effscat_a_cext
             results["scat_a_csca"] = _effscat_a_csca
 
@@ -472,7 +475,11 @@ class DustGrains(object):
                         + (scat_g_csca[1 : self.n_sizes, i] * sizedist2)
                     )
                 )
-            results["g"] = _effg / _effscat_g_csca
+
+            if np.sum(_effscat_g_csca) > 0.0:
+                results["g"] = _effg / _effscat_g_csca
+            else:
+                results["g"] = np.zeros(n_waves_scat_g)
             results["scat_g_csca"] = _effscat_g_csca
 
         # return the results as a tuple of arrays

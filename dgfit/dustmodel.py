@@ -11,7 +11,7 @@ __all__ = ["DustModel", "MRNDustModel", "WDDustModel"]
 
 class DustModel(object):
     """
-    Full dust model including arbirary size and composition distributions.
+    Full dust model including arbitrary size and composition distributions.
     Includes the physical properties of the individual dust grains.
 
     Dust model that has each bin as an independent variable in the
@@ -682,7 +682,7 @@ class DustModel(object):
 
     def save_best_results(self, oname, sampler, obsdata, cur_step=None):
         """
-        Compute the best fit paramaters, set the size
+        Compute the best fit paramaters using a sampler chain, set the size
         distribution, and save the results
 
         Creates a FITS file with the results
@@ -849,6 +849,7 @@ class MRNDustModel(DustModel):
             return lnp_bound
         else:
             dustmodel.set_size_dist(params)
+
             return dustmodel.lnprob_generic(obsdata) + lnp_bound
 
     def initial_walkers(self, p0, nwalkers):
