@@ -29,7 +29,9 @@ def DGFit_cmdparser():
         help="Which observations to fit",
     )
 
-    parser.add_argument("--mcmc", help="Do MCMC sampling using emcee package", action="store_true")
+    parser.add_argument(
+        "--mcmc", help="Do MCMC sampling using emcee package", action="store_true"
+    )
 
     parser.add_argument(
         "-f",
@@ -38,7 +40,10 @@ def DGFit_cmdparser():
         action="store_true",
     )
     parser.add_argument(
-        "-s", "--slow", help="MCMC: Use lots of walkers, n_steps, n_burn", action="store_true"
+        "-s",
+        "--slow",
+        help="MCMC: Use lots of walkers, n_steps, n_burn",
+        action="store_true",
     )
     parser.add_argument(
         "--nburn", type=int, default=500, help="Number of samples for burn"
@@ -139,11 +144,11 @@ def main():
     # get the observed data
     path = f"{data_path}/mw_rv31"
     obsdata = ObsData(
-#        [
-#            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
-#            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
-#            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
-#        ],
+        #        [
+        #            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
+        #            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
+        #            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
+        #        ],
         [f"{path}/MW_diffuse_Gordon23_ext.dat"],
         f"{path}/MW_diffuse_Gordon09_avnhi.dat",
         f"{path}/MW_diffuse_Jenkins09_abundances.dat",
@@ -258,8 +263,8 @@ def main():
     # do simple optimization to find the best fit
     def nll(*args):
         return -dustmodel.lnprob(*args)
-    soln = minimize(nll, p0, args=(obsdata, dustmodel),
-                    method="Nelder-Mead")
+
+    soln = minimize(nll, p0, args=(obsdata, dustmodel), method="Nelder-Mead")
     opt_params = soln.x
     dustmodel.set_size_dist_parameters(opt_params)
 
@@ -335,7 +340,9 @@ def main():
         if nsteps > 1000:
             save_frac = 0.025
         targ_out = int(save_frac * nsteps)
-        for i, result in enumerate(sampler.sample(pos, iterations=nsteps, rstate0=state)):
+        for i, result in enumerate(
+            sampler.sample(pos, iterations=nsteps, rstate0=state)
+        ):
             n = int((width + 1) * float(i) / nsteps)
             sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
 
@@ -368,6 +375,7 @@ def main():
         # 50p dust params
         oname = "%s_sizedist_fin.fits" % (basename)
         dustmodel.save_50percentile_results(oname, sampler, obsdata)
+
 
 if __name__ == "__main__":
     main()
