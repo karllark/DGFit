@@ -23,7 +23,7 @@ class ObsData(object):
     Parameters
     ----------
     ext_filenames: list of 'string'
-        filenames with the observed extincction curve
+        filenames with the observed extinction curve
 
     avnhi_filenames: list of 'string'
         filename with the observed A(V)/N(HI) value + unc
@@ -45,10 +45,10 @@ class ObsData(object):
     Attributes
     ----------
     alnhi : float
-        A(lamda)/N(HI) value for extinction curve
+        A(lambda)/N(HI) value for extinction curve
 
     alnhi_unc : float
-        uncertainty in A(lamda)/N(HI) value for extinction curve
+        uncertainty in A(lambda)/N(HI) value for extinction curve
 
     ext_waves : 'numpy.ndarray'
         wavelengths for the extinction curve
@@ -93,7 +93,7 @@ class ObsData(object):
         if isinstance(ext_filenames, (list, tuple)):
             for i, filename in enumerate(ext_filenames):
                 t = Table.read(filename, format="ascii.commented_header")
-                self.ext_waves = np.concatenate([self.ext_waves, 1.0 / t["wave"]])
+                self.ext_waves = np.concatenate([self.ext_waves, t["wave"]])
                 self.ext_alav = np.concatenate([self.ext_alav, t["A(l)/A(V)"]])
                 self.ext_alav_unc = np.concatenate([self.ext_alav_unc, t["unc"]])
                 if ext_tags is not None:
