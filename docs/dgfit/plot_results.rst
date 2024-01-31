@@ -11,6 +11,10 @@ To plot the results, use the command
 
     plot_dgfit filename
 
-For example, to plot the default run
+For example, to plot the default run results from the optimizer (= max prob):
 
-    plot_dgfit dgfit_test_MRN_fin.fits
+    plot_dgfit dgfit_test_WD_best_optimizer.fits
+
+To include the starting points
+
+    plot_dgfit dgfit_test_WD_best_optimizer.fits --start
