@@ -298,7 +298,7 @@ def main():
     )
 
     # plot the dust size distributions
-    colors = ["b", "g"]
+    # colors = ["b", "g"]
     plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, multa4=False)
 
     plot_dgfit_sizedist(ax[1, 0], hdulist, fontsize=fontsize, plegend=False)
