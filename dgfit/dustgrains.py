@@ -445,7 +445,6 @@ class DustGrains(object):
             results["scat_a_cext"] = _effscat_a_cext
             results["scat_a_csca"] = _effscat_a_csca
 
-
         if ObsData.fit_scat_g or predict_all:
             n_waves_scat_g = self.n_wavelengths_scat_g
             scat_g_csca = self.scat_g_csca
