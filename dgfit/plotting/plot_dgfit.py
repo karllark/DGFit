@@ -316,7 +316,13 @@ def main():
     plot_dgfit_albedo(ax[1, 2], hdulist["ALBEDO"], OD, fontsize=fontsize)
 
     if args.start:
-        hdulist2 = fits.open(args.filename.replace("best_optimizer", "start"))
+        if "best_fin" in args.filename:
+            repstr = "best_fin"
+        elif "fin" in args.filename:
+            repstr = "fin"
+        else:
+            repstr = "best_optimizer"
+        hdulist2 = fits.open(args.filename.replace(repstr, "start"))
         plot_dgfit_sizedist(
             ax[0, 0],
             hdulist2,
