@@ -644,7 +644,7 @@ class DustModel(object):
         val_50p, punc, munc = zip(*values)
         return (val_50p, punc, munc)
 
-    def save_50percentile_results(self, oname, sampler, obsdata, cur_step=None):
+    def save_50percentile_results(self, oname, sampler, obsdata, nburn=0, cur_step=None):
         """
         Compute the 50th percentile paramaters, set the size
         distribution, and save the results
@@ -668,7 +668,7 @@ class DustModel(object):
             fin_size_dist_50p,
             fin_size_dist_punc,
             fin_size_dist_munc,
-        ) = self.get_percentile_vals(sampler.chain[:, 0 : cur_step + 1, :], self.ndim)
+        ) = self.get_percentile_vals(sampler.chain[:, nburn : cur_step + 1, :], self.ndim)
         self.set_size_dist(fin_size_dist_50p)
 
         # save the model parameters for the size distribution

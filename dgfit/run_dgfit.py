@@ -1,12 +1,14 @@
 import pkg_resources
-import sys
 import time
 import argparse
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from scipy.optimize import minimize
 import emcee
+from multiprocessing import Pool
+import corner
 
 from dgfit.dustmodel import DustModel, MRNDustModel, WDDustModel
 from dgfit.obsdata import ObsData
@@ -46,7 +48,10 @@ def DGFit_cmdparser():
         action="store_true",
     )
     parser.add_argument(
-        "--nburn", type=int, default=500, help="Number of samples for burn"
+        "--burnfrac",
+        type=int,
+        default=500,
+        help="Fractinal portion of nsteps for burn in",
     )
     parser.add_argument(
         "--nsteps", type=int, default=1000, help="Number of samples for full run"
@@ -129,13 +134,13 @@ def main():
     if args.fast:
         print("using the fast params")
         nsteps = 100
-        burn = 50
+        burnfrac = 0.1
     elif args.slow:
         print("using the slow params")
         nsteps = 10000
-        burn = 5000
+        burnfrac = 0.2
     else:
-        burn = int(args.nburn)
+        burnfrac = int(args.burnfrac)
         nsteps = int(args.nsteps)
 
     # get the location of the provided data
@@ -172,6 +177,7 @@ def main():
     print(f"# of grain sizes = {len(dustmodel_full.components[0].sizes)}")
 
     sizedisttype = args.sizedisttype
+    pnames = []
     if sizedisttype == "MRN":
         # define the fitting model
         dustmodel = MRNDustModel(dustmodel=dustmodel_full, obsdata=obsdata)
@@ -182,6 +188,7 @@ def main():
         for component in dustmodel.components:
             cparams = dustmodel.parameters[component.name]
             p0 += [cparams["C"], cparams["alpha"], cparams["a_min"], cparams["a_max"]]
+            pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
@@ -210,6 +217,7 @@ def main():
                     cparams["a_cg"],
                     cparams["b_C"],
                 ]
+            pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
@@ -244,10 +252,13 @@ def main():
                             print("deweighting sizes > 0.5 micron")
                             component.size_dist[indxs] *= 1e-10
 
-        # inital guesses at parameters
-        p0 = dustmodel.components[0].size_dist
-        for k in range(1, dustmodel.n_components):
+        # initial guesses at parameters
+        p0 = []
+        for k in range(0, dustmodel.n_components):
             p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
+            pnames += [
+                f"c{k+1}_s{kk}" for kk in range(len(dustmodel.components[k].size_dist))
+            ]
 
     else:
         print("Size distribution choice not known")
@@ -281,11 +292,11 @@ def main():
         ndim = len(p0)
         nwalkers = 2 * ndim
 
-        print("fitting ", fitobs_list)
-        print("# params = %i" % ndim)
-        print("# walkers = %i" % nwalkers)
-        print("# burn = %i" % burn)
-        print("# steps = %i" % nsteps)
+        print(f"fitting {fitobs_list}")
+        print(f"# params = {ndim}")
+        print(f"# walkers = {nwalkers}")
+        print(f"# burnfrac = {burnfrac}")
+        print(f"# steps = {nsteps}")
 
         # setting up the walkers to start "near" the inital guess
         p = dustmodel.initial_walkers(p0, nwalkers)
@@ -294,79 +305,53 @@ def main():
         #    print(dgfit_model.lnprob(pc, obsdata, dustmodel))
         # exit()
 
+        # Set up the backend to save the samples for the emcee runs
+        emcee_samples_file = f"{basename}_chain.h5"
+        backend = emcee.backends.HDFBackend(emcee_samples_file)
+        backend.reset(nwalkers, ndim)
+
         # setup the sampler
-        sampler = emcee.EnsembleSampler(
-            nwalkers,
-            ndim,
-            dustmodel.lnprob,
-            args=(obsdata, dustmodel),
-            threads=int(args.cpus),
-        )
+        with Pool() as pool:
+            sampler = emcee.EnsembleSampler(
+                nwalkers,
+                ndim,
+                dustmodel.lnprob,
+                args=(obsdata, dustmodel),
+                pool=pool,
+                backend=backend,
+            )
 
-        # incrementally save the full chain (burn+run) to a file
-        if args.chain:
-            inc_prog_fname = "%s_chain.dat" % basename
-            f = open(inc_prog_fname, "w")
-            f.close()
-
-        # burn in the walkers
-        # pos, prob, state = sampler.run_mcmc(p, burn)
-        print("burn")
-        width = 60
-        for i, result in enumerate(sampler.sample(p, iterations=burn)):
-            n = int((width + 1) * float(i) / burn)
-            sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
-
-            if args.chain:
-                position = result[0]
-                f = open(inc_prog_fname, "a")
-                for k in range(position.shape[0]):
-                    pos_str = " ".join(str(e) for e in position[k])
-                    f.write("{0:4d} {1:s}\n".format(k, pos_str))
-                f.close()
-
-        sys.stdout.write("\n")
-
-        # decompose so the next sampling is done from the last position
-        pos, prob, state = result
-
-        # reset the sampler
-        sampler.reset()
-
-        # do the full sampling
-        print("afterburn")
-        width = 60
-        save_frac = 0.1
-        if nsteps > 1000:
-            save_frac = 0.025
-        targ_out = int(save_frac * nsteps)
-        for i, result in enumerate(
-            sampler.sample(pos, iterations=nsteps, rstate0=state)
-        ):
-            n = int((width + 1) * float(i) / nsteps)
-            sys.stdout.write("\r[{0}{1}]".format("#" * n, " " * (width - n)))
-
-            # incrementally save the chain
-            if args.chain:
-                position = result[0]
-                f = open(inc_prog_fname, "a")
-                for k in range(position.shape[0]):
-                    pos_str = " ".join(str(e) for e in position[k])
-                    f.write("{0:4d} {1:s}\n".format(k, pos_str))
-                f.close()
-
-            # output the size distribution
-            if i > targ_out:
-                oname = "%s_sizedist_%i.fits" % (basename, targ_out)
-                dustmodel.save_50percentile_results(oname, sampler, obsdata, cur_step=i)
-                oname = "%s_sizedist_best_%i.fits" % (basename, targ_out)
-                dustmodel.save_best_results(oname, sampler, obsdata, cur_step=i)
-                targ_out += int(save_frac * nsteps)
-
-        sys.stdout.write("\n")
+            # do the sampling
+            sampler.run_mcmc(p, nsteps, progress=True)
 
         emcee_time = time.process_time()
         print("emcee time taken: ", (emcee_time - opt_time) / 60.0, " min")
+
+        # plot the walker chains for all parameters
+        nwalkers, nsteps, ndim = sampler.chain.shape
+        fig, ax = plt.subplots(ndim, sharex=True, figsize=(13, 13))
+        walk_val = np.arange(nsteps)
+        for i in range(ndim):
+            for k in range(nwalkers):
+                ax[i].plot(walk_val, sampler.chain[k, :, i], "-")
+                ax[i].set_ylabel(pnames[i])
+        fig.savefig(f"{basename}_walker_param_values.png")
+        plt.close(fig)
+
+        # plot the 1D and 2D likelihood functions in a traditional triangle plot
+        nwalkers, nsteps = sampler.lnprobability.shape
+        # discard the 1st burn_frac (burn in)
+        flat_samples = sampler.get_chain(discard=int(burnfrac * nsteps), flat=True)
+        nflatsteps, ndim = flat_samples.shape
+        fig = corner.corner(
+            flat_samples,
+            labels=pnames,
+            show_titles=True,
+            title_fmt=".3f",
+            use_math_text=True,
+        )
+        fig.savefig(f"{basename}_param_triangle.png")
+        plt.close(fig)
 
         # best fit dust params
         oname = "%s_sizedist_best_fin.fits" % (basename)
@@ -374,7 +359,9 @@ def main():
 
         # 50p dust params
         oname = "%s_sizedist_fin.fits" % (basename)
-        dustmodel.save_50percentile_results(oname, sampler, obsdata)
+        dustmodel.save_50percentile_results(
+            oname, sampler, obsdata, nburn=int(burnfrac * nsteps)
+        )
 
 
 if __name__ == "__main__":
