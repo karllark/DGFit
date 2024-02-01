@@ -1,5 +1,4 @@
 import pkg_resources
-import sys
 import time
 import argparse
 
@@ -49,7 +48,10 @@ def DGFit_cmdparser():
         action="store_true",
     )
     parser.add_argument(
-        "--burnfrac", type=int, default=500, help="Fractinal portion of nsteps for burn in"
+        "--burnfrac",
+        type=int,
+        default=500,
+        help="Fractinal portion of nsteps for burn in",
     )
     parser.add_argument(
         "--nsteps", type=int, default=1000, help="Number of samples for full run"
@@ -254,7 +256,9 @@ def main():
         p0 = []
         for k in range(0, dustmodel.n_components):
             p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
-            pnames += [f"c{k+1}_s{kk}" for kk in range(len(dustmodel.components[k].size_dist))]
+            pnames += [
+                f"c{k+1}_s{kk}" for kk in range(len(dustmodel.components[k].size_dist))
+            ]
 
     else:
         print("Size distribution choice not known")
@@ -355,7 +359,9 @@ def main():
 
         # 50p dust params
         oname = "%s_sizedist_fin.fits" % (basename)
-        dustmodel.save_50percentile_results(oname, sampler, obsdata, nburn=int(burnfrac * nsteps))
+        dustmodel.save_50percentile_results(
+            oname, sampler, obsdata, nburn=int(burnfrac * nsteps)
+        )
 
 
 if __name__ == "__main__":
