@@ -283,6 +283,7 @@ def plot_dgfit_g(
 def main():
     # commandline parser
     parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "filename",
         help=(
@@ -290,6 +291,7 @@ def main():
             + "(size distribution, extinction, etc.)"
         ),
     )
+    parser.add_argument("obsfile", help="Data file giving the observational data that was fit")
     parser.add_argument(
         "--start", help="include the starting model", action="store_true"
     )
@@ -323,7 +325,7 @@ def main():
     # data_path = pkg_resources.resource_filename("dgfit", "data/")
 
     # get the observed data
-    OD = ObsData("mw_rv31_obs.dat")
+    OD = ObsData(args.obsfile)
 
     # plot the dust size distributions
     # colors = ["b", "g"]
@@ -384,7 +386,7 @@ def main():
         )
 
     #ax[0, 0].set_ylim(1e-14, 1e2)
-    ax[0, 0].set_ylim(1e-31, 3e-27)
+    ax[0, 0].set_ylim(1e-40, 3e-27)
 
     #ax[1, 2].xaxis.set_major_formatter(ScalarFormatter())
     #ax[1, 2].xaxis.set_minor_formatter(ScalarFormatter())
