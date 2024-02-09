@@ -12,6 +12,7 @@ User Documentation
    :maxdepth: 2
 
    Running DGFit <dgfit/running_dgfit.rst>
+   Observed Data <dgfit/obsdata.rst>
    Plotting results <dgfit/plot_results.rst>
    Size Distributions <dgfit/size_distributions.rst>
 
