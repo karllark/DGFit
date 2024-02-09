@@ -103,7 +103,7 @@ class DustGrains(object):
         # get the filenames of this component for all sizes
         filelist = []
         for file in glob.glob(
-            path + "INDIV-GRAINS-FAKE-FIT_c_*" + componentname + "*.dat"
+            path + "INDIV-GRAINS-DGFIT_c_*" + componentname + "*.dat"
         ):
             m = re.search("_s_(.+?).dat", file)
             if m:
@@ -187,9 +187,9 @@ class DustGrains(object):
             self.cabs[k, :] = t["CAbs"][gindxs]
             self.scat_g[k, :] = t["G"][gindxs]
             if file[3]:
-                self.emission[k, :] = t["StEmission"][egindxs]
+                self.emission[k, :] = t["StEm1"][egindxs]
             else:
-                self.emission[k, :] = t["EqEmission"][egindxs]
+                self.emission[k, :] = t["EqEm1"][egindxs]
 
             # convert emission from ergs/(s cm sr) to Jy/sr
             #   wavelengths in microns
