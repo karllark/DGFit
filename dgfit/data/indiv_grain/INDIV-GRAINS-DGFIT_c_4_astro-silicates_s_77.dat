@@ -1,11 +1,11 @@
 # 0.000100404 3 76 : grain size, compostion index, size index
-# This grain was stochastically heated: No
 # Heating and cooling timescale: 0.000394909 1.53509e+09
 # Ratio of heating to cooling to determine stochastic cutoff: 100
 # Equilibrium emission is recorded even for those grains in the stochastic regime.
 # Emission spectrum was computed for: 
 # Type: IRSF
-# Scales:  0.5 1 2 5 10
+# Scales: 0.5 1 2 5 10
+StochasticallyHeated: 0 0 0 0 0
 # Temperature: -1
 # Wavelength  CExt  CAbs  CSca  Albedo G EqEm1 StEm1 EqEm2 StEm2 EqEm3 StEm3 EqEm4 StEm4 EqEm5 StEm5
 0.05 6.51613e-08 2.75196e-08 3.76417e-08 0.577669 0.932377 0 0 0 0 0 0 0 0 0 0
