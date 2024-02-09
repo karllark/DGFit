@@ -18,6 +18,9 @@ def DGFit_cmdparser():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "obsfile", help="Data file giving the observational data to be fit"
+    )
+    parser.add_argument(
         "--sizedisttype",
         default="WD",
         choices=["bins", "MRN", "WD"],
@@ -147,21 +150,8 @@ def main():
     data_path = pkg_resources.resource_filename("dgfit", "data/")
 
     # get the observed data
-    path = f"{data_path}/mw_rv31"
-    obsdata = ObsData(
-        #        [
-        #            f"{path}/MW_diffuse_Gordon09_band_ext.dat",
-        #            f"{path}/MW_diffuse_Gordon09_iue_ext.dat",
-        #            f"{path}/MW_diffuse_Gordon09_fuse_ext.dat",
-        #        ],
-        [f"{path}/MW_diffuse_Gordon23_ext.dat"],
-        f"{path}/MW_diffuse_Gordon09_avnhi.dat",
-        f"{path}/MW_diffuse_Jenkins09_abundances.dat",
-        f"{path}/MW_diffuse_Compiegne11_ir_emission.dat",
-        f"{path}/dust_scat.dat",
-        ext_tags=["band", "iue", "fuse"],
-        scat_path=f"{path}/Scat_Data/",
-    )
+    # path = f"{data_path}/mw_rv31"
+    obsdata = ObsData(args.obsfile)
 
     # determine what to fit based on what exists and the commandline args
     fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
