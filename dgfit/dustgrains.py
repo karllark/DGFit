@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# Started: Jan 2015 (KDG)
-# Updated to include better diagnoistic plots when run (Mar 2016 KDG)
-"""
-DustGrains class
-  dust grain properties stored by dust size/composition
-"""
-from __future__ import print_function
 import glob
 import re
 import math
@@ -22,6 +14,8 @@ __all__ = ["DustGrains"]
 class DustGrains(object):
     """
     DustGrains Class
+
+    dust grain properties stored by dust size/composition
 
     Attributes
     ----------

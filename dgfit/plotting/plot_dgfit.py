@@ -1,10 +1,10 @@
-import pkg_resources
+# import pkg_resources
 import argparse
 
 import numpy as np
 import matplotlib.pyplot as pyplot
 import matplotlib
-from matplotlib.ticker import ScalarFormatter
+# from matplotlib.ticker import ScalarFormatter
 
 from astropy.io import fits
 
@@ -115,15 +115,18 @@ def plot_dgfit_sizedist(
 
 
 # plot the atomic abundances
-def plot_dgfit_abundances(ax, hdu, obsdata, color="g", fontsize=12,
-                          plabel="None", plegend=False):
+def plot_dgfit_abundances(
+    ax, hdu, obsdata, color="g", fontsize=12, plabel="None", plegend=False
+):
     # plot the dust abundances
     atomnames = hdu.data["NAME"]
     atomabund = hdu.data["ABUND"]
     n_atoms = len(atomnames)
     aindxs = np.arange(n_atoms)
     width = 0.5
-    ax.bar(aindxs + 0.75 * width, atomabund, width, color=color, alpha=0.15, label=plabel)
+    ax.bar(
+        aindxs + 0.75 * width, atomabund, width, color=color, alpha=0.15, label=plabel
+    )
 
     if obsdata.obs_filenames["abund"] is not None:
         ax.errorbar(
@@ -131,7 +134,7 @@ def plot_dgfit_abundances(ax, hdu, obsdata, color="g", fontsize=12,
             [obsdata.abundance[x][0] for x in atomnames],
             yerr=[obsdata.abundance[x][1] for x in atomnames],
             fmt="ko",
-            label="Observations"
+            label="Observations",
         )
 
     ax.set_ylabel(r"$N(X)/[10^6 N(H)]$", fontsize=fontsize)
@@ -140,6 +143,7 @@ def plot_dgfit_abundances(ax, hdu, obsdata, color="g", fontsize=12,
 
     if plegend:
         ax.legend()
+
 
 # plot the extinction curves (total and components)
 def plot_dgfit_extinction(
@@ -291,7 +295,9 @@ def main():
             + "(size distribution, extinction, etc.)"
         ),
     )
-    parser.add_argument("obsfile", help="Data file giving the observational data that was fit")
+    parser.add_argument(
+        "obsfile", help="Data file giving the observational data that was fit"
+    )
     parser.add_argument(
         "--start", help="include the starting model", action="store_true"
     )
@@ -334,8 +340,15 @@ def main():
     plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, plegend=True)
 
     # plot the abundances
-    plot_dgfit_abundances(ax[0, 1], hdulist["ABUNDANCES"], OD, fontsize=fontsize, color="r",
-                          plegend=True, plabel="Final")
+    plot_dgfit_abundances(
+        ax[0, 1],
+        hdulist["ABUNDANCES"],
+        OD,
+        fontsize=fontsize,
+        color="r",
+        plegend=True,
+        plabel="Final",
+    )
 
     # plot the resulting total and component extinction curves
     plot_dgfit_extinction(ax[1, 0], hdulist["EXTINCTION"], OD, fontsize=fontsize)
@@ -357,7 +370,7 @@ def main():
         else:
             repstr = "best_optimizer"
         hdulist2 = fits.open(args.filename.replace(repstr, "start"))
-        #plot_dgfit_sizedist(
+        # plot_dgfit_sizedist(
         #    ax[0, 0],
         #    hdulist2,
         #    fontsize=fontsize,
@@ -365,7 +378,7 @@ def main():
         #    plegend=False,
         #    ltype="--",
         #    alpha=0.5,
-        #)
+        # )
         plot_dgfit_sizedist(
             ax[0, 0], hdulist2, fontsize=fontsize, plegend=False, ltype="--", alpha=0.50
         )
@@ -381,15 +394,13 @@ def main():
         plot_dgfit_albedo(
             ax[1, 1], hdulist2["ALBEDO"], OD, fontsize=fontsize, ltype="--"
         )
-        plot_dgfit_g(
-            ax[1, 2], hdulist2["G"], OD, fontsize=fontsize, ltype="--"
-        )
+        plot_dgfit_g(ax[1, 2], hdulist2["G"], OD, fontsize=fontsize, ltype="--")
 
-    #ax[0, 0].set_ylim(1e-14, 1e2)
+    # ax[0, 0].set_ylim(1e-14, 1e2)
     ax[0, 0].set_ylim(1e-40, 3e-27)
 
-    #ax[1, 2].xaxis.set_major_formatter(ScalarFormatter())
-    #ax[1, 2].xaxis.set_minor_formatter(ScalarFormatter())
+    # ax[1, 2].xaxis.set_major_formatter(ScalarFormatter())
+    # ax[1, 2].xaxis.set_minor_formatter(ScalarFormatter())
 
     pyplot.tight_layout()
 

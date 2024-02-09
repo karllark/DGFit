@@ -1,16 +1,5 @@
-#!/usr/bin/env python
-# Started: Jan 2015 (KDG)
-#    Revised to read in all the data from files: Mar 2016 (KDG)
-#       observed data defines the wavelength grids to fit on
-"""
-ObsData class
-  observed data that will be used to constrain the dust model
-"""
-from __future__ import print_function
-
 import numpy as np
 from astropy.table import Table
-from astropy.io import fits
 
 __all__ = ["ObsData"]
 
@@ -19,6 +8,8 @@ __all__ = ["ObsData"]
 class ObsData(object):
     """
     ObsData Class
+
+    observed data that will be used to constrain the dust model
 
     Parameters
     ----------
@@ -91,15 +82,19 @@ class ObsData(object):
 
         # normalization from A(V) to N(HI)
         if self.obs_filenames["avnhi"] is not None:
-            t = Table.read(self.obs_filenames["avnhi"], format="ascii.commented_header", header_start=-1)
+            t = Table.read(
+                self.obs_filenames["avnhi"],
+                format="ascii.commented_header",
+                header_start=-1,
+            )
             self.avnhi = t["Av_to_NHI"][0]
             self.avnhi_unc = t["unc"][0]
 
             # change the extinction normalization from A(V) to N(HI)
             self.ext_alnhi = self.ext_alav * self.avnhi
-            self.ext_alnhi_unc = np.square(self.ext_alav_unc / self.ext_alav) + np.square(
-                self.avnhi_unc / self.avnhi
-            )
+            self.ext_alnhi_unc = np.square(
+                self.ext_alav_unc / self.ext_alav
+            ) + np.square(self.avnhi_unc / self.avnhi)
             self.ext_alnhi_unc = self.ext_alnhi * np.sqrt(self.ext_alnhi_unc)
 
         # dust abundances
@@ -120,7 +115,9 @@ class ObsData(object):
         self.fit_ir_emission = False
         if self.obs_filenames["ir_emis"] is not None:
             self.fit_ir_emission = True
-            t = Table.read(self.obs_filenames["ir_emis"], format="ascii.commented_header")
+            t = Table.read(
+                self.obs_filenames["ir_emis"], format="ascii.commented_header"
+            )
             self.ir_emission_waves = np.array(t["WAVE"])
             self.ir_emission = np.array(t["SPEC"]) / 1e20
             self.ir_emission_unc = np.array(t["ERROR"]) / 1e20
@@ -140,17 +137,22 @@ class ObsData(object):
         # dust albedo (Gordon et al. 2004 AoD proceedings)
         self.fit_scat_a = False
         self.fit_scat_g = False
-        if ((self.obs_filenames["scat_a"] is not None)
-            & (self.obs_filenames["scat_g"] is not None)):
+        if (self.obs_filenames["scat_a"] is not None) & (
+            self.obs_filenames["scat_g"] is not None
+        ):
             self.fit_scat_a = True
             self.fit_scat_g = True
 
-            t = Table.read(self.obs_filenames["scat_a"], format="ascii.commented_header")
+            t = Table.read(
+                self.obs_filenames["scat_a"], format="ascii.commented_header"
+            )
             self.scat_a_waves = np.array(t["wave"])
             self.scat_albedo = np.array(t["albedo"])
             self.scat_albedo_unc = np.array(t["unc"])
 
-            t = Table.read(self.obs_filenames["scat_g"], format="ascii.commented_header")
+            t = Table.read(
+                self.obs_filenames["scat_g"], format="ascii.commented_header"
+            )
             self.scat_g_waves = np.array(t["wave"])
             self.scat_g = np.array(t["g"])
             self.scat_g_unc = np.array(t["unc"])
@@ -161,7 +163,7 @@ class ObsData(object):
 
     def parse_obsfile(self, obs_filename):
         """
-        Pares the observations file and get the filenames for the 
+        Pares the observations file and get the filenames for the
         different kinds of observations
         """
         self.obs_filenames = {}
@@ -171,7 +173,7 @@ class ObsData(object):
 
         poss_types = ["ext", "ir_emis", "abund", "avnhi", "scat_a", "scat_g"]
         for ctype in poss_types:
-            if ctype in t['type']:
+            if ctype in t["type"]:
                 gvals = t["type"] == ctype
                 self.obs_filenames[ctype] = t["filename"][gvals].data[0]
             else:
