@@ -17,7 +17,9 @@ from dgfit.obsdata import ObsData
 def DGFit_cmdparser():
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("obsfile", help="Data file giving the observational data to be fit")
+    parser.add_argument(
+        "obsfile", help="Data file giving the observational data to be fit"
+    )
     parser.add_argument(
         "--sizedisttype",
         default="WD",
@@ -148,7 +150,7 @@ def main():
     data_path = pkg_resources.resource_filename("dgfit", "data/")
 
     # get the observed data
-    #path = f"{data_path}/mw_rv31"
+    # path = f"{data_path}/mw_rv31"
     obsdata = ObsData(args.obsfile)
 
     # determine what to fit based on what exists and the commandline args
