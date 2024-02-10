@@ -5,7 +5,7 @@
 # Emission spectrum was computed for: 
 # Type: IRSF
 # Scales: 0.5 1 2 5 10
-StochasticallyHeated: 1 1 1 1 1
+# StochasticallyHeated: 1 1 1 1 1
 # Temperature: -1
 # Wavelength  CExt  CAbs  CSca  Albedo G EqEm1 StEm1 EqEm2 StEm2 EqEm3 StEm3 EqEm4 StEm4 EqEm5 StEm5
 0.05 1.8806e-12 1.65201e-12 2.28586e-13 0.12155 0.18657 0 0 0 0 0 0 0 0 0 0

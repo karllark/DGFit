@@ -343,10 +343,14 @@ class DustModel(object):
             csca = results["csca"]
             cext = cabs + csca
             dust_alnhi = 1.086 * cext
+            weights = 1. / obsdata.ext_alnhi_unc
+            bandvals = obsdata.ext_type != "spec"
+            if np.sum(bandvals) > 0:
+                weights[bandvals] *= 1000
             lnp_alnhi = -0.5 * np.sum(
-                ((obsdata.ext_alnhi - dust_alnhi) / obsdata.ext_alnhi_unc) ** 2
+                ((obsdata.ext_alnhi - dust_alnhi) * weights) ** 2
             )
-        # lnp_alnhi /= obsdata.n_wavelengths
+        # lnp_alnhi /= obsdata.ext_alnhi_npts
 
         # compute the ln(prob) for the depletions
         lnp_dep = 0.0
@@ -358,6 +362,7 @@ class DustModel(object):
                     / obsdata.abundance[atomname][1]
                 ) ** 2
             lnp_dep *= -0.5
+        # lnp_dep /= obsdata.abundance_npts
 
         # compute the ln(prob) for IR emission
         lnp_emission = 0.0

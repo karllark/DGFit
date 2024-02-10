@@ -13,21 +13,8 @@ class ObsData(object):
 
     Parameters
     ----------
-    ext_filename: 'string'
-        filename with the observed extinction curve
-
-    avnhi_filenames: list of 'string'
-        filename with the observed A(V)/N(HI) value + unc
-
-    abund_filename: 'string'
-        filename with the observed atomic abundances
-
-    ir_emis_filename: 'string'
-        filename with the observed infrared dust emission
-
-    dust_scat_filename: 'string'
-        filename with the observed dust scattering (a, g) parameters
-        [currently not used - hard coded for MW diffuse - need to change]
+    obs_filename: 'string'
+        filename with the observed data types and filenames
 
     Attributes
     ----------
@@ -58,7 +45,6 @@ class ObsData(object):
     def __init__(
         self,
         obs_filename,
-        scat_path="./",
     ):
         # get the observed data filenames
         self.parse_obsfile(obs_filename)
@@ -71,12 +57,17 @@ class ObsData(object):
             self.ext_waves = np.array(t["wave"])
             self.ext_alav = np.array(t["A(l)/A(V)"])
             self.ext_alav_unc = np.array(t["unc"])
+            if "type" in t.colnames:
+                self.ext_type = np.array(t["type"])
+            else:
+                self.ext_type = np.full(len(t), "spec")
 
             # sort
             sindxs = np.argsort(self.ext_waves)
             self.ext_waves = self.ext_waves[sindxs]
             self.ext_alav = self.ext_alav[sindxs]
             self.ext_alav_unc = self.ext_alav_unc[sindxs]
+            self.ext_type = self.ext_type[sindxs]
         else:
             self.ext_waves = np.logspace(np.log10(0.0912), np.log10(32.0), 200)
 
@@ -96,6 +87,7 @@ class ObsData(object):
                 self.ext_alav_unc / self.ext_alav
             ) + np.square(self.avnhi_unc / self.avnhi)
             self.ext_alnhi_unc = self.ext_alnhi * np.sqrt(self.ext_alnhi_unc)
+            self.ext_alnhi_npts = len(self.ext_alnhi)
 
         # dust abundances
         self.fit_abundance = False
@@ -110,6 +102,7 @@ class ObsData(object):
                     t["total_abund"][i],
                     t["total_abund_unc"][i],
                 )
+            self.abundance_npts = len(self.abundance)
 
         # diffuse IR emission spectrum
         self.fit_ir_emission = False
