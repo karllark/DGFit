@@ -114,21 +114,13 @@ class DustGrains(object):
                 f = open(file, "r")
                 firstline = f.readline()
                 space_pos = firstline.find(" ", 5)
-                secondline = f.readline()
-                colon_pos = secondline.find(":")
                 f.close()
-
-                if secondline[colon_pos + 2 : colon_pos + 5] == "Yes":
-                    stochastic_heating = True
-                else:
-                    stochastic_heating = False
 
                 filelist.append(
                     (
                         file,
                         int(sizenum),
                         float(firstline[1:space_pos]),
-                        stochastic_heating,
                     )
                 )
 
@@ -158,6 +150,12 @@ class DustGrains(object):
             # read in the table of grain properties for this size
             t = Table.read(file[0], format="ascii.commented_header", header_start=-1)
 
+            stochheated = False
+            for tcomment in t.meta["comments"]:
+                if "StochasticallyHeated" in tcomment:
+                    if "1" in tcomment:
+                        stochheated = True
+
             # setup more variables now that we know the number of wavelengths
             if k == 0:
                 # generate the indices to crop the wavelength to the
@@ -181,15 +179,15 @@ class DustGrains(object):
 
             # store the info
             self.sizes[k] = file[2]
-            self.stochastic_heating[k] = file[3]
+            self.stochastic_heating[k] = stochheated
             self.cext[k, :] = t["CExt"][gindxs]
             self.csca[k, :] = t["CSca"][gindxs]
             self.cabs[k, :] = t["CAbs"][gindxs]
             self.scat_g[k, :] = t["G"][gindxs]
-            if file[3]:
-                self.emission[k, :] = t["StEm1"][egindxs]
+            if self.stochastic_heating[k]:
+                self.emission[k, :] = t["StEm5"][egindxs]
             else:
-                self.emission[k, :] = t["EqEm1"][egindxs]
+                self.emission[k, :] = t["EqEm5"][egindxs]
 
             # convert emission from ergs/(s cm sr) to Jy/sr
             #   wavelengths in microns
