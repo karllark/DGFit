@@ -1,4 +1,5 @@
 import argparse
+import pkg_resources
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,32 +8,19 @@ import matplotlib
 from dgfit.obsdata import ObsData
 from dgfit.dustmodel import DustModel
 
-if __name__ == "__main__":
-
+def main():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--obsdata", help="transform to observed data grids", action="store_true"
+        "obsdata", type=str, default="none",
+         help="transform to observed data grids, with the name of the observed data file as input"
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
 
-    path = "dgfit/data/mw_rv31"
-    OD = ObsData(
-        [
-            "%s/MW_diffuse_Gordon09_band_ext.dat" % path,
-            "%s/MW_diffuse_Gordon09_iue_ext.dat" % path,
-            "%s/MW_diffuse_Gordon09_fuse_ext.dat" % path,
-        ],
-        "%s/MW_diffuse_Gordon09_avnhi.dat" % path,
-        "%s/MW_diffuse_Jenkins09_abundances.dat" % path,
-        "%s/MW_diffuse_Compiegne11_ir_emission.dat" % path,
-        "%s/dust_scat.dat" % path,
-        ext_tags=["band", "iue", "fuse"],
-        scat_path="%s/Scat_Data/" % path,
-    )
+    OD = ObsData(args.obsdata)
 
     # setup the plots
     fontsize = 12
@@ -45,16 +33,16 @@ if __name__ == "__main__":
     matplotlib.rc("xtick.major", width=2)
     matplotlib.rc("ytick.major", width=2)
 
-    # dustmodel = DustModel(['astro-silicates','astro-graphite'])
-    DM = DustModel()
-    DM.predict_full_grid(
-        ["astro-silicates", "astro-carbonaceous"], path="dgfit/data/indiv_grain/"
-    )
+    data_path = pkg_resources.resource_filename("dgfit", "data/")
+    DM = DustModel(['astro-silicates','astro-graphite'], path=data_path + "indiv_grain/")
+    # DM = DustModel()
+    # DM.predict_full_grid(b
+    #     ["astro-silicates", "astro-carbonaceous"], path="dgfit/data/indiv_grain/"
+    # )
 
-    if args.obsdata:
-        DM_obs = DustModel()
-        DM_obs.predict_observed_data(DM, OD)
-        DM = DM_obs
+    DM_obs = DustModel()
+    DM_obs.grains_on_obs(DM, OD)
+    DM = DM_obs
 
     results = DM.eff_grain_props(OD)
     cabs = results["cabs"]
@@ -147,3 +135,6 @@ if __name__ == "__main__":
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
+if __name__ == "__main__":
+    main()
