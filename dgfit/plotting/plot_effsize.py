@@ -4,11 +4,12 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import pkg_resources
 
 from dgfit.dustmodel import DustModel, WDDustModel
 
 
-if __name__ == "__main__":
+def main():
 
     # commandline parser
     parser = argparse.ArgumentParser()
@@ -22,9 +23,10 @@ if __name__ == "__main__":
 
     # get the dust model on the full wavelength grid
     compnames = ["astro-silicates", "astro-carbonaceous"]
+    data_path = pkg_resources.resource_filename("dgfit", "data/")
     dustmodel_full = DustModel(
         componentnames=compnames,
-        path="dgfit/data/indiv_grain/",
+        path=data_path + "indiv_grain/",
         every_nth=args.everynth,
     )
 
@@ -173,3 +175,6 @@ if __name__ == "__main__":
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
+if __name__ == "__main__":
+    main()

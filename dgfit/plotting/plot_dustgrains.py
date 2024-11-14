@@ -1,4 +1,5 @@
 import argparse
+import pkg_resources
 
 import matplotlib.pyplot as plt
 import colorsys
@@ -8,7 +9,7 @@ import numpy as np
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
 
-if __name__ == "__main__":
+def main():
 
     # commandline parser
     parser = argparse.ArgumentParser()
@@ -26,7 +27,8 @@ if __name__ == "__main__":
         help="Grain composition",
     )
     parser.add_argument(
-        "--obsdata", help="transform to observed data grids", action="store_true"
+        "--obsdata", type=str, default="none",
+        help="transform to observed data grids, with the name of the observed data file as input"
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
@@ -34,21 +36,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     DG = DustGrains()
-    DG.from_files(args.composition, path="dgfit/data/indiv_grain/")
+    data_path = pkg_resources.resource_filename("dgfit", "data/")
+    DG.from_files(args.composition, path=data_path + "indiv_grain/")
 
-    if args.obsdata:
-        OD = ObsData(
-            [
-                "data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat",
-                "data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat",
-                "data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat",
-            ],
-            "data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat",
-            "data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat",
-            "data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat",
-            "dust_scat.dat",
-            ext_tags=["band", "iue", "fuse"],
-        )
+    if args.obsdata != 'none':
+        OD = ObsData(args.obsdata)
         new_DG = DustGrains()
         new_DG.from_object(DG, OD)
         DG = new_DG
@@ -129,3 +121,6 @@ if __name__ == "__main__":
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
+if __name__ == "__main__":
+    main()
