@@ -18,3 +18,19 @@ For example, to plot the default run results from the optimizer (= max prob):
 To include the starting points
 
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata --start
+
+To plot the data of the used dustgrains (default is astro-silicates), use command
+
+    plot_dustgrains
+
+To see other dustgrains (<possible> = astro-silicates, astro-carbonaceous, astro-graphite, astro-PAH-ionized and astro-PAH-neutral), use
+
+    plot_dustgrains -c=<possible>
+
+To transform the particles to the observed data grids:
+
+    plot_dustgrains --obsdata obsdata
+
+To see the options for saving the plots, use
+
+    plot_dustgrains -help
