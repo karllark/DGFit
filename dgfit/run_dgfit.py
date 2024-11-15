@@ -52,9 +52,9 @@ def DGFit_cmdparser():
     )
     parser.add_argument(
         "--burnfrac",
-        type=int,
-        default=500,
-        help="Fractinal portion of nsteps for burn in",
+        type=float,
+        default=0.1,
+        help="Fractional portion of nsteps for burn in",
     )
     parser.add_argument(
         "--nsteps", type=int, default=1000, help="Number of samples for full run"
@@ -317,32 +317,6 @@ def main():
         emcee_time = time.process_time()
         print("emcee time taken: ", (emcee_time - opt_time) / 60.0, " min")
 
-        # plot the walker chains for all parameters
-        nwalkers, nsteps, ndim = sampler.chain.shape
-        fig, ax = plt.subplots(ndim, sharex=True, figsize=(13, 13))
-        walk_val = np.arange(nsteps)
-        for i in range(ndim):
-            for k in range(nwalkers):
-                ax[i].plot(walk_val, sampler.chain[k, :, i], "-")
-                ax[i].set_ylabel(pnames[i])
-        fig.savefig(f"{basename}_walker_param_values.png")
-        plt.close(fig)
-
-        # plot the 1D and 2D likelihood functions in a traditional triangle plot
-        nwalkers, nsteps = sampler.lnprobability.shape
-        # discard the 1st burn_frac (burn in)
-        flat_samples = sampler.get_chain(discard=int(burnfrac * nsteps), flat=True)
-        nflatsteps, ndim = flat_samples.shape
-        fig = corner.corner(
-            flat_samples,
-            labels=pnames,
-            show_titles=True,
-            title_fmt=".3f",
-            use_math_text=True,
-        )
-        fig.savefig(f"{basename}_param_triangle.png")
-        plt.close(fig)
-
         # best fit dust params
         oname = "%s_sizedist_best_fin.fits" % (basename)
         dustmodel.save_best_results(oname, sampler, obsdata)
@@ -352,6 +326,34 @@ def main():
         dustmodel.save_50percentile_results(
             oname, sampler, obsdata, nburn=int(burnfrac * nsteps)
         )
+
+        if ndim < 30:
+
+            # plot the walker chains for all parameters
+            nwalkers, nsteps, ndim = sampler.chain.shape
+            fig, ax = plt.subplots(ndim, sharex=True, figsize=(13, 13))
+            walk_val = np.arange(nsteps)
+            for i in range(ndim):
+                for k in range(nwalkers):
+                    ax[i].plot(walk_val, sampler.chain[k, :, i], "-")
+                    ax[i].set_ylabel(pnames[i])
+            fig.savefig(f"{basename}_walker_param_values.png")
+            plt.close(fig)
+
+            # plot the 1D and 2D likelihood functions in a traditional triangle plot
+            nwalkers, nsteps = sampler.lnprobability.shape
+            # discard the 1st burn_frac (burn in)
+            flat_samples = sampler.get_chain(discard=int(burnfrac * nsteps), flat=True)
+            nflatsteps, ndim = flat_samples.shape
+            fig = corner.corner(
+                flat_samples,
+                labels=pnames,
+                show_titles=True,
+                title_fmt=".3f",
+                use_math_text=True,
+            )
+            fig.savefig(f"{basename}_param_triangle.png")
+            plt.close(fig)
 
 
 if __name__ == "__main__":
