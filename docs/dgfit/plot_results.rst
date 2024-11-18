@@ -29,6 +29,12 @@ To plot the data of the used dustgrains (default is astro-silicates), use comman
 
     plot_dustgrains
 
+.. figure:: plot_dustgrains.png
+    :width: 50%
+    :align: center
+
+The figure will look like this.
+
 To see other dustgrains (<possible> = astro-silicates, astro-carbonaceous, astro-graphite, astro-PAH-ionized and astro-PAH-neutral), use
 
     plot_dustgrains -c=<possible>
