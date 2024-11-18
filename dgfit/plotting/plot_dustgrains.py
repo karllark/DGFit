@@ -64,8 +64,12 @@ def main():
     ws_indxs = np.argsort(DG.wavelengths)
     ews_indxs = np.argsort(DG.wavelengths_emission)
     waves = DG.wavelengths[ws_indxs]
+    colors = []
+    labels = []
     for i in range(DG.n_sizes):
         pcolor = colorsys.hsv_to_rgb(float(i) / DG.n_sizes / (1.1), 1, 1)
+        colors.append(pcolor)
+        labels.append(DG.sizes[i])
 
         ax[0, 0].plot(waves, DG.cabs[i, ws_indxs], color=pcolor)
         ax[0, 0].set_xlabel(r"$\lambda$ [$\mu m$]")
@@ -111,8 +115,10 @@ def main():
         ax[1, 2].set_ylim([1e-23, 1e-0])
 
     ax[0, 1].set_title(args.composition)
+    fig.legend(labels, title="Grainsizes [$m$]", loc="lower center", bbox_to_anchor=(0.5, 0), ncol=DG.n_sizes/3)
 
-    plt.tight_layout()
+
+    plt.tight_layout(rect=[0, 0.14, 1, 1])
 
     # show or save
     basename = "DustGrains_diag_%s" % (args.composition)
