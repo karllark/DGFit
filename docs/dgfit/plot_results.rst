@@ -16,8 +16,8 @@ For example, to plot the default run results from the optimizer (= max prob):
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata
 
 .. figure:: plot_dgfit.png
-:width: 50%
-:align: center
+    :width: 50%
+    :align: center
 
 The figure should look like this.
 
