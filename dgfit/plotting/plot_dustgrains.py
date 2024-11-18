@@ -9,6 +9,7 @@ import numpy as np
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
 
+
 def main():
 
     # commandline parser
@@ -27,8 +28,10 @@ def main():
         help="Grain composition",
     )
     parser.add_argument(
-        "--obsdata", type=str, default="none",
-        help="transform to observed data grids, with the name of the observed data file as input"
+        "--obsdata",
+        type=str,
+        default="none",
+        help="transform to observed data grids, with the name of the observed data file as input",
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
@@ -39,7 +42,7 @@ def main():
     data_path = pkg_resources.resource_filename("dgfit", "data/")
     DG.from_files(args.composition, path=data_path + "indiv_grain/")
 
-    if args.obsdata != 'none':
+    if args.obsdata != "none":
         OD = ObsData(args.obsdata)
         new_DG = DustGrains()
         new_DG.from_object(DG, OD)
@@ -121,6 +124,7 @@ def main():
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     main()

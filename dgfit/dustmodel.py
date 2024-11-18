@@ -343,13 +343,11 @@ class DustModel(object):
             csca = results["csca"]
             cext = cabs + csca
             dust_alnhi = 1.086 * cext
-            weights = 1. / obsdata.ext_alnhi_unc
+            weights = 1.0 / obsdata.ext_alnhi_unc
             bandvals = obsdata.ext_type != "spec"
             if np.sum(bandvals) > 0:
                 weights[bandvals] *= 1000
-            lnp_alnhi = -0.5 * np.sum(
-                ((obsdata.ext_alnhi - dust_alnhi) * weights) ** 2
-            )
+            lnp_alnhi = -0.5 * np.sum(((obsdata.ext_alnhi - dust_alnhi) * weights) ** 2)
         # lnp_alnhi /= obsdata.ext_alnhi_npts
 
         # compute the ln(prob) for the depletions
@@ -649,7 +647,9 @@ class DustModel(object):
         val_50p, punc, munc = zip(*values)
         return (val_50p, punc, munc)
 
-    def save_50percentile_results(self, oname, sampler, obsdata, nburn=0, cur_step=None):
+    def save_50percentile_results(
+        self, oname, sampler, obsdata, nburn=0, cur_step=None
+    ):
         """
         Compute the 50th percentile paramaters, set the size
         distribution, and save the results
@@ -673,7 +673,9 @@ class DustModel(object):
             fin_size_dist_50p,
             fin_size_dist_punc,
             fin_size_dist_munc,
-        ) = self.get_percentile_vals(sampler.chain[:, nburn : cur_step + 1, :], self.ndim)
+        ) = self.get_percentile_vals(
+            sampler.chain[:, nburn : cur_step + 1, :], self.ndim
+        )
         self.set_size_dist(fin_size_dist_50p)
 
         # save the model parameters for the size distribution

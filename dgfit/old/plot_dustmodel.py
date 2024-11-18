@@ -8,12 +8,15 @@ import matplotlib
 from dgfit.obsdata import ObsData
 from dgfit.dustmodel import DustModel
 
+
 def main():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "obsdata", type=str, default="none",
-         help="transform to observed data grids, with the name of the observed data file as input"
+        "obsdata",
+        type=str,
+        default="none",
+        help="transform to observed data grids, with the name of the observed data file as input",
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
@@ -34,7 +37,9 @@ def main():
     matplotlib.rc("ytick.major", width=2)
 
     data_path = pkg_resources.resource_filename("dgfit", "data/")
-    DM = DustModel(['astro-silicates','astro-graphite'], path=data_path + "indiv_grain/")
+    DM = DustModel(
+        ["astro-silicates", "astro-graphite"], path=data_path + "indiv_grain/"
+    )
     # DM = DustModel()
     # DM.predict_full_grid(b
     #     ["astro-silicates", "astro-carbonaceous"], path="dgfit/data/indiv_grain/"
@@ -135,6 +140,7 @@ def main():
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     main()

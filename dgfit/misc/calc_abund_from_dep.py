@@ -57,11 +57,11 @@ def abundances_from_depletions(depletions, depletions_unc, ref_abundances="SMC")
     ref_abund["SMC"] = np.array([7.52, 8.14, 6.88, 6.96, 6.89])
     ref_abund_unc["SMC"] = np.array(
         [
-            np.sqrt(0.10 ** 2 + 0.04 ** 2),
-            np.sqrt(0.08 ** 2 + 0.04 ** 2),
-            np.sqrt(0.06 ** 2 + 0.03 ** 2),
-            np.sqrt(0.07 ** 2 + 0.09 ** 2),
-            np.sqrt(0.08 ** 2 + 0.03 ** 2),
+            np.sqrt(0.10**2 + 0.04**2),
+            np.sqrt(0.08**2 + 0.04**2),
+            np.sqrt(0.06**2 + 0.03**2),
+            np.sqrt(0.07**2 + 0.09**2),
+            np.sqrt(0.08**2 + 0.03**2),
         ]
     )
 

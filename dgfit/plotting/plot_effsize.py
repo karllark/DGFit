@@ -89,9 +89,13 @@ def main():
         _effcabs_sum[:, k] = np.sum(_effcabs_all[:, k, :], axis=1)
         _effcsca_sum[:, k] = np.sum(_effcsca_all[:, k, :], axis=1)
 
-        _effsize[k, :] = 0.5 * 1e4 * (
-            component.sizes[1 : component.n_sizes]
-            + component.sizes[0 : component.n_sizes - 1]
+        _effsize[k, :] = (
+            0.5
+            * 1e4
+            * (
+                component.sizes[1 : component.n_sizes]
+                + component.sizes[0 : component.n_sizes - 1]
+            )
         )
 
     _effcext_sum = _effcabs_sum + _effcsca_sum
@@ -115,7 +119,9 @@ def main():
     # plot size distributions
     ax = fax[1, 1]
     for k, component in enumerate(dustmodel.components):
-        ax.plot(component.sizes * 1e4, component.size_dist, symvals[k], label=component.name)
+        ax.plot(
+            component.sizes * 1e4, component.size_dist, symvals[k], label=component.name
+        )
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -175,6 +181,7 @@ def main():
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     main()
