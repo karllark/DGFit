@@ -9,6 +9,7 @@ import numpy as np
 
 import corner
 
+
 def main():
 
     # commandline parser
@@ -26,6 +27,7 @@ def main():
 
     fig = corner.corner(samples)
     fig.savefig("%s.png" % args.filename)
+
 
 if __name__ == "__main__":
     main()

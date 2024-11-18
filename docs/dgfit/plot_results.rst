@@ -34,3 +34,12 @@ To transform the particles to the observed data grids:
 To see the options for saving the plots, use
 
     plot_dustgrains -help
+
+To see an overview of the observed data used, use
+
+    plot_obsdata filename
+
+To add the ISRF plot (if available)
+
+    plot_obsdata filename --ISRF ISRFdatafile
+

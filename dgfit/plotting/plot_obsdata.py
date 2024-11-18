@@ -10,13 +10,16 @@ from astropy.table import Table
 
 from dgfit.obsdata import ObsData
 
+
 def main():
 
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("obsdata", type=str, default="none", help="give the file with the observed data")
     parser.add_argument(
-        "--ISRF",type=str, default="none", help="Add the ISFR file to plot"
+        "obsdata", type=str, default="none", help="give the file with the observed data"
+    )
+    parser.add_argument(
+        "--ISRF", type=str, default="none", help="Add the ISFR file to plot"
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
@@ -89,7 +92,7 @@ def main():
         ax[0, 1].set_yscale("log")
         ax[0, 1].legend(loc=2)
 
-    if args.ISRF != 'none':
+    if args.ISRF != "none":
         t = Table.read(args.ISRF, format="ascii.commented_header")
         ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF")
         ax[1, 1].set_xlabel(r"$\lambda [\mu m]$")
@@ -142,6 +145,7 @@ def main():
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     main()
