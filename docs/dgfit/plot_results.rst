@@ -16,12 +16,12 @@ For example, to plot the default run results from the optimizer (= max prob):
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata
 
 .. plot::
-    import dgfit.plotting.plot_dgfit
-    dgfit.plotting.plot_dgfit.main("dgfit/data/mw_rv31/dgfit_test_WD_best_optimizer.fits", "dgfit/data/mw_rv31/mw_rv31_obs.dat")
+    from dgfit.plotting.plot_dgfit import run_plot_script
+    run_plot_script()
 
-.. figure:: plot_dgfit.png
-    :width: 50%
-    :align: center
+.. .. figure:: plot_dgfit.png
+..     :width: 50%
+..     :align: center
 
 The figure should look like this.
 
