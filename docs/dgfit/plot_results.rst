@@ -15,6 +15,13 @@ For example, to plot the default run results from the optimizer (= max prob):
 
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata
 
+.. plot::
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from dgfit.plotting.plot_dgfit import main
+    main()
+
 .. figure:: plot_dgfit.png
     :width: 50%
     :align: center
