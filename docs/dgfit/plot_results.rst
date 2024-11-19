@@ -20,7 +20,7 @@ For example, to plot the default run results from the optimizer (= max prob):
     import numpy as np
     import matplotlib.pyplot as plt
     from dgfit.plotting.plot_dgfit import main
-    main(["dgfit/data/dgfit_test_WD_best_optimizer.fits", "dgfit/data/mw_rv31_obs.dat"])
+    main(["dgfit/data/mw_rv31/dgfit_test_WD_best_optimizer.fits", "dgfit/data/mw_rv31/mw_rv31_obs.dat"])
 
 .. figure:: plot_dgfit.png
     :width: 50%
