@@ -43,6 +43,8 @@ conf = ConfigParser()
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 setup_cfg = dict(conf.items('metadata'))
 
+sys.path.insert(0, os.path.abspath('..'))
+
 # -- General configuration ----------------------------------------------------
 
 # By default, highlight as Python 3.
