@@ -16,6 +16,9 @@ For example, to plot the default run results from the optimizer (= max prob):
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata
 
 .. plot::
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath('../..'))
     import dgfit.plotting.plot_dgfit
     dgfit.plotting.plot_dgfit.main(["dgfit/data/mw_rv31/dgfit_test_WD_best_optimizer.fits", "dgfit/data/mw_rv31/mw_rv31_obs.dat"])
 
