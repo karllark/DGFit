@@ -115,8 +115,13 @@ def main():
         ax[1, 2].set_ylim([1e-23, 1e-0])
 
     ax[0, 1].set_title(args.composition)
-    fig.legend(labels, title="Grainsizes [$m$]", loc="lower center", bbox_to_anchor=(0.5, 0), ncol=DG.n_sizes/3)
-
+    fig.legend(
+        labels,
+        title="Grainsizes [$m$]",
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0),
+        ncol=DG.n_sizes / 3,
+    )
 
     plt.tight_layout(rect=[0, 0.14, 1, 1])
 

@@ -247,7 +247,8 @@ def main():
         for k in range(0, dustmodel.n_components):
             p0 = np.concatenate([p0, dustmodel.components[k].size_dist])
             pnames += [
-                f"c{k + 1}_s{kk}" for kk in range(len(dustmodel.components[k].size_dist))
+                f"c{k + 1}_s{kk}"
+                for kk in range(len(dustmodel.components[k].size_dist))
             ]
 
     else:
