@@ -14,6 +14,7 @@ from dgfit.obsdata import ObsData
 # import subprocess
 # import os
 
+
 def get_krange(x, logaxis=False, in_range=[0]):
     prange = np.array([0.0, 0.0])
     if logaxis:
@@ -422,6 +423,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# def run_plot_script():
-#     subprocess.run(["plot_dgfit", "dgfit/data/mw_rv31/dgfit_test_WD_best_optimizer.fits", "dgfit/data/mw_rv31/mw_rv31_obs.dat"])

@@ -42,13 +42,9 @@ class ObsData(object):
     """
 
     # read in the data from files
-    def __init__(
-        self,
-        obs_filename,
-        path = './'
-    ):
+    def __init__(self, obs_filename, path="./"):
 
-        if path != './':
+        if path != "./":
             obs_filename = path + obs_filename
 
         # get the observed data filenames
@@ -58,7 +54,9 @@ class ObsData(object):
         self.fit_extinction = False
         if self.obs_filenames["ext"] is not None:
             self.fit_extinction = True
-            t = Table.read(path + self.obs_filenames["ext"], format="ascii.commented_header")
+            t = Table.read(
+                path + self.obs_filenames["ext"], format="ascii.commented_header"
+            )
             self.ext_waves = np.array(t["wave"])
             self.ext_alav = np.array(t["A(l)/A(V)"])
             self.ext_alav_unc = np.array(t["unc"])
@@ -98,7 +96,9 @@ class ObsData(object):
         self.fit_abundance = False
         if self.obs_filenames["abund"] is not None:
             self.fit_abundance = True
-            t = Table.read(path + self.obs_filenames["abund"], format="ascii.commented_header")
+            t = Table.read(
+                path + self.obs_filenames["abund"], format="ascii.commented_header"
+            )
             self.abundance = {}
             self.total_abundance = {}
             for i in range(len(t)):
