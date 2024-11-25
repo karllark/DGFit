@@ -1,4 +1,4 @@
-import importlib_resources
+import importlib.resources as importlib_resources
 import time
 import argparse
 
