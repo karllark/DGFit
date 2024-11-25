@@ -52,7 +52,7 @@ def main():
     results = DM.eff_grain_props(OD)
     cabs = results["cabs"]
     csca = results["csca"]
-    natoms = results["natoms"]
+    # natoms = results["natoms"]
     emission = results["emission"]
     albedo = results["albedo"]
     g = results["g"]

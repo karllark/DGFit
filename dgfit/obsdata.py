@@ -44,8 +44,7 @@ class ObsData(object):
     # read in the data from files
     def __init__(self, obs_filename, path="./"):
 
-        if path != "./":
-            obs_filename = path + obs_filename
+        obs_filename = path + obs_filename
 
         # get the observed data filenames
         self.parse_obsfile(obs_filename)

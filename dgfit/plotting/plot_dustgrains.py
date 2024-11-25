@@ -48,6 +48,10 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
+    plot(DG, args.composition, args.png, args.eps, args.pdf)
+
+
+def plot(DG, composition, png=False, eps=False, pdf=False):
     # setup the plots
     fontsize = 12
     font = {"size": fontsize}
@@ -111,10 +115,9 @@ def main():
         ax[1, 2].set_ylabel("Emission")
         ax[1, 2].set_xscale("log")
         ax[1, 2].set_yscale("log")
-        cur_ylim = ax[1, 2].get_ylim()
         ax[1, 2].set_ylim([1e-23, 1e-0])
 
-    ax[0, 1].set_title(args.composition)
+    ax[0, 1].set_title(composition)
     fig.legend(
         labels,
         title="Grainsizes [$m$]",
@@ -126,12 +129,12 @@ def main():
     plt.tight_layout(rect=[0, 0.14, 1, 1])
 
     # show or save
-    basename = "DustGrains_diag_%s" % (args.composition)
-    if args.png:
+    basename = "DustGrains_diag_%s" % (composition)
+    if png:
         fig.savefig(basename + ".png")
-    elif args.eps:
+    elif eps:
         fig.savefig(basename + ".eps")
-    elif args.pdf:
+    elif pdf:
         fig.savefig(basename + ".pdf")
     else:
         plt.show()

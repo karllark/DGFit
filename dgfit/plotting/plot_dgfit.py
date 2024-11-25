@@ -1,18 +1,12 @@
-# import pkg_resources
 import argparse
 
 import numpy as np
 import matplotlib.pyplot as pyplot
 import matplotlib
 
-# from matplotlib.ticker import ScalarFormatter
-
 from astropy.io import fits
 
 from dgfit.obsdata import ObsData
-
-# import subprocess
-# import os
 
 
 def get_krange(x, logaxis=False, in_range=[0]):
