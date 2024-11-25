@@ -64,7 +64,6 @@ def main():
     fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 10))
 
     ws_indxs = np.argsort(DG.wavelengths)
-    ews_indxs = np.argsort(DG.wavelengths_emission)
     waves = DG.wavelengths[ws_indxs]
     for i in range(DG.n_sizes):
         pcolor = colorsys.hsv_to_rgb(float(i) / DG.n_sizes / (1.1), 1, 1)

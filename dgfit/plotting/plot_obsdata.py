@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import argparse
+import pkg_resources
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +28,11 @@ def main():
     args = parser.parse_args()
 
     OD = ObsData(args.obsdata)
+
+    plot(OD, args.ISRF, args.png, args.eps, args.pdf)
+
+
+def plot(OD, ISRF, png=False, eps=False, pdf=False):
 
     # setup the plots
     fontsize = 16
@@ -92,8 +98,9 @@ def main():
         ax[0, 1].set_yscale("log")
         ax[0, 1].legend(loc=2)
 
-    if args.ISRF != "none":
-        t = Table.read(args.ISRF, format="ascii.commented_header")
+    if ISRF != "none":
+        data_path = pkg_resources.resource_filename("dgfit", ISRF)
+        t = Table.read(data_path, format="ascii.commented_header")
         ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF")
         ax[1, 1].set_xlabel(r"$\lambda [\mu m]$")
         ax[1, 1].set_ylabel(r"ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]")
@@ -137,11 +144,11 @@ def main():
 
     # show or save
     basename = "ObsData_MW_Diffuse"
-    if args.png:
+    if png:
         fig.savefig(basename + ".png")
-    elif args.eps:
+    elif eps:
         fig.savefig(basename + ".eps")
-    elif args.pdf:
+    elif pdf:
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
