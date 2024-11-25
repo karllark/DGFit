@@ -1,4 +1,4 @@
-import pkg_resources
+import importlib_resources
 import time
 import argparse
 
@@ -147,7 +147,7 @@ def main():
         nsteps = int(args.nsteps)
 
     # get the location of the provided data
-    data_path = pkg_resources.resource_filename("dgfit", "data/")
+    ref = importlib_resources.files("dgfit") / "data"
 
     # get the observed data
     # path = f"{data_path}/mw_rv31"
@@ -158,11 +158,12 @@ def main():
 
     # get the dust model on the full wavelength grid
     compnames = ["astro-silicates", "astro-carbonaceous"]
-    dustmodel_full = DustModel(
-        componentnames=compnames,
-        path=f"{data_path}/indiv_grain/",
-        every_nth=args.everynth,
-    )
+    with importlib_resources.as_file(ref) as data_path:
+        dustmodel_full = DustModel(
+            componentnames=compnames,
+            path=str(data_path) + "/indiv_grain/",
+            every_nth=args.everynth,
+        )
 
     print(f"# of grain sizes = {len(dustmodel_full.components[0].sizes)}")
 

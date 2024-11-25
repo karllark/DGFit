@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import argparse
-import pkg_resources
+import importlib_resources
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -99,8 +99,9 @@ def plot(OD, ISRF, png=False, eps=False, pdf=False):
         ax[0, 1].legend(loc=2)
 
     if ISRF != "none":
-        data_path = pkg_resources.resource_filename("dgfit", ISRF)
-        t = Table.read(data_path, format="ascii.commented_header")
+        ref = importlib_resources.files("dgfit") / ISRF
+        with importlib_resources.as_file(ref) as data_path:
+            t = Table.read(str(data_path), format="ascii.commented_header")
         ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF")
         ax[1, 1].set_xlabel(r"$\lambda [\mu m]$")
         ax[1, 1].set_ylabel(r"ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]")
