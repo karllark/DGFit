@@ -4,7 +4,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-import pkg_resources
+import importlib_resources
 
 from dgfit.dustmodel import DustModel, WDDustModel
 
@@ -23,12 +23,13 @@ def main():
 
     # get the dust model on the full wavelength grid
     compnames = ["astro-silicates", "astro-carbonaceous"]
-    data_path = pkg_resources.resource_filename("dgfit", "data/")
-    dustmodel_full = DustModel(
-        componentnames=compnames,
-        path=data_path + "indiv_grain/",
-        every_nth=args.everynth,
-    )
+    ref = importlib_resources.files("dgfit") / "data"
+    with importlib_resources.as_file(ref) as data_path:
+        dustmodel_full = DustModel(
+            componentnames=compnames,
+            path=str(data_path) + "/indiv_grain/",
+            every_nth=args.everynth,
+        )
 
     # WD model
     dustmodel = WDDustModel(dustmodel=dustmodel_full)

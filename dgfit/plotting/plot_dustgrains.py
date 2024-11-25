@@ -1,5 +1,5 @@
 import argparse
-import pkg_resources
+import importlib_resources
 
 import matplotlib.pyplot as plt
 import colorsys
@@ -39,8 +39,9 @@ def main():
     args = parser.parse_args()
 
     DG = DustGrains()
-    data_path = pkg_resources.resource_filename("dgfit", "data/")
-    DG.from_files(args.composition, path=data_path + "indiv_grain/")
+    ref = importlib_resources.files("dgfit") / "data"
+    with importlib_resources.as_file(ref) as data_path:
+        DG.from_files(args.composition, path=str(data_path) + "/indiv_grain/")
 
     if args.obsdata != "none":
         OD = ObsData(args.obsdata)
