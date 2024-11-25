@@ -4,7 +4,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-import importlib_resources
+import importlib.resources as importlib_resources
 
 from dgfit.dustmodel import DustModel, WDDustModel
 
