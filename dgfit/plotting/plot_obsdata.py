@@ -32,7 +32,7 @@ def main():
     plot(OD, args.ISRF, args.png, args.eps, args.pdf)
 
 
-def plot(OD, ISRF='none', png=False, eps=False, pdf=False):
+def plot(OD, ISRF="none", png=False, eps=False, pdf=False):
 
     # setup the plots
     fontsize = 16
