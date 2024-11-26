@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import argparse
+import importlib.resources as importlib_resources
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,40 +11,28 @@ from astropy.table import Table
 
 from dgfit.obsdata import ObsData
 
-if __name__ == "__main__":
+
+def main():
 
     # commandline parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--smc", help="use an SMC sightline", action="store_true")
+    parser.add_argument(
+        "obsdata", type=str, default="none", help="give the file with the observed data"
+    )
+    parser.add_argument(
+        "--ISRF", type=str, default="none", help="Add the ISFR file to plot"
+    )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
 
-    if args.smc:
-        path = "dgfit/data/smc_azv215"
-        OD = ObsData(
-            "%s/azv215_50p_ext.fits" % path,
-            "%s/azv215_avnhi.dat" % path,
-            "%s/SMC_AzV215_abundances.dat" % path,
-            None,
-            None,
-        )
-    else:
-        path = "dgfit/data/mw_rv31"
-        OD = ObsData(
-            [
-                "%s/MW_diffuse_Gordon09_band_ext.dat" % path,
-                "%s/MW_diffuse_Gordon09_iue_ext.dat" % path,
-                "%s/MW_diffuse_Gordon09_fuse_ext.dat" % path,
-            ],
-            "%s/MW_diffuse_Gordon09_avnhi.dat" % path,
-            "%s/MW_diffuse_Jenkins09_abundances.dat" % path,
-            "%s/MW_diffuse_Compiegne11_ir_emission.dat" % path,
-            "%s/dust_scat.dat" % path,
-            ext_tags=["band", "iue", "fuse"],
-            scat_path="%s/Scat_Data/" % path,
-        )
+    OD = ObsData(args.obsdata)
+
+    plot(OD, args.ISRF, args.png, args.eps, args.pdf)
+
+
+def plot(OD, ISRF="none", png=False, eps=False, pdf=False):
 
     # setup the plots
     fontsize = 16
@@ -109,17 +98,18 @@ if __name__ == "__main__":
         ax[0, 1].set_yscale("log")
         ax[0, 1].legend(loc=2)
 
-    t = Table.read(
-        "%s/MW_diffuse_Mathis83_ISRF.dat" % path, format="ascii.commented_header"
-    )
-    ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF")
-    ax[1, 1].set_xlabel(r"$\lambda [\mu m]$")
-    ax[1, 1].set_ylabel(r"ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]")
-    ax[1, 1].set_xscale("log")
-    ax[1, 1].set_yscale("log")
-    ax[1, 1].set_xlim(0.09, 1e1)
-    ax[1, 1].set_ylim(1e-2, 1e2)
-    ax[1, 1].legend()
+    if ISRF != "none":
+        ref = importlib_resources.files("dgfit") / ISRF
+        with importlib_resources.as_file(ref) as data_path:
+            t = Table.read(str(data_path), format="ascii.commented_header")
+        ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF")
+        ax[1, 1].set_xlabel(r"$\lambda [\mu m]$")
+        ax[1, 1].set_ylabel(r"ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]")
+        ax[1, 1].set_xscale("log")
+        ax[1, 1].set_yscale("log")
+        ax[1, 1].set_xlim(0.09, 1e1)
+        ax[1, 1].set_ylim(1e-2, 1e2)
+        ax[1, 1].legend()
 
     if OD.fit_scat_a:
         ax[0, 2].errorbar(
@@ -155,11 +145,15 @@ if __name__ == "__main__":
 
     # show or save
     basename = "ObsData_MW_Diffuse"
-    if args.png:
+    if png:
         fig.savefig(basename + ".png")
-    elif args.eps:
+    elif eps:
         fig.savefig(basename + ".eps")
-    elif args.pdf:
+    elif pdf:
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
+
+if __name__ == "__main__":
+    main()
