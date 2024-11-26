@@ -1,0 +1,14 @@
+# atom  abund  abund_unc  total_abund  total_abund_unc
+C    83.41   8.341   288.4  28.8
+O   109.26  10.926   575.4  57.5
+Mg   31.90   3.190    41.7   4.2
+Si   31.24   3.124    40.7   4.1
+Fe   33.34   3.334    34.7   3.5
+# abundances from Jenkins (2009) for F_* = 0.36   gas/dust = 150
+#   appropriate for the diffuse ISM (esp. IR emission)
+#   see Gordon et al. (2014)
+#
+# Units are # atoms per 10^6 H atoms
+#
+# Note: uncertainties need more thought at well, currently just 10%
+#

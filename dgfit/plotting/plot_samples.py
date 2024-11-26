@@ -9,7 +9,8 @@ import numpy as np
 
 import corner
 
-if __name__ == "__main__":
+
+def main():
 
     # commandline parser
     parser = argparse.ArgumentParser()
@@ -26,3 +27,7 @@ if __name__ == "__main__":
 
     fig = corner.corner(samples)
     fig.savefig("%s.png" % args.filename)
+
+
+if __name__ == "__main__":
+    main()

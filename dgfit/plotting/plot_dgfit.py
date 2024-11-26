@@ -1,10 +1,8 @@
-# import pkg_resources
 import argparse
 
 import numpy as np
 import matplotlib.pyplot as pyplot
 import matplotlib
-# from matplotlib.ticker import ScalarFormatter
 
 from astropy.io import fits
 

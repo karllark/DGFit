@@ -1,14 +1,18 @@
 import argparse
+import importlib.resources as importlib_resources
 
 import matplotlib.pyplot as plt
-import colorsys
 import matplotlib
 import numpy as np
+from matplotlib.cm import ScalarMappable
+from matplotlib.cm import get_cmap
+from matplotlib.colors import LogNorm
 
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
 
-if __name__ == "__main__":
+
+def main():
 
     # commandline parser
     parser = argparse.ArgumentParser()
@@ -26,7 +30,10 @@ if __name__ == "__main__":
         help="Grain composition",
     )
     parser.add_argument(
-        "--obsdata", help="transform to observed data grids", action="store_true"
+        "--obsdata",
+        type=str,
+        default="none",
+        help="transform to observed data grids, with the name of the observed data file as input",
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
@@ -34,25 +41,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     DG = DustGrains()
-    DG.from_files(args.composition, path="dgfit/data/indiv_grain/")
+    ref = importlib_resources.files("dgfit") / "data"
+    with importlib_resources.as_file(ref) as data_path:
+        DG.from_files(args.composition, path=str(data_path) + "/indiv_grain/")
 
-    if args.obsdata:
-        OD = ObsData(
-            [
-                "data/mw_rv31/MW_diffuse_Gordon09_band_ext.dat",
-                "data/mw_rv31/MW_diffuse_Gordon09_iue_ext.dat",
-                "data/mw_rv31/MW_diffuse_Gordon09_fuse_ext.dat",
-            ],
-            "data/mw_rv31/MW_diffuse_Gordon09_avnhi.dat",
-            "data/mw_rv31/MW_diffuse_Jenkins09_abundances.dat",
-            "data/mw_rv31/MW_diffuse_Compiegne11_ir_emission.dat",
-            "dust_scat.dat",
-            ext_tags=["band", "iue", "fuse"],
-        )
+    if args.obsdata != "none":
+        OD = ObsData(args.obsdata)
         new_DG = DustGrains()
         new_DG.from_object(DG, OD)
         DG = new_DG
 
+    plot(DG, args.composition, args.png, args.eps, args.pdf)
+
+
+def plot(DG, composition, png=False, eps=False, pdf=False):
     # setup the plots
     fontsize = 12
     font = {"size": fontsize}
@@ -69,8 +71,15 @@ if __name__ == "__main__":
     ws_indxs = np.argsort(DG.wavelengths)
     ews_indxs = np.argsort(DG.wavelengths_emission)
     waves = DG.wavelengths[ws_indxs]
+
+    num_segments = DG.n_sizes
+    DG.sizes *= 10**4
+    cmap = get_cmap("hsv", num_segments)
+    norm = LogNorm(vmin=min(DG.sizes), vmax=max(DG.sizes))
+    colors = [cmap(i) for i in range(num_segments)]
+
     for i in range(DG.n_sizes):
-        pcolor = colorsys.hsv_to_rgb(float(i) / DG.n_sizes / (1.1), 1, 1)
+        pcolor = colors[i]
 
         ax[0, 0].plot(waves, DG.cabs[i, ws_indxs], color=pcolor)
         ax[0, 0].set_xlabel(r"$\lambda$ [$\mu m$]")
@@ -112,20 +121,26 @@ if __name__ == "__main__":
         ax[1, 2].set_ylabel("Emission")
         ax[1, 2].set_xscale("log")
         ax[1, 2].set_yscale("log")
-        cur_ylim = ax[1, 2].get_ylim()
         ax[1, 2].set_ylim([1e-23, 1e-0])
 
-    ax[0, 1].set_title(args.composition)
+    ax[0, 1].set_title(composition)
 
-    plt.tight_layout()
+    sm = ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, fraction=0.05, pad=0.04, aspect=50)
+    cbar.set_label(r"Grainsizes [$\mu m$]")
 
     # show or save
-    basename = "DustGrains_diag_%s" % (args.composition)
-    if args.png:
+    basename = "DustGrains_diag_%s" % (composition)
+    if png:
         fig.savefig(basename + ".png")
-    elif args.eps:
+    elif eps:
         fig.savefig(basename + ".eps")
-    elif args.pdf:
+    elif pdf:
         fig.savefig(basename + ".pdf")
     else:
         plt.show()
+
+
+if __name__ == "__main__":
+    main()
