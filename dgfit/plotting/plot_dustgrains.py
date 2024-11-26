@@ -4,7 +4,6 @@ import importlib.resources as importlib_resources
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
-from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from matplotlib.cm import get_cmap
 from matplotlib.colors import LogNorm
@@ -129,7 +128,7 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax, fraction=0.05, pad=0.04, aspect=50)
-    cbar.set_label("Grainsizes [$\mu m$]")
+    cbar.set_label(r"Grainsizes [$\mu m$]")
 
     # show or save
     basename = "DustGrains_diag_%s" % (composition)
