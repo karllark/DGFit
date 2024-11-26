@@ -2,9 +2,12 @@ import argparse
 import importlib.resources as importlib_resources
 
 import matplotlib.pyplot as plt
-import colorsys
 import matplotlib
 import numpy as np
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+from matplotlib.cm import get_cmap
+from matplotlib.colors import LogNorm
 
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
@@ -69,12 +72,15 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
     ws_indxs = np.argsort(DG.wavelengths)
     ews_indxs = np.argsort(DG.wavelengths_emission)
     waves = DG.wavelengths[ws_indxs]
-    colors = []
-    labels = []
+
+    num_segments = DG.n_sizes
+    DG.sizes *= 10**4
+    cmap = get_cmap('hsv', num_segments)
+    norm = LogNorm(vmin=min(DG.sizes), vmax=max(DG.sizes))
+    colors = [cmap(i) for i in range(num_segments)]
+
     for i in range(DG.n_sizes):
-        pcolor = colorsys.hsv_to_rgb(float(i) / DG.n_sizes / (1.1), 1, 1)
-        colors.append(pcolor)
-        labels.append(DG.sizes[i])
+        pcolor = colors[i]
 
         ax[0, 0].plot(waves, DG.cabs[i, ws_indxs], color=pcolor)
         ax[0, 0].set_xlabel(r"$\lambda$ [$\mu m$]")
@@ -119,15 +125,11 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
         ax[1, 2].set_ylim([1e-23, 1e-0])
 
     ax[0, 1].set_title(composition)
-    fig.legend(
-        labels,
-        title="Grainsizes [$m$]",
-        loc="lower center",
-        bbox_to_anchor=(0.5, 0),
-        ncol=DG.n_sizes / 3,
-    )
 
-    plt.tight_layout(rect=[0, 0.14, 1, 1])
+    sm = ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, fraction=0.05, pad=0.04, aspect=50)
+    cbar.set_label("Grainsizes [$\mu m$]")
 
     # show or save
     basename = "DustGrains_diag_%s" % (composition)
