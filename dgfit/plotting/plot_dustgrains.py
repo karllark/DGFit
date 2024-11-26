@@ -75,7 +75,7 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
 
     num_segments = DG.n_sizes
     DG.sizes *= 10**4
-    cmap = get_cmap('hsv', num_segments)
+    cmap = get_cmap("hsv", num_segments)
     norm = LogNorm(vmin=min(DG.sizes), vmax=max(DG.sizes))
     colors = [cmap(i) for i in range(num_segments)]
 
