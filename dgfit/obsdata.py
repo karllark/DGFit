@@ -154,7 +154,7 @@ class ObsData(object):
             # emission conversion
             rel_ir_emission_unc = self.ir_emission_unc / self.ir_emission
             self.ir_emission_av = self.ir_emission / self.avnhi
-            self.ir_emission_av_unc = self.ir_emission * np.sqrt(
+            self.ir_emission_av_unc = self.ir_emission_av * np.sqrt(
                 np.square(rel_ir_emission_unc) + np.square(avnhi_rel_unc)
             )
 
