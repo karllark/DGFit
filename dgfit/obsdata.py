@@ -73,24 +73,6 @@ class ObsData(object):
         else:
             self.ext_waves = np.logspace(np.log10(0.0912), np.log10(32.0), 200)
 
-        # normalization from A(V) to N(HI)
-        if self.obs_filenames["avnhi"] is not None:
-            t = Table.read(
-                path + self.obs_filenames["avnhi"],
-                format="ascii.commented_header",
-                header_start=-1,
-            )
-            self.avnhi = t["Av_to_NHI"][0]
-            self.avnhi_unc = t["unc"][0]
-
-            # change the extinction normalization from A(V) to N(HI)
-            self.ext_alnhi = self.ext_alav * self.avnhi
-            self.ext_alnhi_unc = np.square(
-                self.ext_alav_unc / self.ext_alav
-            ) + np.square(self.avnhi_unc / self.avnhi)
-            self.ext_alnhi_unc = self.ext_alnhi * np.sqrt(self.ext_alnhi_unc)
-            self.ext_alnhi_npts = len(self.ext_alnhi)
-
         # dust abundances
         self.fit_abundance = False
         if self.obs_filenames["abund"] is not None:
@@ -157,6 +139,57 @@ class ObsData(object):
         else:
             self.scat_a_waves = np.logspace(np.log10(0.1), np.log10(5.0), 100)
             self.scat_g_waves = np.logspace(np.log10(0.1), np.log10(5.0), 100)
+
+        # normalization from N(HI) to A(V) for emission and abundance data
+        if self.obs_filenames["avnhi"] is not None:
+            t = Table.read(
+                path + self.obs_filenames["avnhi"],
+                format="ascii.commented_header",
+                header_start=-1,
+            )
+            self.avnhi = t["Av_to_NHI"][0]
+            self.avnhi_unc = t["unc"][0]
+            avnhi_rel_unc = self.avnhi_unc / self.avnhi
+
+            # emission conversion
+            rel_ir_emission_unc = self.ir_emission_unc / self.ir_emission
+            self.ir_emission_av = self.ir_emission / self.avnhi
+            self.ir_emission_av_unc = self.ir_emission * np.sqrt(
+                np.square(rel_ir_emission_unc) + np.square(avnhi_rel_unc)
+            )
+
+            # abundance conversion
+            self.abundance_av = {}
+            self.total_abundance_av = {}
+            for key in self.abundance.keys():
+                old_abund, old_abund_unc = self.abundance[key]
+                old_tot_abund, old_tot_abund_unc = self.total_abundance[key]
+
+                rel_abund_unc = old_abund_unc / old_abund
+                rel_tot_abund_unc = old_tot_abund_unc / old_tot_abund
+
+                new_abund = old_abund / (10**6)
+                new_abund /= self.avnhi
+                new_tot_abund = old_tot_abund / (10**6)
+                new_tot_abund /= self.avnhi
+
+                new_abund_unc = new_abund * np.sqrt(
+                    np.square(rel_abund_unc) + np.square(avnhi_rel_unc)
+                )
+                new_tot_abund_unc = new_tot_abund * np.sqrt(
+                    np.square(rel_tot_abund_unc) + np.square(avnhi_rel_unc)
+                )
+
+                self.abundance_av[key] = (new_abund, new_abund_unc)
+                self.total_abundance_av[key] = (new_tot_abund, new_tot_abund_unc)
+
+            # extinction normalization from A(V) to N(HI)
+            self.ext_alnhi = self.ext_alav * self.avnhi
+            self.ext_alnhi_unc = np.square(
+                self.ext_alav_unc / self.ext_alav
+            ) + np.square(avnhi_rel_unc)
+            self.ext_alnhi_unc = self.ext_alnhi * np.sqrt(self.ext_alnhi_unc)
+            self.ext_alnhi_npts = len(self.ext_alnhi)
 
     def parse_obsfile(self, obs_filename):
         """

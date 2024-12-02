@@ -86,6 +86,13 @@ def DGFit_cmdparser():
         "--nolarge", action="store_true", help="Deweight a > 0.5 micron by 1e-10"
     )
 
+    parser.add_argument(
+        "--units",
+        default="Av",
+        choices=["Av", "NHI"],
+        help="Choose in what units the plots are",
+    )
+
     return parser
 
 
