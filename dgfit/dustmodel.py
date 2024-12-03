@@ -336,18 +336,19 @@ class DustModel(object):
         # get the integrated dust properties
         results = self.eff_grain_props(obsdata)
 
-        # compute the ln(prob) for A(l)/N(HI)
-        lnp_alnhi = 0.0
+        # compute the ln(prob) for A(l)/A(V)
+        lnp_alav = 0.0
         if obsdata.fit_extinction:
             cabs = results["cabs"]
             csca = results["csca"]
             cext = cabs + csca
             dust_alnhi = 1.086 * cext
-            weights = 1.0 / obsdata.ext_alnhi_unc
+            dust_alav = dust_alnhi/obsdata.avnhi
+            weights = 1.0 / obsdata.ext_alav_unc
             bandvals = obsdata.ext_type != "spec"
             if np.sum(bandvals) > 0:
                 weights[bandvals] *= 1000
-            lnp_alnhi = -0.5 * np.sum(((obsdata.ext_alnhi - dust_alnhi) * weights) ** 2)
+            lnp_alav = -0.5 * np.sum(((obsdata.ext_alav - dust_alav) * weights) ** 2)
         # lnp_alnhi /= obsdata.ext_alnhi_npts
 
         # compute the ln(prob) for the depletions
@@ -356,8 +357,8 @@ class DustModel(object):
             natoms = results["natoms"]
             for atomname in natoms.keys():
                 lnp_dep = (
-                    (natoms[atomname] - obsdata.abundance[atomname][0])
-                    / obsdata.abundance[atomname][1]
+                    (natoms[atomname] - obsdata.abundance_av[atomname][0])
+                    / obsdata.abundance_av[atomname][1]
                 ) ** 2
             lnp_dep *= -0.5
         # lnp_dep /= obsdata.abundance_npts
@@ -367,7 +368,7 @@ class DustModel(object):
         if obsdata.fit_ir_emission:
             emission = results["emission"]
             lnp_emission = -0.5 * np.sum(
-                (((obsdata.ir_emission - emission) / (obsdata.ir_emission_unc)) ** 2)
+                (((obsdata.ir_emission_av - emission) / (obsdata.ir_emission_av_unc)) ** 2)
             )
 
         # compute the ln(prob) for the dust albedo
@@ -387,13 +388,13 @@ class DustModel(object):
             )
 
         # combine the lnps
-        lnp = lnp_alnhi + lnp_dep + lnp_emission + lnp_albedo + lnp_g
+        lnp = lnp_alav + lnp_dep + lnp_emission + lnp_albedo + lnp_g
 
         # print(params)
         # print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
 
         if math.isinf(lnp) | math.isnan(lnp):
-            print(lnp_alnhi, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
+            print(lnp_alav, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
             print(lnp)
             # print(params)
             exit()
@@ -538,7 +539,7 @@ class DustModel(object):
         cols = fits.ColDefs([col1, col2])
         tbhdu = fits.BinTableHDU.from_columns(cols)
         tbhdu.header.set(
-            "EXTNAME", "Abundances", "abundances in units of # atoms/1e6 H atoms"
+            "EXTNAME", "Abundances", "abundances in units of # atoms/A(V)"
         )
         hdulist.append(tbhdu)
 
@@ -546,7 +547,7 @@ class DustModel(object):
         col1 = fits.Column(
             name="WAVE", format="E", array=self.components[0].wavelengths
         )
-        col2 = fits.Column(name="EXT", format="E", array=1.086 * (cabs + csca))
+        col2 = fits.Column(name="EXT", format="E", array=(1.086 * (cabs + csca))/OD.avnhi)
         all_cols_ext = [col1, col2]
 
         # emission
@@ -599,13 +600,13 @@ class DustModel(object):
         #    extinction
         cols = fits.ColDefs(all_cols_ext)
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set("EXTNAME", "Extinction", "extinction in A(lambda)/N(HI) units")
+        tbhdu.header.set("EXTNAME", "Extinction", "extinction in A(lambda)/A(V)")
         hdulist.append(tbhdu)
 
         #    emission
         cols = fits.ColDefs(all_cols_emis)
         tbhdu = fits.BinTableHDU.from_columns(cols)
-        tbhdu.header.set("EXTNAME", "Emission", "emission MJy/sr/H atom units")
+        tbhdu.header.set("EXTNAME", "Emission", "emission MJy/sr/A(V)")
         hdulist.append(tbhdu)
 
         #    albedo
