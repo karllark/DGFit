@@ -365,8 +365,8 @@ class DustGrains(object):
 
             # *not* faster to use numexpr (tested in 2015)
 
-        results["cabs"] = _effcabs
-        results["csca"] = _effcsca
+        results["cabs"] = _effcabs / ObsData.avnhi
+        results["csca"] = _effcsca / ObsData.avnhi
 
         # compute the number of atoms/NHI
         _natoms = np.empty(len(self.atomic_comp_names))
@@ -387,8 +387,8 @@ class DustGrains(object):
                 )
             )
 
-        # convert to N(N) per 1e6 N(HI)
-        _natoms *= 1e6
+        # convert to N(N) per A(V)
+        _natoms /= ObsData.avnhi
 
         results["natoms"] = dict(zip(self.atomic_comp_names, _natoms))
 
@@ -403,7 +403,7 @@ class DustGrains(object):
                         + (self.emission[1 : self.n_sizes, i] * sizedist2)
                     )
                 )
-            results["emission"] = _emission
+            results["emission"] = _emission / ObsData.avnhi
 
         # scattering parameters a & g
         if ObsData.fit_scat_a or predict_all:
