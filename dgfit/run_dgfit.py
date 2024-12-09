@@ -229,15 +229,15 @@ def main():
 
         else:
             # check that the default size distributions give approximately
-            #     the right level of the A(lambda)/N(HI) curve
+            #     the right level of the A(lambda)/A(V) curve
             # if not, adjust the overall level of the size distributions to
             #     get them close
             results = dustmodel.eff_grain_props(obsdata)
             cabs = results["cabs"]
             csca = results["csca"]
-            dust_alnhi = 1.086 * (cabs + csca)
-            ave_model = np.average(dust_alnhi)
-            ave_data = np.average(obsdata.ext_alnhi)
+            dust_alav = 1.086 * (cabs + csca)
+            ave_model = np.average(dust_alav)
+            ave_data = np.average(obsdata.ext_alav)
             ave_ratio = ave_data / ave_model
             if (ave_ratio < 0.5) | (ave_ratio > 2):
                 for component in dustmodel.components:
