@@ -129,13 +129,13 @@ def plot_dgfit_abundances(
     if obsdata.obs_filenames["abund"] is not None:
         ax.errorbar(
             aindxs + 0.75 * width,
-            [obsdata.abundance[x][0] for x in atomnames],
-            yerr=[obsdata.abundance[x][1] for x in atomnames],
+            [obsdata.abundance_av[x][0] for x in atomnames],
+            yerr=[obsdata.abundance_av[x][1] for x in atomnames],
             fmt="ko",
             label="Observations",
         )
 
-    ax.set_ylabel(r"$N(X)/[10^6 N(H)]$", fontsize=fontsize)
+    ax.set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
 
@@ -163,13 +163,13 @@ def plot_dgfit_extinction(
             )
 
     if obsdata.obs_filenames["ext"] is not None:
-        ax.plot(obsdata.ext_waves, obsdata.ext_alnhi, "k-", label="Observed")
-        yrange = get_krange(obsdata.ext_alnhi, logaxis=True, in_range=yrange)
+        ax.plot(obsdata.ext_waves, obsdata.ext_alav, "k-", label="Observed")
+        yrange = get_krange(obsdata.ext_alav, logaxis=True, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"$A(\lambda)/N(H)$", fontsize=fontsize)
+    ax.set_ylabel(r"$A(\lambda)/A(V)$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
@@ -196,17 +196,17 @@ def plot_dgfit_emission(
     if obsdata.obs_filenames["ir_emis"] is not None:
         ax.errorbar(
             obsdata.ir_emission_waves,
-            obsdata.ir_emission,
-            yerr=obsdata.ir_emission_unc,
+            obsdata.ir_emission_av,
+            yerr=obsdata.ir_emission_av_unc,
             fmt="ko",
             label="Observed",
         )
-        yrange = get_krange(obsdata.ir_emission, logaxis=True, in_range=yrange)
+        yrange = get_krange(obsdata.ir_emission_av, logaxis=True, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(H)^{-1}]$", fontsize=fontsize)
+    ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)

@@ -22,6 +22,12 @@ def main():
     parser.add_argument(
         "--ISRF", type=str, default="none", help="Add the ISFR file to plot"
     )
+    parser.add_argument(
+        "--units",
+        default="AV",
+        choices=["AV", "NHI"],
+        help="Choose in what units the plots are",
+    )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -29,10 +35,10 @@ def main():
 
     OD = ObsData(args.obsdata)
 
-    plot(OD, args.ISRF, args.png, args.eps, args.pdf)
+    plot(OD, args.ISRF, args.units, args.png, args.eps, args.pdf)
 
 
-def plot(OD, ISRF="none", png=False, eps=False, pdf=False):
+def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
 
     # setup the plots
     fontsize = 16
@@ -47,56 +53,99 @@ def plot(OD, ISRF="none", png=False, eps=False, pdf=False):
 
     fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15, 10))
 
-    ax[0, 0].errorbar(
-        OD.ext_waves, OD.ext_alnhi, yerr=OD.ext_alnhi_unc, fmt="o", label="Extinction"
-    )
-    ax[0, 0].set_xlabel(r"$\lambda [\mu m]$")
-    ax[0, 0].set_ylabel(r"$A(\lambda)/N(HI)$")
-    ax[0, 0].set_xscale("log")
-    ax[0, 0].set_xlim(0.085, 3.0)
-    ax[0, 0].legend()
-
     n_atoms = len(OD.abundance)
     aindxs = np.arange(n_atoms)
     width = 0.5
     atomnames = sorted(list(OD.abundance.keys()))
 
-    ax[1, 0].bar(
-        aindxs + 0.25 * width,
-        [OD.total_abundance[x][0] for x in atomnames],
-        width,
-        color="g",
-        alpha=0.25,
-        label="gas+dust",
-    )
+    if units == "AV":
+        ax[0, 0].errorbar(
+            OD.ext_waves, OD.ext_alav, yerr=OD.ext_alav_unc, fmt="o", label="Extinction"
+        )
+        ax[0, 0].set_ylabel(r"$A(\lambda)/A(V)$")
 
-    ax[1, 0].errorbar(
-        aindxs + 0.75 * width,
-        [OD.abundance[x][0] for x in atomnames],
-        yerr=[OD.abundance[x][1] for x in atomnames],
-        fmt="o",
-        label="dust",
-    )
+        ax[1, 0].bar(
+            aindxs + 0.25 * width,
+            [OD.total_abundance_av[x][0] for x in atomnames],
+            width,
+            color="g",
+            alpha=0.25,
+            label="gas+dust",
+        )
+        ax[1, 0].errorbar(
+            aindxs + 0.75 * width,
+            [OD.abundance_av[x][0] for x in atomnames],
+            yerr=[OD.abundance_av[x][1] for x in atomnames],
+            fmt="o",
+            label="dust",
+        )
+        ax[1, 0].set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
 
-    ax[1, 0].set_ylabel(r"$N(X)/[10^6 N(HI)]$", fontsize=fontsize)
+        if OD.fit_ir_emission:
+            ax[0, 1].errorbar(
+                OD.ir_emission_waves,
+                OD.ir_emission_av,
+                yerr=OD.ir_emission_av_unc,
+                fmt="o",
+                label="Emission",
+            )
+            ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
+            ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$")
+            ax[0, 1].set_xscale("log")
+            ax[0, 1].set_xlim(1.0, 1.5e4)
+            ax[0, 1].set_yscale("log")
+            ax[0, 1].legend(loc=2)
+
+    elif units == "NHI":
+        ax[0, 0].errorbar(
+            OD.ext_waves,
+            OD.ext_alnhi,
+            yerr=OD.ext_alnhi_unc,
+            fmt="o",
+            label="Extinction",
+        )
+        ax[0, 0].set_ylabel(r"$A(\lambda)/N(HI)$")
+
+        ax[1, 0].bar(
+            aindxs + 0.25 * width,
+            [OD.total_abundance[x][0] for x in atomnames],
+            width,
+            color="g",
+            alpha=0.25,
+            label="gas+dust",
+        )
+        ax[1, 0].errorbar(
+            aindxs + 0.75 * width,
+            [OD.abundance[x][0] for x in atomnames],
+            yerr=[OD.abundance[x][1] for x in atomnames],
+            fmt="o",
+            label="dust",
+        )
+        ax[1, 0].set_ylabel(r"$N(X)/[10^6N(HI)]$", fontsize=fontsize)
+
+        if OD.fit_ir_emission:
+            ax[0, 1].errorbar(
+                OD.ir_emission_waves,
+                OD.ir_emission,
+                yerr=OD.ir_emission_unc,
+                fmt="o",
+                label="Emission",
+            )
+            ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
+            ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$")
+            ax[0, 1].set_xscale("log")
+            ax[0, 1].set_xlim(1.0, 1.5e4)
+            ax[0, 1].set_yscale("log")
+            ax[0, 1].legend(loc=2)
+
+    ax[0, 0].set_xlabel(r"$\lambda [\mu m]$")
+    ax[0, 0].set_xscale("log")
+    ax[0, 0].set_xlim(0.085, 3.0)
+    ax[0, 0].legend()
+
     ax[1, 0].set_xticks(aindxs + (0.75 * width))
     ax[1, 0].set_xticklabels(atomnames)
     ax[1, 0].legend(loc=2)
-
-    if OD.fit_ir_emission:
-        ax[0, 1].errorbar(
-            OD.ir_emission_waves,
-            OD.ir_emission,
-            yerr=OD.ir_emission_unc,
-            fmt="o",
-            label="Emission",
-        )
-        ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
-        ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$")
-        ax[0, 1].set_xscale("log")
-        ax[0, 1].set_xlim(1.0, 1.5e4)
-        ax[0, 1].set_yscale("log")
-        ax[0, 1].legend(loc=2)
 
     if ISRF != "none":
         ref = importlib_resources.files("dgfit") / ISRF
