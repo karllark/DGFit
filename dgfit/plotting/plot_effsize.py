@@ -67,6 +67,11 @@ def main():
     _effsize = np.empty((dustmodel.n_components, component.n_sizes - 1))
     _effcabs_sum = np.empty((component.n_wavelengths, dustmodel.n_components))
     _effcsca_sum = np.empty((component.n_wavelengths, dustmodel.n_components))
+    _emission_sum = np.empty((component.n_wavelengths, dustmodel.n_components))
+
+    _emission_all = np.empty(
+        (component.n_wavelengths, dustmodel.n_components, component.n_sizes - 1)
+    )
     for k, component in enumerate(dustmodel.components):
 
         # do a very simple integration (later this could be made more complex)
@@ -85,10 +90,15 @@ def main():
                 (component.csca[0 : component.n_sizes - 1, i] * sizedist1)
                 + (component.csca[1 : component.n_sizes, i] * sizedist2)
             )
+            _emission_all[i, k, :] = deltas * (
+                (component.emission[0 : component.n_sizes - 1, i] * sizedist1)
+                + (component.emission[1 : component.n_sizes, i] * sizedist2)
+            )
 
         # *not* faster to use numexpr (tested in 2015)
         _effcabs_sum[:, k] = np.sum(_effcabs_all[:, k, :], axis=1)
         _effcsca_sum[:, k] = np.sum(_effcsca_all[:, k, :], axis=1)
+        _emission_sum[:, k] = np.sum(_emission_all[:, k, :], axis=1)
 
         _effsize[k, :] = (
             0.5
@@ -101,6 +111,7 @@ def main():
 
     _effcext_sum = _effcabs_sum + _effcsca_sum
     _effcext_sum_allcomp = np.sum(_effcext_sum, axis=1)
+    _emission_sum_allcomp = np.sum(_emission_sum, axis=1)
 
     # setup the plots
     fontsize = 16
@@ -126,10 +137,10 @@ def main():
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(1e-4, 1e0)
-    ax.set_ylim(1e-12, 1e1)
+    ax.set_ylim(1e-12, 1e2)
     ax.set_xlabel(r"$a [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$n_H^{-1} dn/da$", fontsize=fontsize)
+    ax.set_title("Size distributions")
     ax.legend()
 
     # plot extinction
@@ -140,10 +151,10 @@ def main():
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(0.1, 1e2)
     ax.set_ylim(1e-25, 1e-20)
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$A(\lambda)/N(H)$", fontsize=fontsize)
+    ax.set_title("Extinction plot")
     ax.legend()
 
     # plot the contribution of each grains by component to the total
@@ -167,10 +178,31 @@ def main():
     ax.plot(component.wavelengths, esize_all, "k-", label="Total")
 
     ax.set_xscale("log")
-    ax.set_xlim(0.1, 1e2)
     ax.set_ylim(0.0, 0.4)
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"average $a [\mu m]$", fontsize=fontsize)
+    ax.set_title("Average a for extinction")
+
+    ax = fax[1, 0]
+    esize = np.empty((component.n_wavelengths, dustmodel.n_components))
+    for k, component in enumerate(dustmodel.components):
+        for i in range(component.n_wavelengths):
+            weights = _emission_all[i, k, :] / _emission_sum_allcomp[i]
+            esize[i, k] = np.sum(_effsize[k, :] * weights) / np.sum(weights)
+
+        ax.plot(component.wavelengths, esize[:, k], symvals[k], label=component.name)
+
+    esize_all = np.empty((component.n_wavelengths))
+    for i in range(component.n_wavelengths):
+        weights = _emission_all[i, :, :] / _emission_sum_allcomp[i]
+        esize_all[i] = np.sum(_effsize * weights) / np.sum(weights)
+    ax.plot(component.wavelengths, esize_all, "k-", label="Total")
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
+    ax.set_ylabel(r"average $a [\mu m]$", fontsize=fontsize)
+    ax.set_title("Average a for emission")
 
     fig.tight_layout()
 

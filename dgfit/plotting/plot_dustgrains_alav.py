@@ -62,7 +62,7 @@ def main():
     matplotlib.rc("xtick.major", width=2)
     matplotlib.rc("ytick.major", width=2)
 
-    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 10))
+    fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(15, 10))
 
     ws_indxs = np.argsort(DG.wavelengths)
     waves = DG.wavelengths[ws_indxs]
@@ -71,22 +71,29 @@ def main():
 
         # get the values at specified lambda and V
         al = np.interp([args.wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
-        ax[0].plot(DG.sizes[i] * 1e4, al[0] / al[1], "o", color=pcolor)
+        em = np.interp(args.wave, waves, DG.emission[i, ws_indxs])
+        ax[0][0].plot(DG.sizes[i] * 1e4, al[0] / al[1], "o", color=pcolor)
+        ax[0][1].plot(DG.sizes[i] * 1e4, em, "o", color=pcolor)
 
         rv = al[1] / (al[2] - al[1])
-        ax[1].plot(rv, al[0] / al[1], "o", color=pcolor)
+        ax[1][0].plot(rv, al[0] / al[1], "o", color=pcolor)
 
-    ax[0].set_xlabel(r"$a$ [$\mu m$]")
-    ax[0].set_ylabel(f"A({args.wave})/A(V)")
-    ax[0].set_xscale("log")
-    ax[0].set_yscale("log")
+    ax[0][0].set_xlabel(r"$a$ [$\mu m$]")
+    ax[0][0].set_ylabel(f"A({args.wave})/A(V)")
+    ax[0][0].set_xscale("log")
+    ax[0][0].set_yscale("log")
 
-    ax[1].set_xlabel(r"R(V)")
-    ax[1].set_xlim(0.0, 10.0)
-    ax[1].set_ylabel(f"A({args.wave})/A(V)")
-    ax[1].set_yscale("log")
+    ax[0][1].set_xlabel(r"$a$ [$\mu m$]")
+    ax[0][1].set_ylabel(f"S({args.wave})")
+    ax[0][1].set_xscale("log")
+    #ax[0][1].set_yscale("log")
 
-    ax[0].set_title(args.composition)
+    ax[1][0].set_xlabel(r"R(V)")
+    ax[1][0].set_xlim(0.0, 10.0)
+    ax[1][0].set_ylabel(f"A({args.wave})/A(V)")
+    ax[1][0].set_yscale("log")
+
+    ax[0][0].set_title(args.composition)
 
     plt.tight_layout()
 
