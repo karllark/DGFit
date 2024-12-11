@@ -86,7 +86,7 @@ def main():
     ax[0][1].set_xlabel(r"$a$ [$\mu m$]")
     ax[0][1].set_ylabel(f"S({args.wave})")
     ax[0][1].set_xscale("log")
-    #ax[0][1].set_yscale("log")
+    ax[0][1].set_yscale("log")
 
     ax[1][0].set_xlabel(r"R(V)")
     ax[1][0].set_xlim(0.0, 10.0)
