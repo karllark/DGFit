@@ -499,7 +499,9 @@ class DustModel(object):
         k1 = 0
         for component in self.components:
             col1 = fits.Column(name="SIZE", format="E", array=component.sizes)
-            col2 = fits.Column(name="DIST", format="E", array=component.size_dist)
+            col2 = fits.Column(
+                name="DIST", format="E", array=(component.size_dist / OD.avnhi)
+            )
             all_cols = [col1, col2]
 
             k2 = k1 + component.n_sizes

@@ -295,7 +295,7 @@ class DustGrains(object):
 
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.
-    # these are normalized to NHI (assumption)
+    # these are normalized to A(V)
     def eff_grain_props(self, ObsData, predict_all=False):
         """
         Calculate the grain properties integrated over the size distribution
