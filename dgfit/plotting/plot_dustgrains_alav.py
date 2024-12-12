@@ -84,7 +84,10 @@ def main():
     ax[0][0].set_yscale("log")
 
     ax[0][1].set_xlabel(r"$a$ [$\mu m$]")
-    ax[0][1].set_ylabel(f"S({args.wave})")
+    if args.obsdata != "none":
+        ax[0][1].set_ylabel(f"S({args.wave})/A(V)")
+    else:
+        ax[0][1].set_ylabel(f"S({args.wave})/N(HI)")
     ax[0][1].set_xscale("log")
     ax[0][1].set_yscale("log")
 
