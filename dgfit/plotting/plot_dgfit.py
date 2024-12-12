@@ -61,7 +61,7 @@ def plot_dgfit_sizedist(
         hdu = hdulist[i + 1]
 
         xvals = hdu.data["SIZE"] * 1e4
-        yvals = hdu.data["DIST"]
+        yvals = hdu.data["DIST"]  # / obsdata.avnhi
 
         if plot_uncs:
             yvals_punc = hdu.data["DISTPUNC"]
@@ -98,9 +98,9 @@ def plot_dgfit_sizedist(
             )
 
     if multa4:
-        ylabel = r"$a^4 N_d(a)/N(H)$"
+        ylabel = r"$a^4 N_d(a)/A(V)$"
     else:
-        ylabel = r"$N_d(a)/N(H)$"
+        ylabel = r"$N_d(a)/A(V)$"
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -108,6 +108,7 @@ def plot_dgfit_sizedist(
     ax.set_ylim(yrange)
     ax.set_xlabel(r"$a [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.set_title("Size distribution")
     if plegend:
         ax.legend()
 
@@ -138,6 +139,7 @@ def plot_dgfit_abundances(
     ax.set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
+    ax.set_title("Abundances")
 
     if plegend:
         ax.legend()
@@ -173,6 +175,7 @@ def plot_dgfit_extinction(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
+    ax.set_title("Extinction")
 
 
 # plot the emission spectra (total and components)
@@ -210,6 +213,7 @@ def plot_dgfit_emission(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
+    ax.set_title("Emission")
 
 
 # plot the dust scattering albedo
@@ -244,6 +248,7 @@ def plot_dgfit_albedo(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim([0.0, 1.0])
+    ax.set_title("Albedo")
     # ax.set_ylim(yrange)
 
 
@@ -279,6 +284,7 @@ def plot_dgfit_g(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim([0.0, 1.0])
+    ax.set_title("Scattering phase funtion")
     # ax.set_ylim(yrange)
 
 
@@ -325,16 +331,10 @@ def main():
     # open the DGFit results
     hdulist = fits.open(args.filename)
 
-    # get the location of the provided data
-    # data_path = pkg_resources.resource_filename("dgfit", "data/")
-
     # get the observed data
     OD = ObsData(args.obsfile)
 
     # plot the dust size distributions
-    # colors = ["b", "g"]
-    # plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, multa4=False)
-
     plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, plegend=True)
 
     # plot the abundances
@@ -368,15 +368,6 @@ def main():
         else:
             repstr = "best_optimizer"
         hdulist2 = fits.open(args.filename.replace(repstr, "start"))
-        # plot_dgfit_sizedist(
-        #    ax[0, 0],
-        #    hdulist2,
-        #    fontsize=fontsize,
-        #    multa4=False,
-        #    plegend=False,
-        #    ltype="--",
-        #    alpha=0.5,
-        # )
         plot_dgfit_sizedist(
             ax[0, 0], hdulist2, fontsize=fontsize, plegend=False, ltype="--", alpha=0.50
         )
@@ -393,12 +384,6 @@ def main():
             ax[1, 1], hdulist2["ALBEDO"], OD, fontsize=fontsize, ltype="--"
         )
         plot_dgfit_g(ax[1, 2], hdulist2["G"], OD, fontsize=fontsize, ltype="--")
-
-    # ax[0, 0].set_ylim(1e-14, 1e2)
-    ax[0, 0].set_ylim(1e-40, 3e-27)
-
-    # ax[1, 2].xaxis.set_major_formatter(ScalarFormatter())
-    # ax[1, 2].xaxis.set_minor_formatter(ScalarFormatter())
 
     pyplot.tight_layout()
 
