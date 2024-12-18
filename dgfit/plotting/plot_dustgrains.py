@@ -35,6 +35,9 @@ def main():
         default="none",
         help="transform to observed data grids, with the name of the observed data file as input",
     )
+    parser.add_argument(
+        "--everynth", type=int, default=5, help="Use every nth grain size"
+    )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -43,7 +46,7 @@ def main():
     DG = DustGrains()
     ref = importlib_resources.files("dgfit") / "data"
     with importlib_resources.as_file(ref) as data_path:
-        DG.from_files(args.composition, path=str(data_path) + "/indiv_grain/")
+        DG.from_files(args.composition, path=str(data_path) + "/indiv_grain/", every_nth=args.everynth)
 
     if args.obsdata != "none":
         OD = ObsData(args.obsdata)
