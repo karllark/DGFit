@@ -2,7 +2,6 @@ import argparse
 import importlib.resources as importlib_resources
 
 import matplotlib.pyplot as plt
-import colorsys
 import matplotlib
 import numpy as np
 from matplotlib.cm import ScalarMappable
@@ -11,6 +10,7 @@ from matplotlib.colors import LogNorm
 
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
+
 
 def main():
     # commandline parser
@@ -48,7 +48,11 @@ def main():
     DG = DustGrains()
     ref = importlib_resources.files("dgfit") / "data"
     with importlib_resources.as_file(ref) as data_path:
-        DG.from_files(args.composition, path=str(data_path) + "/indiv_grain/", every_nth=args.everynth)
+        DG.from_files(
+            args.composition,
+            path=str(data_path) + "/indiv_grain/",
+            every_nth=args.everynth,
+        )
 
     if args.obsdata != "none":
         OD = ObsData(args.obsdata)
@@ -88,7 +92,7 @@ def main():
 
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
-    cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.05, pad=0.04)
+    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.04)
     cbar.set_label(r"Grainsizes [$\mu m$]")
 
     ax.set_xlabel(r"R(V)")
