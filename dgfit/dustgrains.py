@@ -29,7 +29,7 @@ class DustGrains(object):
         """
         self.origin = None
 
-    def from_files(self, componentname, path="./", every_nth=1):
+    def from_files(self, componentname, path="./", every_nth=5):
         """
         Read in precomputed dust grain information from files.
 
