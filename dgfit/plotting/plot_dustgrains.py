@@ -46,7 +46,11 @@ def main():
     DG = DustGrains()
     ref = importlib_resources.files("dgfit") / "data"
     with importlib_resources.as_file(ref) as data_path:
-        DG.from_files(args.composition, path=str(data_path) + "/indiv_grain/", every_nth=args.everynth)
+        DG.from_files(
+            args.composition,
+            path=str(data_path) + "/indiv_grain/",
+            every_nth=args.everynth,
+        )
 
     if args.obsdata != "none":
         OD = ObsData(args.obsdata)
