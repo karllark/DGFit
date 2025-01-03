@@ -138,7 +138,7 @@ def main():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_ylim(1e-12, 1e2)
-    ax.set_xlabel(r"$a [\mu m]$", fontsize=fontsize)
+    ax.set_xlabel(r"a $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$n_H^{-1} dn/da$", fontsize=fontsize)
     ax.set_title("Size distributions")
     ax.legend()
@@ -154,7 +154,7 @@ def main():
     ax.set_ylim(1e-25, 1e-20)
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$A(\lambda)/N(H)$", fontsize=fontsize)
-    ax.set_title("Extinction plot")
+    ax.set_title("Extinction")
     ax.legend()
 
     # plot the contribution of each grains by component to the total
@@ -180,8 +180,8 @@ def main():
     ax.set_xscale("log")
     ax.set_ylim(0.0, 0.4)
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"average $a [\mu m]$", fontsize=fontsize)
-    ax.set_title("Average a for extinction")
+    ax.set_ylabel(r"average a $[\mu m]$", fontsize=fontsize)
+    ax.set_title("Average grain size for extinction")
 
     ax = fax[1, 0]
     esize = np.empty((component.n_wavelengths, dustmodel.n_components))
@@ -201,8 +201,8 @@ def main():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"average $a [\mu m]$", fontsize=fontsize)
-    ax.set_title("Average a for emission")
+    ax.set_ylabel(r"average a $[\mu m]$", fontsize=fontsize)
+    ax.set_title("Average grain size for emission")
 
     fig.tight_layout()
 
