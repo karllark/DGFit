@@ -93,7 +93,7 @@ def main():
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.04)
-    cbar.set_label(r"Grainsizes [$\mu m$]")
+    cbar.set_label(r"Grain sizes [$\mu m$]")
 
     ax.set_xlabel(r"R(V)")
     ax.set_xlim(0.0, 10.0)
