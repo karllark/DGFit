@@ -343,7 +343,6 @@ class DustModel(object):
             csca = results["csca"]
             cext = cabs + csca
             dust_alav = 1.086 * cext
-            # dust_alav = dust_alnhi
             weights = 1.0 / obsdata.ext_alav_unc
             bandvals = obsdata.ext_type != "spec"
             if np.sum(bandvals) > 0:
