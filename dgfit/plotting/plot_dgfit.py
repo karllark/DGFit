@@ -61,7 +61,7 @@ def plot_dgfit_sizedist(
         hdu = hdulist[i + 1]
 
         xvals = hdu.data["SIZE"] * 1e4
-        yvals = hdu.data["DIST"]  # / obsdata.avnhi
+        yvals = hdu.data["DIST"]
 
         if plot_uncs:
             yvals_punc = hdu.data["DISTPUNC"]
@@ -106,9 +106,8 @@ def plot_dgfit_sizedist(
     ax.set_yscale("log")
     ax.set_xlim(get_krange(xvals, logaxis=True))
     ax.set_ylim(yrange)
-    ax.set_xlabel(r"$a [\mu m]$", fontsize=fontsize)
+    ax.set_xlabel(r"a $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
-    ax.set_title("Size distribution")
     if plegend:
         ax.legend()
 
@@ -139,7 +138,6 @@ def plot_dgfit_abundances(
     ax.set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
-    ax.set_title("Abundances")
 
     if plegend:
         ax.legend()
@@ -175,7 +173,6 @@ def plot_dgfit_extinction(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
-    ax.set_title("Extinction")
 
 
 # plot the emission spectra (total and components)
@@ -213,7 +210,6 @@ def plot_dgfit_emission(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
-    ax.set_title("Emission")
 
 
 # plot the dust scattering albedo
@@ -248,7 +244,6 @@ def plot_dgfit_albedo(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim([0.0, 1.0])
-    ax.set_title("Albedo")
     # ax.set_ylim(yrange)
 
 
@@ -284,7 +279,6 @@ def plot_dgfit_g(
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim([0.0, 1.0])
-    ax.set_title("Scattering phase funtion")
     # ax.set_ylim(yrange)
 
 
