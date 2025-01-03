@@ -4,6 +4,9 @@ import importlib.resources as importlib_resources
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
+from matplotlib.cm import ScalarMappable
+from matplotlib.cm import get_cmap
+from matplotlib.colors import LogNorm
 
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
@@ -68,57 +71,46 @@ def main():
     matplotlib.rc("xtick.major", width=2)
     matplotlib.rc("ytick.major", width=2)
 
-    fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(15, 10))
-
     ws_indxs = np.argsort(DG.wavelengths)
     waves = DG.wavelengths[ws_indxs]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    num_segments = DG.n_sizes
+    DG.sizes *= 10**4
+    cmap = get_cmap("hsv", num_segments)
+    norm = LogNorm(vmin=min(DG.sizes), vmax=max(DG.sizes))
+    colors = [cmap(i) for i in range(num_segments)]
     for i in range(DG.n_sizes):
+        pcolor = colors[i]
 
         # get the values at specified lambda and V
         al = np.interp([args.wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
-        em = np.interp(args.wave, waves, DG.emission[i, ws_indxs])
-        absext = DG.cabs[i, ws_indxs] / DG.cext[i, ws_indxs]
-        scaext = DG.csca[i, ws_indxs] / DG.cext[i, ws_indxs]
-        cabs = np.interp(args.wave, waves, absext)
-        csca = np.interp(args.wave, waves, scaext)
-        ax[0][0].plot(DG.sizes[i] * 1e4, al[0] / al[1], "o", color="b")
-        ax[0][1].plot(DG.sizes[i] * 1e4, em, "o", color="b")
-        ax[1][0].plot(DG.sizes[i] * 1e4, cabs, "o", color="b")
-        ax[1][1].plot(DG.sizes[i] * 1e4, csca, "o", color="b")
 
-    ax[0][0].set_xlabel(r"$a$ [$\mu m$]")
-    ax[0][0].set_ylabel(f"A({args.wave})/A(V)")
-    ax[0][0].set_xscale("log")
-    ax[0][0].set_yscale("log")
+        rv = al[1] / (al[2] - al[1])
+        ax.plot(rv, al[0] / al[1], "o", color=pcolor)
 
-    ax[0][1].set_xlabel(r"$a$ [$\mu m$]")
-    if args.obsdata != "none":
-        ax[0][1].set_ylabel(f"S({args.wave})/A(V)")
-    else:
-        ax[0][1].set_ylabel(f"S({args.wave})/N(HI)")
-    ax[0][1].set_xscale("log")
-    ax[0][1].set_yscale("log")
+    sm = ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.04)
+    cbar.set_label(r"Grain sizes [$\mu m$]")
 
-    ax[1][0].set_xlabel(r"$a$ [$\mu m$]")
-    ax[1][0].set_ylabel(r"$C_{abs}/C_{ext}$")
-    ax[1][0].set_xscale("log")
-
-    ax[1][1].set_xlabel(r"$a$ [$\mu m$]")
-    ax[1][1].set_ylabel(r"$C_{sca}/C_{ext}$")
-    ax[1][1].set_xscale("log")
-
-    ax[0][0].set_title(args.composition)
+    ax.set_xlabel(r"R(V)")
+    ax.set_xlim(0.0, 10.0)
+    ax.set_ylabel(f"A({args.wave})/A(V)")
+    ax.set_yscale("log")
+    ax.set_title(args.composition)
 
     plt.tight_layout()
 
     # show or save
     basename = "DustGrains_diag_%s" % (args.composition)
     if args.png:
-        fig.savefig(basename + ".png")
+        plt.savefig(basename + ".png")
     elif args.eps:
-        fig.savefig(basename + ".eps")
+        plt.savefig(basename + ".eps")
     elif args.pdf:
-        fig.savefig(basename + ".pdf")
+        plt.savefig(basename + ".pdf")
     else:
         plt.show()
 
