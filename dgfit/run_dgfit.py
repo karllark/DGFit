@@ -185,7 +185,12 @@ def main():
         p0 = []
         for component in dustmodel.components:
             cparams = dustmodel.parameters[component.name]
-            p0 += [cparams["C"], cparams["alpha"], cparams["a_min"], cparams["a_max"]]
+            p0 += [
+                cparams["C"] / obsdata.avnhi,
+                cparams["alpha"],
+                cparams["a_min"],
+                cparams["a_max"],
+            ]
             pnames += cparams.keys()
 
         # need to set dust model size distribution
@@ -200,7 +205,7 @@ def main():
             if component.name == "astro-silicates":
                 cparams = dustmodel.parameters["astro-silicates"]
                 p0 += [
-                    cparams["C_s"],
+                    cparams["C_s"] / obsdata.avnhi,
                     cparams["a_ts"],
                     cparams["alpha_s"],
                     cparams["beta_s"],
@@ -208,12 +213,12 @@ def main():
             else:
                 cparams = dustmodel.parameters["astro-carbonaceous"]
                 p0 += [
-                    cparams["C_g"],
+                    cparams["C_g"] / obsdata.avnhi,
                     cparams["a_tg"],
                     cparams["alpha_g"],
                     cparams["beta_g"],
                     cparams["a_cg"],
-                    cparams["b_C"],
+                    cparams["b_C"] / obsdata.avnhi,
                 ]
             pnames += cparams.keys()
 
