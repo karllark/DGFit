@@ -152,7 +152,7 @@ def main():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_ylim(1e-25, 1e-20)
-    ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
+    ax.set_xlabel(r"$\lambda$ $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$A(\lambda)/N(H)$", fontsize=fontsize)
     ax.set_title("Extinction")
     ax.legend()
@@ -179,7 +179,7 @@ def main():
 
     ax.set_xscale("log")
     ax.set_ylim(0.0, 0.4)
-    ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
+    ax.set_xlabel(r"$\lambda$ $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"average a $[\mu m]$", fontsize=fontsize)
     ax.set_title("Average grain size for extinction")
 
@@ -200,7 +200,7 @@ def main():
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
+    ax.set_xlabel(r"$\lambda$ $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"average a $[\mu m]$", fontsize=fontsize)
     ax.set_title("Average grain size for emission")
 
