@@ -98,15 +98,15 @@ def plot_dgfit_sizedist(
             )
 
     if multa4:
-        ylabel = r"$a^4 N_d(a)/N(H)$"
+        ylabel = r"$a^4 N_d(a)/A(V)$"
     else:
-        ylabel = r"$N_d(a)/N(H)$"
+        ylabel = r"$N_d(a)/A(V)$"
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlim(get_krange(xvals, logaxis=True))
     ax.set_ylim(yrange)
-    ax.set_xlabel(r"$a [\mu m]$", fontsize=fontsize)
+    ax.set_xlabel(r"a $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     if plegend:
         ax.legend()
@@ -129,13 +129,13 @@ def plot_dgfit_abundances(
     if obsdata.obs_filenames["abund"] is not None:
         ax.errorbar(
             aindxs + 0.75 * width,
-            [obsdata.abundance[x][0] for x in atomnames],
-            yerr=[obsdata.abundance[x][1] for x in atomnames],
+            [obsdata.abundance_av[x][0] for x in atomnames],
+            yerr=[obsdata.abundance_av[x][1] for x in atomnames],
             fmt="ko",
             label="Observations",
         )
 
-    ax.set_ylabel(r"$N(X)/[10^6 N(H)]$", fontsize=fontsize)
+    ax.set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
 
@@ -163,13 +163,13 @@ def plot_dgfit_extinction(
             )
 
     if obsdata.obs_filenames["ext"] is not None:
-        ax.plot(obsdata.ext_waves, obsdata.ext_alnhi, "k-", label="Observed")
-        yrange = get_krange(obsdata.ext_alnhi, logaxis=True, in_range=yrange)
+        ax.plot(obsdata.ext_waves, obsdata.ext_alav, "k-", label="Observed")
+        yrange = get_krange(obsdata.ext_alav, logaxis=True, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"$A(\lambda)/N(H)$", fontsize=fontsize)
+    ax.set_ylabel(r"$A(\lambda)/A(V)$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
@@ -196,17 +196,17 @@ def plot_dgfit_emission(
     if obsdata.obs_filenames["ir_emis"] is not None:
         ax.errorbar(
             obsdata.ir_emission_waves,
-            obsdata.ir_emission,
-            yerr=obsdata.ir_emission_unc,
+            obsdata.ir_emission_av,
+            yerr=obsdata.ir_emission_av_unc,
             fmt="ko",
             label="Observed",
         )
-        yrange = get_krange(obsdata.ir_emission, logaxis=True, in_range=yrange)
+        yrange = get_krange(obsdata.ir_emission_av, logaxis=True, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(H)^{-1}]$", fontsize=fontsize)
+    ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$", fontsize=fontsize)
 
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim(yrange)
@@ -325,16 +325,10 @@ def main():
     # open the DGFit results
     hdulist = fits.open(args.filename)
 
-    # get the location of the provided data
-    # data_path = pkg_resources.resource_filename("dgfit", "data/")
-
     # get the observed data
     OD = ObsData(args.obsfile)
 
     # plot the dust size distributions
-    # colors = ["b", "g"]
-    # plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, multa4=False)
-
     plot_dgfit_sizedist(ax[0, 0], hdulist, fontsize=fontsize, plegend=True)
 
     # plot the abundances
@@ -368,15 +362,6 @@ def main():
         else:
             repstr = "best_optimizer"
         hdulist2 = fits.open(args.filename.replace(repstr, "start"))
-        # plot_dgfit_sizedist(
-        #    ax[0, 0],
-        #    hdulist2,
-        #    fontsize=fontsize,
-        #    multa4=False,
-        #    plegend=False,
-        #    ltype="--",
-        #    alpha=0.5,
-        # )
         plot_dgfit_sizedist(
             ax[0, 0], hdulist2, fontsize=fontsize, plegend=False, ltype="--", alpha=0.50
         )
@@ -393,12 +378,6 @@ def main():
             ax[1, 1], hdulist2["ALBEDO"], OD, fontsize=fontsize, ltype="--"
         )
         plot_dgfit_g(ax[1, 2], hdulist2["G"], OD, fontsize=fontsize, ltype="--")
-
-    # ax[0, 0].set_ylim(1e-14, 1e2)
-    ax[0, 0].set_ylim(1e-40, 3e-27)
-
-    # ax[1, 2].xaxis.set_major_formatter(ScalarFormatter())
-    # ax[1, 2].xaxis.set_minor_formatter(ScalarFormatter())
 
     pyplot.tight_layout()
 

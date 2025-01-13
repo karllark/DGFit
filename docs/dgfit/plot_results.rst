@@ -57,7 +57,6 @@ For example, to plot the default run results from the optimizer (= max prob):
     plot_dgfit_albedo(ax[1, 1], hdulist["ALBEDO"], OD, fontsize=fontsize)
     plot_dgfit_g(ax[1, 2], hdulist["G"], OD, fontsize=fontsize)
 
-    ax[0, 0].set_ylim(1e-40, 3e-27)
     pyplot.tight_layout()
 
 To include the starting points

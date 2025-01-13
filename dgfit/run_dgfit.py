@@ -86,6 +86,13 @@ def DGFit_cmdparser():
         "--nolarge", action="store_true", help="Deweight a > 0.5 micron by 1e-10"
     )
 
+    parser.add_argument(
+        "--units",
+        default="Av",
+        choices=["Av", "NHI"],
+        help="Choose in what units the plots are",
+    )
+
     return parser
 
 
@@ -178,7 +185,12 @@ def main():
         p0 = []
         for component in dustmodel.components:
             cparams = dustmodel.parameters[component.name]
-            p0 += [cparams["C"], cparams["alpha"], cparams["a_min"], cparams["a_max"]]
+            p0 += [
+                cparams["C"] / obsdata.avnhi,
+                cparams["alpha"],
+                cparams["a_min"],
+                cparams["a_max"],
+            ]
             pnames += cparams.keys()
 
         # need to set dust model size distribution
@@ -193,7 +205,7 @@ def main():
             if component.name == "astro-silicates":
                 cparams = dustmodel.parameters["astro-silicates"]
                 p0 += [
-                    cparams["C_s"],
+                    cparams["C_s"] / obsdata.avnhi,
                     cparams["a_ts"],
                     cparams["alpha_s"],
                     cparams["beta_s"],
@@ -201,12 +213,12 @@ def main():
             else:
                 cparams = dustmodel.parameters["astro-carbonaceous"]
                 p0 += [
-                    cparams["C_g"],
+                    cparams["C_g"] / obsdata.avnhi,
                     cparams["a_tg"],
                     cparams["alpha_g"],
                     cparams["beta_g"],
                     cparams["a_cg"],
-                    cparams["b_C"],
+                    cparams["b_C"] / obsdata.avnhi,
                 ]
             pnames += cparams.keys()
 
@@ -222,15 +234,15 @@ def main():
 
         else:
             # check that the default size distributions give approximately
-            #     the right level of the A(lambda)/N(HI) curve
+            #     the right level of the A(lambda)/A(V) curve
             # if not, adjust the overall level of the size distributions to
             #     get them close
             results = dustmodel.eff_grain_props(obsdata)
             cabs = results["cabs"]
             csca = results["csca"]
-            dust_alnhi = 1.086 * (cabs + csca)
-            ave_model = np.average(dust_alnhi)
-            ave_data = np.average(obsdata.ext_alnhi)
+            dust_alav = 1.086 * (cabs + csca)
+            ave_model = np.average(dust_alav)
+            ave_data = np.average(obsdata.ext_alav)
             ave_ratio = ave_data / ave_model
             if (ave_ratio < 0.5) | (ave_ratio > 2):
                 for component in dustmodel.components:

@@ -295,7 +295,7 @@ class DustGrains(object):
 
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.
-    # these are normalized to NHI (assumption)
+    # these are normalized to A(V)
     def eff_grain_props(self, ObsData, predict_all=False):
         """
         Calculate the grain properties integrated over the size distribution
@@ -368,7 +368,7 @@ class DustGrains(object):
         results["cabs"] = _effcabs
         results["csca"] = _effcsca
 
-        # compute the number of atoms/NHI
+        # compute the number of atoms/A(V)
         _natoms = np.empty(len(self.atomic_comp_names))
         for i in range(len(self.atomic_comp_names)):
             _natoms[i] = np.sum(
@@ -386,9 +386,6 @@ class DustGrains(object):
                     )
                 )
             )
-
-        # convert to N(N) per 1e6 N(HI)
-        _natoms *= 1e6
 
         results["natoms"] = dict(zip(self.atomic_comp_names, _natoms))
 
