@@ -64,32 +64,6 @@ To include the starting points
 
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata --start
 
-To plot the data of the used dustgrains (default is astro-silicates), use command
-
-    dgplot_dustgrains
-
-.. plot::
-
-    from dgfit.dustgrains import DustGrains
-    import dgfit.plotting.plot_dustgrains
-
-    DG = DustGrains()
-    DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/")
-
-    dgfit.plotting.plot_dustgrains.plot(DG, 'astro-silicates')
-
-To see other dustgrains (<possible> = astro-silicates, astro-carbonaceous, astro-graphite, astro-PAH-ionized and astro-PAH-neutral), use
-
-    dgplot_dustgrains -c <possible>
-
-To transform the particles to the observed data grids and see the data of the dustgrains for the observed dustmodel:
-
-    dgplot_dustgrains --obsdata obsdata
-
-To see the options for saving the plots, use
-
-    dgplot_dustgrains --help
-
 There are two more plots that show the data of the dustgrains.
 The first one can show you the average dustgrain size in function of wavelength for both extinction and emission.
 To show this plot, use
