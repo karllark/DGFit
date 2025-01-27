@@ -60,6 +60,10 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
+    plot(DG, args.wave, args.composition, args.pdf, args.png, args.eps)
+
+def plot(DG, wave, composition, pdf=False, png=False, eps=False):
+
     # setup the plots
     fontsize = 12
     font = {"size": fontsize}
@@ -85,7 +89,7 @@ def main():
         pcolor = colors[i]
 
         # get the values at specified lambda and V
-        al = np.interp([args.wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
+        al = np.interp([wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
 
         rv = al[1] / (al[2] - al[1])
         ax.plot(rv, al[0] / al[1], "o", color=pcolor)
@@ -97,19 +101,19 @@ def main():
 
     ax.set_xlabel(r"R(V)")
     ax.set_xlim(0.0, 10.0)
-    ax.set_ylabel(f"A({args.wave})/A(V)")
+    ax.set_ylabel(f"A({wave})/A(V)")
     ax.set_yscale("log")
-    ax.set_title(args.composition)
+    ax.set_title(composition)
 
     plt.tight_layout()
 
     # show or save
-    basename = "DustGrains_diag_%s" % (args.composition)
-    if args.png:
+    basename = "DustGrains_diag_%s" % (composition)
+    if png:
         plt.savefig(basename + ".png")
-    elif args.eps:
+    elif eps:
         plt.savefig(basename + ".eps")
-    elif args.pdf:
+    elif pdf:
         plt.savefig(basename + ".pdf")
     else:
         plt.show()
