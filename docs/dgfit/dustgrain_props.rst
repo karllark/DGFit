@@ -35,6 +35,19 @@ To plot the average dustgrain size in function of wavelength for both extinction
 
     dgplot_effsize
 
+.. plot::
+
+    from dgfit.dustmodel import DustModel, WDDustModel
+    import dgfit.plotting.plot_effsize
+
+    DM = WDDustModel()
+    compnames = ["astro-silicates", "astro-carbonaceous"]
+    DM.read_grain_files(compnames, "../../dgfit/data/indiv_grain/", every_nth=1)
+
+    dgfit.plotting.plot_effsize.plot(DM)
+
+
+
 Another plot that is available is one that shows the single grain properties. It is devided into four subplots.
 The first one shows the extinction for a chosen wavelength and composition in function of grain size.
 The second one shows the same thing but for the emission.
