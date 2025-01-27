@@ -5,7 +5,7 @@ Dust grain properties
 There are several plots that show the effective grain properties of the used dustgrains.
 In all plots, it is possible to transform the particles and data to the observed data that was used.
 
-To plot the extinction coëfficients, albedo, scattering phase function and emission of the used dustgrains (default is astro-silicates) in function of the grain size, use command
+To plot the extinction coefficients, albedo, scattering phase function and emission of the used dustgrains (default is astro-silicates) in function of the grain size, use command
 
     dgplot_dustgrains
 
@@ -37,20 +37,16 @@ To plot the average dustgrain size in function of wavelength for both extinction
 
 .. plot::
 
-    from dgfit.dustmodel import DustModel
+    from dgfit.dustmodel import DustModel, WDDustModel
+    from dgfit.dustgrains import DustGrains
     import dgfit.plotting.plot_effsize
-    import importlib.resources as importlib_resources
-
+    
     compnames = ["astro-silicates", "astro-carbonaceous"]
-    ref = importlib_resources.files("dgfit") / "data"
-    with importlib_resources.as_file(ref) as data_path:
-        dustmodel_full = DustModel(
-            componentnames=compnames,
-            path=str(data_path) + "/indiv_grain/",
-            every_nth=1,
-        )
-    dustmodel = WDDustModel(dustmodel=dustmodel_full)
 
-    dgfit.plotting.plot_effsize.plot(dustmodel)
+    DM = DustModel(componentnames="astro-carbonaceous", path="../../dgfit/data/indiv_grain/", dustmodel=None, obsdata=None, every_nth=2)
+    model = WDDustModel(DM)
+
+    dgfit.plotting.plot_effsize.plot(model)
+
 
 
