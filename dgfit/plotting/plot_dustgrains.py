@@ -122,7 +122,7 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
         ax[1, 1].set_xscale("log")
 
         ax[1, 2].plot(
-            DG.wavelengths_emission[ews_indxs], DG.emission[i, ews_indxs], color=pcolor
+            DG.wavelengths_emission[ews_indxs], DG.emission[1, i, ews_indxs], color=pcolor
         )
         ax[1, 2].set_xlabel(r"$\lambda$ [$\mu m$]")
         ax[1, 2].set_ylabel("Emission")

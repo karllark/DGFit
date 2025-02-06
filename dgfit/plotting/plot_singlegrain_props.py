@@ -76,7 +76,7 @@ def main():
 
         # get the values at specified lambda and V
         al = np.interp([args.wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
-        em = np.interp(args.wave, waves, DG.emission[i, ws_indxs])
+        em = np.interp(args.wave, waves, DG.emission[1, i, ws_indxs])
         absext = DG.cabs[i, ws_indxs] / DG.cext[i, ws_indxs]
         scaext = DG.csca[i, ws_indxs] / DG.cext[i, ws_indxs]
         cabs = np.interp(args.wave, waves, absext)
