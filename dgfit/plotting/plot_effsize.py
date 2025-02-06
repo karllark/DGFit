@@ -44,6 +44,7 @@ def main():
                 cparams["a_ts"],
                 cparams["alpha_s"],
                 cparams["beta_s"],
+                cparams["RF"],
             ]
         else:
             cparams = dustmodel.parameters["astro-carbonaceous"]
@@ -54,6 +55,7 @@ def main():
                 cparams["beta_g"],
                 cparams["a_cg"],
                 cparams["b_C"],
+                cparams["RF"],
             ]
     dustmodel.set_size_dist(p0)
 
@@ -91,8 +93,8 @@ def main():
                 + (component.csca[1 : component.n_sizes, i] * sizedist2)
             )
             _emission_all[i, k, :] = deltas * (
-                (component.emission[0 : component.n_sizes - 1, i] * sizedist1)
-                + (component.emission[1 : component.n_sizes, i] * sizedist2)
+                (component.emission[1, 0 : component.n_sizes - 1, i] * sizedist1)
+                + (component.emission[1, 1 : component.n_sizes, i] * sizedist2)
             )
 
         # *not* faster to use numexpr (tested in 2015)

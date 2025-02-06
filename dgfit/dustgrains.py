@@ -144,6 +144,7 @@ class DustGrains(object):
         self.sizes = np.empty(self.n_sizes)
         self.size_dist = np.empty(self.n_sizes)
         self.stochastic_heating = np.empty(self.n_sizes)
+        self.RF_strength = 1
 
         # loop over the files from the smallest to the largest sizes
         for k, file in enumerate(sorted(filelist, key=lambda file: file[1])):
@@ -175,7 +176,9 @@ class DustGrains(object):
                 self.cabs = np.empty((self.n_sizes, self.n_wavelengths))
                 self.csca = np.empty((self.n_sizes, self.n_wavelengths))
                 self.scat_g = np.empty((self.n_sizes, self.n_wavelengths))
-                self.emission = np.empty((self.n_sizes, self.n_wavelengths_emission))
+                self.ISRF_field_strengths = ["0.5", "1", "2", "5", "10"]
+                self.n_ISRF_strengths = len(self.ISRF_field_strengths)
+                self.emission = np.empty((self.n_ISRF_strengths, self.n_sizes, self.n_wavelengths_emission))
 
             # store the info
             self.sizes[k] = file[2]
@@ -185,18 +188,25 @@ class DustGrains(object):
             self.cabs[k, :] = t["CAbs"][gindxs]
             self.scat_g[k, :] = t["G"][gindxs]
             if self.stochastic_heating[k]:
-                self.emission[k, :] = t["StEm5"][egindxs]
+                base = "StEm"
+                for i in range(self.n_ISRF_strengths):
+                    number = str(i+1)
+                    self.emission[i, k, :] = t[base+number][egindxs]
+
             else:
-                self.emission[k, :] = t["EqEm5"][egindxs]
+                base = "EqEm"
+                for i in range(self.n_ISRF_strengths):
+                    number = str(i+1)
+                    self.emission[i, k, :] = t[base+number][egindxs]
 
             # convert emission from ergs/(s cm sr) to Jy/sr
             #   wavelengths in microns
             #      convert from cm^-1 to Hz^-1
-            self.emission[k, :] *= (self.wavelengths_emission) ** 2 / 2.998e10
-            self.emission[k, :] /= 1e-19  # convert from ergs/(s Hz) to Jy
-            self.emission[k, :] *= 1e-6  # convert from Jy/sr to MJy/sr
+            self.emission[:, k, :] *= (self.wavelengths_emission) ** 2 / 2.998e10
+            self.emission[:, k, :] /= 1e-19  # convert from ergs/(s Hz) to Jy
+            self.emission[:, k, :] *= 1e-6  # convert from Jy/sr to MJy/sr
             # convert from m^-2 to cm^-2
-            self.emission[k, :] *= 1e-4
+            self.emission[:, k, :] *= 1e-4
 
             # default size distributions
             self.size_dist[k] = self.sizes[k] ** (-4.0)
@@ -248,6 +258,9 @@ class DustGrains(object):
         self.sizes = DustGrain.sizes
         self.size_dist = DustGrain.size_dist
         self.stochastic_heating = DustGrain.stochastic_heating
+        self.ISRF_field_strengths = DustGrain.ISRF_field_strengths
+        self.n_ISRF_strengths = DustGrain.n_ISRF_strengths
+        self.RF_strength = DustGrain.RF_strength
 
         # new values on the observed wavelength grids
         self.wavelengths = ObsData.ext_waves
@@ -260,7 +273,7 @@ class DustGrains(object):
 
         self.wavelengths_emission = ObsData.ir_emission_waves
         self.n_wavelengths_emission = len(self.wavelengths_emission)
-        self.emission = np.empty((self.n_sizes, self.n_wavelengths_emission))
+        self.emission = np.empty((self.n_ISRF_strengths, self.n_sizes, self.n_wavelengths_emission))
 
         self.wavelengths_scat_a = ObsData.scat_a_waves
         self.n_wavelengths_scat_a = len(self.wavelengths_scat_a)
@@ -289,9 +302,9 @@ class DustGrains(object):
             self.scat_g_csca[i, :] = csca_interp(self.wavelengths_scat_g)
 
             emission_interp = interp1d(
-                DustGrain.wavelengths_emission, DustGrain.emission[i, :]
+                DustGrain.wavelengths_emission, DustGrain.emission[:, i, :]
             )
-            self.emission[i, :] = emission_interp(self.wavelengths_emission)
+            self.emission[:, i, :] = emission_interp(self.wavelengths_emission)
 
     # function to integrate this component
     # returns the effective/total cabs, csca, etc.
@@ -389,15 +402,26 @@ class DustGrains(object):
 
         results["natoms"] = dict(zip(self.atomic_comp_names, _natoms))
 
-        # compute the integrated emission spectrum
+        # compute the integrated emission spectrum for the right ISRF strength
         if ObsData.fit_ir_emission or predict_all:
             _emission = np.empty(self.n_wavelengths_emission)
+
+            # find the index of the ISRF strength that is just below the value we want to calculate
+            # this is needed for interpolation
+            for a in range(self.n_ISRF_strengths-1, -1, -1):
+                if float(self.ISRF_field_strengths[a]) <= self.RF_strength:
+                    index = a
+                    break
+
+            interpolated_emission = self.interpol_emission(index, self.RF_strength)
+
+
             for i in range(self.n_wavelengths_emission):
                 _emission[i] = np.sum(
                     deltas
                     * (
-                        (self.emission[0 : self.n_sizes - 1, i] * sizedist1)
-                        + (self.emission[1 : self.n_sizes, i] * sizedist2)
+                        (interpolated_emission[0 : self.n_sizes - 1, i] * sizedist1)
+                        + (interpolated_emission[1 : self.n_sizes, i] * sizedist2)
                     )
                 )
             results["emission"] = _emission
@@ -473,3 +497,17 @@ class DustGrains(object):
 
         # return the results as a tuple of arrays
         return results
+    
+    def interpol_emission(self, index, ISRF):
+        #here needs to be an interpolating function for the emission depending in the ISRF strength
+        lower_emission = self.emission[index, :, :]
+        upper_emission = self.emission[index+1, :, :]
+
+        lower_value = float(self.ISRF_field_strengths[index])
+        upper_value = float(self.ISRF_field_strengths[index+1])
+
+        alpha = (ISRF - lower_value)/(upper_value - lower_value)
+
+        emission = (1 - alpha) * lower_emission + alpha * upper_emission
+
+        return emission
