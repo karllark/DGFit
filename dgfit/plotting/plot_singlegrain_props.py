@@ -62,7 +62,8 @@ def main():
 
     plot(DG, args.wave, args.composition, args.obsdata, args.png, args.eps, args.pdf)
 
-def plot(DG, wave, composition, obsdata='none', png=False, eps=False, pdf=False):
+
+def plot(DG, wave, composition, obsdata="none", png=False, eps=False, pdf=False):
 
     # setup the plots
     fontsize = 12

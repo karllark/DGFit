@@ -62,6 +62,7 @@ def main():
 
     plot(DG, args.wave, args.composition, args.pdf, args.png, args.eps)
 
+
 def plot(DG, wave, composition, pdf=False, png=False, eps=False):
 
     # setup the plots
