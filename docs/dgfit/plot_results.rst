@@ -86,12 +86,12 @@ To see an overview of the observed data used, use
 
 .. plot::
 
-    import dgfit.plotting.plot_obsdata
+    from dgfit.plotting.plot_obsdata import plot
     from dgfit.obsdata import ObsData
 
     OD = ObsData("mw_rv31_obs.dat", path = "../../dgfit/data/mw_rv31/")
 
-    dgfit.plotting.plot_obsdata.plot(OD, 'none')
+    plot(OD, 'none')
 
 To add the ISRF plot (if available)
 

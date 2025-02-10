@@ -12,12 +12,12 @@ To plot the extinction coefficients, albedo, scattering phase function and emiss
 .. plot::
 
     from dgfit.dustgrains import DustGrains
-    import dgfit.plotting.plot_dustgrains
+    from dgfit.plotting.plot_dustgrains import plot
 
     DG = DustGrains()
     DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/")
 
-    dgfit.plotting.plot_dustgrains.plot(DG, 'astro-silicates')
+    plot(DG, 'astro-silicates')
 
 To see other dustgrains (<possible> = astro-silicates, astro-carbonaceous, astro-graphite, astro-PAH-ionized and astro-PAH-neutral), use
 
@@ -38,15 +38,15 @@ To plot the average dustgrain size in function of wavelength for both extinction
 .. plot::
 
     from dgfit.dustmodel import DustModel, WDDustModel
-    import dgfit.plotting.plot_effsize
-
-    DM = WDDustModel()
+    from dgfit.dustgrains import DustGrains
+    from dgfit.plotting.plot_effsize import plot
+    
     compnames = ["astro-silicates", "astro-carbonaceous"]
-    DM.read_grain_files(compnames, "../../dgfit/data/indiv_grain/", every_nth=1)
 
-    dgfit.plotting.plot_effsize.plot(DM)
+    DustM = DustModel(componentnames=compnames, path="../../dgfit/data/indiv_grain/", dustmodel=None, obsdata=None, every_nth=2)
+    model = WDDustModel(dustmodel=DustM)
 
-
+    plot(model)
 
 Another plot that is available is one that shows the single grain properties. It is devided into four subplots.
 The first one shows the extinction for a chosen wavelength and composition in function of grain size.
@@ -59,12 +59,12 @@ To make this plot, use
 .. plot::
 
     from dgfit.dustgrains import DustGrains
-    import dgfit.plotting.plot_singlegrain_props
+    from dgfit.plotting.plot_singlegrain_props import plot
 
     DG = DustGrains()
     DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/", every_nth=1)
 
-    dgfit.plotting.plot_singlegrain_props.plot(DG, 10, 'astro-silicates')
+    plot(DG, 10, 'astro-silicates')
 
 The default wavelength for these plots is 0.1 micron. 
 To choose another wavelength (with the wavelength given in micron), use
@@ -87,12 +87,12 @@ To make this plot, use
 .. plot::
 
     from dgfit.dustgrains import DustGrains
-    import dgfit.plotting.plot_rv
+    from dgfit.plotting.plot_rv import plot
 
     DG = DustGrains()
     DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/", every_nth=1)
 
-    dgfit.plotting.plot_rv.plot(DG, 10, 'astro-silicates')
+    plot(DG, 10, 'astro-silicates')
 
 The default wavelength for these plots is 0.1 micron. 
 To choose another wavelength (with the wavelength given in micron), use
