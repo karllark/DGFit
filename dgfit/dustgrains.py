@@ -176,9 +176,18 @@ class DustGrains(object):
                 self.cabs = np.empty((self.n_sizes, self.n_wavelengths))
                 self.csca = np.empty((self.n_sizes, self.n_wavelengths))
                 self.scat_g = np.empty((self.n_sizes, self.n_wavelengths))
-                self.ISRF_field_strengths = ["0.5", "1", "2", "5", "10"]
+
+                self.ISRF_field_strengths = []
+                for tcomment in t.meta["comments"]:
+                    if "Scales" in tcomment:
+                        scales = tcomment.split(":")[1].strip()
+                        for number in scales.split():
+                            self.ISRF_field_strengths.append(float(number))
+
                 self.n_ISRF_strengths = len(self.ISRF_field_strengths)
-                self.emission = np.empty((self.n_ISRF_strengths, self.n_sizes, self.n_wavelengths_emission))
+                self.emission = np.empty(
+                    (self.n_ISRF_strengths, self.n_sizes, self.n_wavelengths_emission)
+                )
 
             # store the info
             self.sizes[k] = file[2]
@@ -190,14 +199,14 @@ class DustGrains(object):
             if self.stochastic_heating[k]:
                 base = "StEm"
                 for i in range(self.n_ISRF_strengths):
-                    number = str(i+1)
-                    self.emission[i, k, :] = t[base+number][egindxs]
+                    number = str(i + 1)
+                    self.emission[i, k, :] = t[base + number][egindxs]
 
             else:
                 base = "EqEm"
                 for i in range(self.n_ISRF_strengths):
-                    number = str(i+1)
-                    self.emission[i, k, :] = t[base+number][egindxs]
+                    number = str(i + 1)
+                    self.emission[i, k, :] = t[base + number][egindxs]
 
             # convert emission from ergs/(s cm sr) to Jy/sr
             #   wavelengths in microns
@@ -273,7 +282,9 @@ class DustGrains(object):
 
         self.wavelengths_emission = ObsData.ir_emission_waves
         self.n_wavelengths_emission = len(self.wavelengths_emission)
-        self.emission = np.empty((self.n_ISRF_strengths, self.n_sizes, self.n_wavelengths_emission))
+        self.emission = np.empty(
+            (self.n_ISRF_strengths, self.n_sizes, self.n_wavelengths_emission)
+        )
 
         self.wavelengths_scat_a = ObsData.scat_a_waves
         self.n_wavelengths_scat_a = len(self.wavelengths_scat_a)
@@ -406,15 +417,8 @@ class DustGrains(object):
         if ObsData.fit_ir_emission or predict_all:
             _emission = np.empty(self.n_wavelengths_emission)
 
-            # find the index of the ISRF strength that is just below the value we want to calculate
-            # this is needed for interpolation
-            for a in range(self.n_ISRF_strengths-1, -1, -1):
-                if float(self.ISRF_field_strengths[a]) <= self.RF_strength:
-                    index = a
-                    break
-
-            interpolated_emission = self.interpol_emission(index, self.RF_strength)
-
+            # Calculate the emission for the used radaiation field
+            interpolated_emission = self.interpol_emission(self.RF_strength)
 
             for i in range(self.n_wavelengths_emission):
                 _emission[i] = np.sum(
@@ -497,17 +501,11 @@ class DustGrains(object):
 
         # return the results as a tuple of arrays
         return results
-    
-    def interpol_emission(self, index, ISRF):
-        #here needs to be an interpolating function for the emission depending in the ISRF strength
-        lower_emission = self.emission[index, :, :]
-        upper_emission = self.emission[index+1, :, :]
 
-        lower_value = float(self.ISRF_field_strengths[index])
-        upper_value = float(self.ISRF_field_strengths[index+1])
+    def interpol_emission(self, ISRF):
 
-        alpha = (ISRF - lower_value)/(upper_value - lower_value)
-
-        emission = (1 - alpha) * lower_emission + alpha * upper_emission
+        x = np.array(self.ISRF_field_strengths)
+        interpolation = interp1d(x, self.emission, axis=0)
+        emission = interpolation(ISRF)
 
         return emission

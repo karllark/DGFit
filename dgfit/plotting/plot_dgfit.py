@@ -183,7 +183,7 @@ def plot_dgfit_emission(
     yrange = get_krange(hdu.data["EMIS"], logaxis=True)
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
-        for i in range(len(hdu.data.names) - 3):
+        for i in range(len(hdu.data.names) - 2):
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["EMIS" + str(i + 1)],
@@ -203,9 +203,8 @@ def plot_dgfit_emission(
         )
         yrange = get_krange(obsdata.ir_emission_av, logaxis=True, in_range=yrange)
 
-    ISRF_array = hdu.data["ISRF"]
-    ISRF_value = ISRF_array[0]
-    ax.set_title(f"ISRF = {ISRF_value}")
+    ISRF_value = hdu.header["ISRF"]
+    ax.set_title(f"ISRF = {ISRF_value:.2f}")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
