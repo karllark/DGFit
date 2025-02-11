@@ -121,6 +121,7 @@ def main():
         yerr=OD.ir_emission_av_unc,
         fmt="ko",
         label="Observed",
+        capsize=4,
     )
     yrange = get_krange(OD.ir_emission_av, logaxis=True, in_range=yrange)
 
@@ -133,7 +134,8 @@ def main():
     ax1.set_ylim(yrange)
 
     residuals = (hdu.data["EMIS"] - OD.ir_emission_av) / OD.ir_emission_av
-    ax2.scatter(hdu.data["WAVE"], residuals)
+    unc = OD.ir_emission_av_unc / OD.ir_emission_av
+    ax2.errorbar(hdu.data["WAVE"], residuals, yerr=unc, fmt="x", capsize=4)
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax2.set_ylabel("Residuals", fontsize=fontsize)

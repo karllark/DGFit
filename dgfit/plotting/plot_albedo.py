@@ -119,6 +119,7 @@ def main():
         yerr=OD.scat_albedo_unc,
         fmt="ko",
         label="Observed",
+        capsize=4,
     )
 
     ax1.set_xscale("log")
@@ -129,7 +130,8 @@ def main():
     ax1.set_ylim([0.0, 1.0])
 
     residuals = (hdu.data["ALBEDO"] - OD.scat_albedo) / OD.scat_albedo
-    ax2.scatter(hdu.data["WAVE"], residuals)
+    unc = OD.scat_albedo_unc / OD.scat_albedo
+    ax2.errorbar(hdu.data["WAVE"], residuals, yerr=unc, fmt="o", capsize=4)
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax2.set_ylabel("Residuals", fontsize=fontsize)
