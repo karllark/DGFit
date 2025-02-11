@@ -133,7 +133,7 @@ def main():
 
     residuals = (hdu.data["EXT"] - OD.ext_alav) / OD.ext_alav
     unc = OD.ext_alav_unc / OD.ext_alav
-    ax2.errorbar(hdu.data["WAVE"], residuals, yerr=unc, fmt="o", capsize=4)
+    ax2.errorbar(hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color='black', capsize=4)
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax2.set_ylabel("Residuals (%)", fontsize=fontsize)
