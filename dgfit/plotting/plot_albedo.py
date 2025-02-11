@@ -8,6 +8,7 @@ from astropy.io import fits
 
 from dgfit.obsdata import ObsData
 
+
 def get_krange(x, logaxis=False, in_range=[0]):
     prange = np.array([0.0, 0.0])
     if logaxis:
@@ -37,6 +38,7 @@ def get_krange(x, logaxis=False, in_range=[0]):
         prange[1] = np.maximum(prange[1], in_range[1])
 
     return prange
+
 
 def main():
     # commandline parser
@@ -75,11 +77,17 @@ def main():
     matplotlib.rc("xtick.major", width=2)
     matplotlib.rc("ytick.major", width=2)
 
-    fig, ax = pyplot.subplots(ncols=1, nrows=2, figsize=(15, 10), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
+    fig, ax = pyplot.subplots(
+        ncols=1,
+        nrows=2,
+        figsize=(15, 10),
+        sharex=True,
+        gridspec_kw={"height_ratios": [3, 1]},
+    )
     ax1 = ax[0]
     ax2 = ax[1]
-    colors=["r", "b", "g"]
-    ltype="-"
+    colors = ["r", "b", "g"]
+    ltype = "-"
 
     # open the DGFit results
     hdulist = fits.open(args.filename)
@@ -101,7 +109,7 @@ def main():
             hdu.data["WAVE"],
             hdu.data["ALBEDO" + str(i + 1)],
             colors[i + 1] + ltype,
-            label=comps[i]
+            label=comps[i],
         )
         yrange = get_krange(hdu.data["ALBEDO" + str(i + 1)], in_range=yrange)
 
@@ -122,9 +130,9 @@ def main():
 
     residuals = (hdu.data["ALBEDO"] - OD.scat_albedo) / OD.scat_albedo
     ax2.scatter(hdu.data["WAVE"], residuals)
-    ax2.axhline(0, color='red', linestyle='--', linewidth=1)
+    ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax2.set_ylabel('Residuals', fontsize=fontsize)
+    ax2.set_ylabel("Residuals", fontsize=fontsize)
     ax2.grid(True)
 
     pyplot.tight_layout()
