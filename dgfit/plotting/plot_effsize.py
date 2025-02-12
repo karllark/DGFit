@@ -8,6 +8,8 @@ import importlib.resources as importlib_resources
 
 from dgfit.dustmodel import DustModel, WDDustModel
 
+# from dgfit.dustgrains import DustGrains
+
 
 def main():
 
@@ -44,7 +46,6 @@ def main():
                 cparams["a_ts"],
                 cparams["alpha_s"],
                 cparams["beta_s"],
-                cparams["RF"],
             ]
         else:
             cparams = dustmodel.parameters["astro-carbonaceous"]
@@ -55,8 +56,9 @@ def main():
                 cparams["beta_g"],
                 cparams["a_cg"],
                 cparams["b_C"],
-                cparams["RF"],
             ]
+    cparams = dustmodel.parameters["Radiation field"]
+    p0 += [cparams["RF"]]
     dustmodel.set_size_dist(p0)
 
     # compute the contribution of each grain to the total
@@ -83,6 +85,7 @@ def main():
         )
         sizedist1 = component.size_dist[0 : component.n_sizes - 1]
         sizedist2 = component.size_dist[1 : component.n_sizes]
+        interpolated_emission = component.interpol_emission(1)
         for i in range(component.n_wavelengths):
             _effcabs_all[i, k, :] = deltas * (
                 (component.cabs[0 : component.n_sizes - 1, i] * sizedist1)
@@ -93,8 +96,8 @@ def main():
                 + (component.csca[1 : component.n_sizes, i] * sizedist2)
             )
             _emission_all[i, k, :] = deltas * (
-                (component.emission[1, 0 : component.n_sizes - 1, i] * sizedist1)
-                + (component.emission[1, 1 : component.n_sizes, i] * sizedist2)
+                (interpolated_emission[0 : component.n_sizes - 1, i] * sizedist1)
+                + (interpolated_emission[1 : component.n_sizes, i] * sizedist2)
             )
 
         # *not* faster to use numexpr (tested in 2015)
