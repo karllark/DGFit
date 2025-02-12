@@ -37,6 +37,9 @@ def main():
     parser.add_argument(
         "--everynth", type=int, default=1, help="Use every nth grain size"
     )
+    parser.add_argument(
+        "--ISRF", default=1.0, type=float, help="Choose an ISRF strength"
+    )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -72,11 +75,12 @@ def main():
 
     ws_indxs = np.argsort(DG.wavelengths)
     waves = DG.wavelengths[ws_indxs]
+    interpolated_emission = DG.interpol_emission(args.ISRF)
     for i in range(DG.n_sizes):
 
         # get the values at specified lambda and V
         al = np.interp([args.wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
-        em = np.interp(args.wave, waves, DG.emission[1, i, ws_indxs])
+        em = np.interp(args.wave, waves, interpolated_emission[i, ws_indxs])
         absext = DG.cabs[i, ws_indxs] / DG.cext[i, ws_indxs]
         scaext = DG.csca[i, ws_indxs] / DG.cext[i, ws_indxs]
         cabs = np.interp(args.wave, waves, absext)

@@ -610,7 +610,7 @@ class DustModel(object):
         cols = fits.ColDefs(all_cols_emis)
         tbhdu = fits.BinTableHDU.from_columns(cols)
         tbhdu.header.set("EXTNAME", "Emission", "emission MJy/sr/A(V)")
-        tbhdu.header.set("ISRF", ISRF, "The final ISRF strength")
+        tbhdu.header.set("ISRF", ISRF, "The ISRF strength")
         hdulist.append(tbhdu)
 
         #    albedo
@@ -860,9 +860,6 @@ class MRNDustModel(DustModel):
             if cparams[1] < 0.0:
                 lnp_bound = -1e20
 
-        if params[-1] < 0.5:
-            lnp_bound = -1e20
-
         if lnp_bound < 0.0:
             return lnp_bound
         else:
@@ -1094,9 +1091,6 @@ class WDDustModel(DustModel):
                     lnp_bound = -1e20
                 if cparams[5] < 0.0:
                     lnp_bound = -1e20
-
-        if params[-1] < 0.5:
-            lnp_bound = -1e20
 
         if lnp_bound < 0.0:
             return lnp_bound

@@ -505,6 +505,14 @@ class DustGrains(object):
     def interpol_emission(self, ISRF):
 
         x = np.array(self.ISRF_field_strengths)
+        if ISRF < x[0]:
+            ISRF = x[0]
+            self.RF_strength = x[0]
+
+        elif ISRF > x[-1]:
+            ISRF = x[-1]
+            self.RF_strength = x[-1]
+
         interpolation = interp1d(x, self.emission, axis=0)
         emission = interpolation(ISRF)
 
