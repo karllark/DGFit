@@ -10,9 +10,13 @@ Results
 
 To plot the results in filename based on the obsdata, use the command 
 
+.. code-block:: console
+
     plot_dgfit filename obsdata
 
 For example, to plot the default run results from the optimizer (= max prob):
+
+.. code-block:: console
 
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata
 
@@ -62,11 +66,15 @@ For example, to plot the default run results from the optimizer (= max prob):
 
 To include the starting points
 
+.. code-block:: console
+
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata --start
 
 There are two more plots that show the data of the dustgrains.
 The first one can show you the average dustgrain size in function of wavelength for both extinction and emission.
 To show this plot, use
+
+.. code-block:: console
 
     dgplot_effsize
 
@@ -74,13 +82,19 @@ The second plot on dustgrain information shows the extinction and emission in fu
 The default wavelength is 0.1 microns.
 Use following command to show this plot
 
+.. code-block:: console
+
     dgplot_dustgrains_alav --wave l
 
 To transform to the observed data grids again (with filename 'obsdata'), use
 
+.. code-block:: console
+
     dgplot_dustgrains-alav --wave l --obsdata obsdata
 
 To see an overview of the observed data used, use
+
+.. code-block:: console
 
     dgplot_obsdata obsdata
 
@@ -95,6 +109,8 @@ To see an overview of the observed data used, use
 
 To add the ISRF plot (if available)
 
+.. code-block:: console
+    
     dgplot_obsdata obsdata --ISRF ISRFdatafile:
 
 This ISRF plot will pop up in the middle plot of the lower row.
