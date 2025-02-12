@@ -55,9 +55,13 @@ def main():
         "obsfile", help="Data file giving the observational data that was fit"
     )
     parser.add_argument(
+        "dustproperty",
+        help="What dust property needs to be shown for both model and data",
+        choices=["emission", "extinction", "albedo", "g"],
+    )
+    parser.add_argument(
         "--start", help="include the starting model", action="store_true"
     )
-    parser.add_argument("--smc", help="use an SMC sightline", action="store_true")
     parser.add_argument(
         "-p", "--png", help="save figure as a png file", action="store_true"
     )
@@ -97,45 +101,82 @@ def main():
         hdu = hdulist[i + 1]
         comps.append(hdu.header["EXTNAME"])
 
-    hdu = hdulist["EMISSION"]
+    hdu = hdulist[args.dustproperty.upper()]
 
     # get the observed data
     OD = ObsData(args.obsfile)
 
-    ax1.plot(hdu.data["WAVE"], hdu.data["EMIS"], colors[0] + ltype, label="Total")
-    yrange = get_krange(hdu.data["EMIS"], logaxis=True)
+    if args.dustproperty == "emission":
+        waves = OD.ir_emission_waves
+        data = OD.ir_emission_av
+        data_unc = OD.ir_emission_av_unc
+        data_name = "EMIS"
+        ylabel = r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$"
+        logscale = True
+        ylim = False
+
+    elif args.dustproperty == "extinction":
+        waves = OD.ext_waves
+        data = OD.ext_alav
+        data_unc = OD.ext_alav_unc
+        data_name = "EXT"
+        ylabel = r"$A(\lambda)/A(V)$"
+        logscale = True
+        ylim = False
+
+    elif args.dustproperty == "albedo":
+        waves = OD.scat_a_waves
+        data = OD.scat_albedo
+        data_unc = OD.scat_albedo_unc
+        data_name = args.dustproperty.upper()
+        ylabel = "Albedo"
+        logscale = False
+        ylim = True
+
+    elif args.dustproperty == "g":
+        waves = OD.scat_g_waves
+        data = OD.scat_g
+        data_unc = OD.scat_g_unc
+        data_name = args.dustproperty.upper()
+        ylabel = "g"
+        logscale = False
+        ylim = True
+
+    ax1.plot(hdu.data["WAVE"], hdu.data[data_name], colors[0] + ltype, label="Total")
+    yrange = get_krange(hdu.data[data_name])
     for i in range(len(hdu.data.names) - 2):
         ax1.plot(
             hdu.data["WAVE"],
-            hdu.data["EMIS" + str(i + 1)],
+            hdu.data[data_name + str(i + 1)],
             colors[i + 1] + ltype,
             label=comps[i],
         )
-        yrange = get_krange(
-            hdu.data["EMIS" + str(i + 1)], logaxis=True, in_range=yrange
-        )
+        yrange = get_krange(hdu.data[data_name + str(i + 1)], in_range=yrange)
 
     ax1.errorbar(
-        OD.ir_emission_waves,
-        OD.ir_emission_av,
-        yerr=OD.ir_emission_av_unc,
+        waves,
+        data,
+        data_unc,
         fmt="ko",
         label="Observed",
         capsize=4,
     )
-    yrange = get_krange(OD.ir_emission_av, logaxis=True, in_range=yrange)
 
+    if logscale:
+        ax1.set_yscale("log")
     ax1.set_xscale("log")
-    ax1.set_yscale("log")
-    ax1.legend()
     ax1.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax1.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$", fontsize=fontsize)
+    ax1.set_ylabel(ylabel, fontsize=fontsize)
+    ax1.legend()
     ax1.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
-    ax1.set_ylim(yrange)
+    if ylim:
+        ax1.set_ylim([0.0, 1.0])
 
-    residuals = (hdu.data["EMIS"] - OD.ir_emission_av) / OD.ir_emission_av
-    unc = OD.ir_emission_av_unc / OD.ir_emission_av
-    ax2.errorbar(hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color='black', capsize=4)
+    residuals = (hdu.data[data_name] - data) / data
+    unc = data_unc / data
+    ax2.errorbar(
+        hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color="black", capsize=4
+    )
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax2.set_ylabel("Residuals (%)", fontsize=fontsize)
@@ -145,6 +186,7 @@ def main():
     # show or save
     basename = args.filename
     basename.replace(".fits", "")
+    basename += "_" + args.dustproperty
     if args.png:
         fig.savefig(basename + ".png")
     elif args.eps:
