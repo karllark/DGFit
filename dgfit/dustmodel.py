@@ -208,6 +208,7 @@ class DustModel(object):
             component.size_dist[:] = self.compute_size_dist(
                 component.sizes[:], params[k1:k2]
             )
+            component.RF_strength = params[-1]
             k1 += delta_val
 
     def eff_grain_props(self, OD, predict_all=False):
@@ -596,6 +597,8 @@ class DustModel(object):
             tcol = fits.Column(name="G" + str(k + 1), format="E", array=tg)
             all_cols_g.append(tcol)
 
+            ISRF = component.RF_strength
+
         # now output the results
         #    extinction
         cols = fits.ColDefs(all_cols_ext)
@@ -607,6 +610,7 @@ class DustModel(object):
         cols = fits.ColDefs(all_cols_emis)
         tbhdu = fits.BinTableHDU.from_columns(cols)
         tbhdu.header.set("EXTNAME", "Emission", "emission MJy/sr/A(V)")
+        tbhdu.header.set("ISRF", ISRF, "The ISRF strength")
         hdulist.append(tbhdu)
 
         #    albedo
@@ -738,6 +742,7 @@ class MRNDustModel(DustModel):
         super().__init__(**kwargs)
         self.sizedisttype = "MRN"
         self.n_params = [4] * self.n_components
+        self.n_params.append(1)
         for component in self.components:
             self.parameters[component.name] = {
                 "C": 1e-25,
@@ -745,6 +750,7 @@ class MRNDustModel(DustModel):
                 "a_min": 1e-7,
                 "a_max": 1e-3,
             }
+        self.parameters["Radiation field"] = {"RF": 1}
 
     def compute_size_dist(self, x, params):
         """
@@ -799,6 +805,7 @@ class MRNDustModel(DustModel):
                 "a_min": cparams[2],
                 "a_max": cparams[3],
             }
+        self.parameters["Radiation field"] = {"RF": params[-1]}
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):
@@ -930,6 +937,8 @@ class WDDustModel(DustModel):
                     raise ValueError(
                         "%s grain material note supported" % component.name
                     )
+            self.n_params.append(1)
+            self.parameters["Radiation field"] = {"RF": 1}
 
     def compute_size_dist(self, x, params):
         """
@@ -1040,6 +1049,7 @@ class WDDustModel(DustModel):
                     "a_cg": cparams[4],
                     "b_C": cparams[5],
                 }
+        self.parameters["Radiation field"] = {"RF": params[-1]}
 
     @staticmethod
     def lnprob(params, obsdata, dustmodel):
