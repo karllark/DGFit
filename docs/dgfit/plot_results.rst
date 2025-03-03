@@ -2,16 +2,21 @@
 Plot Results
 ############
 
-A number of programs exist to plot the inputs and results of the fitting.
+A number of different programs exists to plot the inputs, results of the fitting and information on the used dustgrains. 
+The default plots are in units per A(V), converting to units per N(HI) is always possible.
 
 Results
 =======
 
 To plot the results in filename based on the obsdata, use the command 
 
+.. code-block:: console
+
     plot_dgfit filename obsdata
 
 For example, to plot the default run results from the optimizer (= max prob):
+
+.. code-block:: console
 
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata
 
@@ -61,49 +66,30 @@ For example, to plot the default run results from the optimizer (= max prob):
 
 To include the starting points
 
+.. code-block:: console
+
     plot_dgfit dgfit_test_WD_best_optimizer.fits obsdata --start
 
-To plot the data of the used dustgrains (default is astro-silicates), use command
-
-    dgplot_dustgrains
-
-.. plot::
-
-    from dgfit.dustgrains import DustGrains
-    import dgfit.plotting.plot_dustgrains
-
-    DG = DustGrains()
-    DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/")
-
-    dgfit.plotting.plot_dustgrains.plot(DG, 'astro-silicates')
-
-To see other dustgrains (<possible> = astro-silicates, astro-carbonaceous, astro-graphite, astro-PAH-ionized and astro-PAH-neutral), use
-
-    dgplot_dustgrains -c=<possible>
-
-To transform the particles to the observed data grids:
-
-    dgplot_dustgrains --obsdata obsdata
-
-To see the options for saving the plots, use
-
-    dgplot_dustgrains --help
 
 To see an overview of the observed data used, use
 
-    dgplot_obsdata filename
+.. code-block:: console
+
+    dgplot_obsdata obsdata
 
 .. plot::
 
-    import dgfit.plotting.plot_obsdata
+    from dgfit.plotting.plot_obsdata import plot
     from dgfit.obsdata import ObsData
 
     OD = ObsData("mw_rv31_obs.dat", path = "../../dgfit/data/mw_rv31/")
 
-    dgfit.plotting.plot_obsdata.plot(OD, 'none')
+    plot(OD, 'none')
 
 To add the ISRF plot (if available)
 
-    dgplot_obsdata filename --ISRF ISRFdatafile
+.. code-block:: console
+
+    dgplot_obsdata obsdata --ISRF ISRFdatafile:
 
 This ISRF plot will pop up in the middle plot of the lower row.

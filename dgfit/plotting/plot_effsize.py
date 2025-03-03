@@ -36,6 +36,11 @@ def main():
     # WD model
     dustmodel = WDDustModel(dustmodel=dustmodel_full)
 
+    plot(dustmodel, args.png, args.pdf, args.eps)
+
+
+def plot(dustmodel, png=False, pdf=False, eps=False):
+
     # set size distributions
     p0 = []
     for component in dustmodel.components:
@@ -213,9 +218,11 @@ def main():
 
     # show or save
     basename = "effsize"
-    if args.png:
+    if png:
         fig.savefig(basename + ".png")
-    elif args.pdf:
+    elif eps:
+        fig.savefig(basename + ".eps")
+    elif pdf:
         fig.savefig(basename + ".pdf")
     else:
         plt.show()

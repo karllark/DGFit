@@ -8,6 +8,8 @@ From source
 ``DGFit`` can be installed from the source code in the normal
 python fashion after downloading it from the git repo::
 
+.. code-block:: console
+    
     pip install -e .
 
 Using pip

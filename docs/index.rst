@@ -15,6 +15,7 @@ User Documentation
    Observed Data <dgfit/obsdata.rst>
    Plotting results <dgfit/plot_results.rst>
    Size Distributions <dgfit/size_distributions.rst>
+   Dustgrain properties <dgfit/dustgrain_props.rst>
 
 Installation
 ============
