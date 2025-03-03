@@ -193,6 +193,10 @@ def main():
             ]
             pnames += cparams.keys()
 
+        cparams = dustmodel.parameters["Radiation field"]
+        p0 += [cparams["RF"]]
+        pnames += cparams.keys()
+
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
@@ -221,6 +225,10 @@ def main():
                     cparams["b_C"] / obsdata.avnhi,
                 ]
             pnames += cparams.keys()
+
+        cparams = dustmodel.parameters["Radiation field"]
+        p0 += [cparams["RF"]]
+        pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
