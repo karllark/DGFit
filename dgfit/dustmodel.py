@@ -453,7 +453,7 @@ class DustModel(object):
         -------
         array of floats
             concatenated set of initial walker positions
-        """  
+        """
         self.ndim = len(p0)
         self.nwalkers = nwalkers
         # some parameters are negative, so need to be handled
