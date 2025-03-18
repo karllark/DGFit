@@ -90,7 +90,7 @@ def main():
     )
     ax1 = ax[0]
     ax2 = ax[1]
-    colors = ["r", "b", "g"]
+    colors = ["r", "b", "g", "c"]
     ltype = "-"
 
     # open the DGFit results
@@ -159,7 +159,7 @@ def main():
         data_unc,
         fmt="ko",
         label="Observed",
-        capsize=4,
+        capsize=3,
     )
 
     if logscale:
@@ -173,9 +173,11 @@ def main():
         ax1.set_ylim([0.0, 1.0])
 
     residuals = (hdu.data[data_name] - data) / data
+    residuals *= 100
     unc = data_unc / data
+    unc *= 100
     ax2.errorbar(
-        hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color="black", capsize=4
+        hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color="black", capsize=3,
     )
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
