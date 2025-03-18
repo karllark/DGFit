@@ -63,6 +63,10 @@ def plot_dgfit_sizedist(
         xvals = hdu.data["SIZE"] * 1e4
         yvals = hdu.data["DIST"]
 
+        if np.sum(yvals) == 0:
+            print(f"Composition {i} is zero")
+            continue
+
         if plot_uncs:
             yvals_punc = hdu.data["DISTPUNC"]
             yvals_munc = hdu.data["DISTMUNC"]
@@ -153,6 +157,10 @@ def plot_dgfit_extinction(
         # linetypes = ['--', ':', '-.']
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+                
+            if np.sum(hdu.data["EXT" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["EXT" + str(i + 1)],
@@ -184,6 +192,10 @@ def plot_dgfit_emission(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+                
+            if np.sum(hdu.data["EMIS" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["EMIS" + str(i + 1)],
@@ -223,6 +235,10 @@ def plot_dgfit_albedo(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+                
+            if np.sum(hdu.data["ALBEDO" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["ALBEDO" + str(i + 1)],
@@ -238,7 +254,6 @@ def plot_dgfit_albedo(
             fmt="ko",
             label="Observed",
         )
-    # yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
@@ -258,6 +273,10 @@ def plot_dgfit_g(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+                
+            if np.sum(hdu.data["G" + str(i + 1)]) == 0:
+                continue
+            
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["G" + str(i + 1)],
@@ -341,7 +360,7 @@ def main():
         fontsize=fontsize,
         color="r",
         plegend=True,
-        plabel="Final",
+        plabel="Model",
     )
 
     # plot the resulting total and component extinction curves

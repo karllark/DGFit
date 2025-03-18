@@ -344,7 +344,7 @@ class DustModel(object):
             csca = results["csca"]
             cext = cabs + csca
             dust_alav = 1.086 * cext
-            weights = 1.0 / obsdata.ext_alav_unc
+            weights = 1.0 / (obsdata.ext_alav_unc)
             bandvals = obsdata.ext_type != "spec"
             if np.sum(bandvals) > 0:
                 weights[bandvals] *= 1000
@@ -358,7 +358,7 @@ class DustModel(object):
             for atomname in natoms.keys():
                 lnp_dep = (
                     (natoms[atomname] - obsdata.abundance_av[atomname][0])
-                    / obsdata.abundance_av[atomname][1]
+                    / (obsdata.abundance_av[atomname][1])
                 ) ** 2
             lnp_dep *= -0.5
         # lnp_dep /= obsdata.abundance_npts
@@ -726,6 +726,41 @@ class DustModel(object):
         # save the best fit size distributions
         self.save_results(oname, obsdata)
 
+    def initial_walkers(self, p0, nwalkers):
+        """
+        Setup the walkers based on the initial parameters p0
+        Specific to MCMC fitters (e.g., emcee).
+
+        Parameters
+        ----------
+        p0 : floats
+            Initial values of the parameters
+        nwalkers : int
+            Number of walkers to initialize
+
+        Returns
+        -------
+        array of floats
+            concatenated set of initial walker positions
+        """
+        self.ndim = len(p0)
+        self.nwalkers = nwalkers
+        # some parameters are negative, so need to be handled
+        psigns = np.sign(p0)
+        p = [
+            psigns
+            * (
+                10
+                ** (
+                    np.log10(np.absolute(p0))
+                    + 0.1 * np.random.uniform(-1, 1.0, self.ndim)
+                )
+            )
+            for k in range(self.nwalkers)
+        ]
+
+        return p
+
 
 # ================================================================
 
@@ -867,34 +902,6 @@ class MRNDustModel(DustModel):
 
             return dustmodel.lnprob_generic(obsdata) + lnp_bound
 
-    def initial_walkers(self, p0, nwalkers):
-        """
-        Setup the walkers based on the initial parameters p0
-        Specific to MCMC fitters (e.g., emcee).
-
-        Parameters
-        ----------
-        p0 : floats
-            Initial values of the parameters
-        nwalkers : int
-            Number of walkers to initialize
-
-        Returns
-        -------
-        array of floats
-            concatenated set of initial walker positions
-        """
-        self.ndim = len(p0)
-        self.nwalkers = nwalkers
-        # Initial ball
-        # delts = np.array([1.0, 0.01, 1e-8, 1e-5, 1.0, 0.01, 1e-8, 1e-5])
-        # p = [p0 + delts*np.random.normal(0., 1., self.ndim)
-        p = [
-            10 ** (np.log10(p0) + 0.1 * np.random.uniform(-1, 1.0, self.ndim))
-            for k in range(self.nwalkers)
-        ]
-
-        return p
 
 
 # ================================================================
@@ -1098,37 +1105,554 @@ class WDDustModel(DustModel):
             dustmodel.set_size_dist(params)
             return dustmodel.lnprob_generic(obsdata) + lnp_bound
 
-    def initial_walkers(self, p0, nwalkers):
+
+# ================================================================
+
+
+class Z04DustModel(DustModel):
+    """
+    Dust model that uses the Zubko et al. (2004) size distributions.
+
+    Same kewyords and attributes as the parent DustModel class.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sizedisttype = "Z04"
+
+        # set the number of size distribution parametres
+        if self.n_components > 0:
+            self.n_params = []
+            for component in self.components:
+                if component.name == "PAH-Z04":
+                    self.n_params.append(9)
+                    self.parameters["PAH-Z04"] = {
+                        "A": 2.227433e-2,
+                        "c_0": -8.02895,
+                        "b_0": -3.45764,
+                        "b_1": 1.18396e3,
+                        "a_1": 1,
+                        "m_1": -8.20551,
+                        "b_3": 1e24,
+                        "a_3": -5.29496e-3,
+                        "m_3": 12.0146,
+                    }
+                elif component.name == "Graphite-Z04":
+                    self.n_params.append(12)
+                    self.parameters["Graphite-Z04"] = {
+                        "A": 1.905816e-3,
+                        "c_0": -9.86,
+                        "b_0": -5.02082,
+                        "b_1": 5.81215e-3,
+                        "a_1": 0.415861,
+                        "m_1": 4.63229,
+                        "b_3": 1.12502e3,
+                        "a_3": 0.160344,
+                        "m_3": 3.69897,
+                        "b_4": 1.12602e3,
+                        "a_4": 0.160501,
+                        "m_4": 3.69967,
+                    }
+                elif component.name == "Silicates-Z04":
+                    self.n_params.append(9)
+                    self.parameters["Silicates-Z04"] = {
+                        "A": 1.471288e-3,
+                        "c_0": -8.47091,
+                        "b_0": -3.68708,
+                        "b_1": 2.37316e-5,
+                        "a_1": 7.64943e-3,
+                        "m_1": 22.5489,
+                        "b_3": 2.96128e3,
+                        "a_3": 0.480229,
+                        "m_3": 12.1717,
+                    }
+                else:
+                    raise ValueError(
+                        "%s grain material note supported for this size distribution"
+                        % component.name
+                    )
+            self.n_params.append(1)
+            self.parameters["Radiation field"] = {"RF": 1}
+
+    def compute_size_dist(self, x, params):
         """
-        Setup the walkers based on the initial parameters p0
-        Specific to MCMC fitters (e.g., emcee).
+        Compute the size distribution for the input sizes.
 
         Parameters
         ----------
-        p0 : floats
-            Initial values of the parameters
-        nwalkers : int
-            Number of walkers to initialize
+        x : floats
+            grain sizes
+        params : floats
+            Size distribution parameters
 
         Returns
         -------
-        array of floats
-            concatenated set of initial walker positions
+        floats
+            Size distribution as a function of x
         """
-        self.ndim = len(p0)
-        self.nwalkers = nwalkers
-        # some parameters are negative, so need to be handled
-        psigns = np.sign(p0)
-        p = [
-            psigns
-            * (
-                10
-                ** (
-                    np.log10(np.absolute(p0))
-                    + 0.1 * np.random.uniform(-1, 1.0, self.ndim)
-                )
-            )
-            for k in range(self.nwalkers)
-        ]
+        # input grain sizes are in cm, needed in microns
+        a = x * 1e4
 
-        return p
+        if len(params) == 9:
+            A, c_0, b_0, b_1, a_1, m_1, b_3, a_3, m_3 = params
+            #b_2 = a_2 = m_2 = b_4 = a_4 = m_4 = 0
+            term5 = 0
+
+        else:
+            A, c_0, b_0, b_1, a_1, m_1, b_3, a_3, m_3, b_4, a_4, m_4 = params
+            #b_2 = a_2 = m_2 = 0
+            term5 = b_4 * np.power(np.abs(a - a_4), m_4)
+
+        term1 = b_0 * np.log10(a)
+        term2 = b_1 * np.power(np.abs(np.log10(a / a_1)), m_1)
+        # term3 = b_2 * (np.abs(np.log10(a / a_2)) ** m_2)
+        term4 = b_3 * np.power(np.abs(a - a_3), m_3)
+
+        ga = c_0 + term1 - term2 - term4 - term5
+
+        sizedist = A * np.power(10, ga)
+        return sizedist
+
+    def set_size_dist_parameters(self, params):
+        """
+        Set the size distribution parameters in the object dictonary.
+
+        Parameters
+        ----------
+        params : floats
+            Size distribution parameters
+        """
+        k1 = 0
+        for k, component in enumerate(self.components):
+            k2 = k1 + self.n_params[k]
+            cparams = params[k1:k2]
+            k1 += self.n_params[k]
+            if component.name == "PAH-Z04":
+                self.parameters["PAH-Z04"] = {
+                    "A": cparams[0],
+                    "c_0": cparams[1],
+                    "b_0": cparams[2],
+                    "b_1": cparams[3],
+                    "a_1": cparams[4],
+                    "m_1": cparams[5],
+                    "b_3": cparams[6],
+                    "a_3": cparams[7],
+                    "m_3": cparams[8],
+                }
+            elif component.name == "Graphite-Z04":
+                self.parameters["Graphite-Z04"] = {
+                    "A": cparams[0],
+                    "c_0": cparams[1],
+                    "b_0": cparams[2],
+                    "b_1": cparams[3],
+                    "a_1": cparams[4],
+                    "m_1": cparams[5],
+                    "b_3": cparams[6],
+                    "a_3": cparams[7],
+                    "m_3": cparams[8],
+                    "b_4": cparams[9],
+                    "a_4": cparams[10],
+                    "m_4": cparams[11],
+                }
+            elif component.name == "Silicates-Z04":
+                self.parameters["Silicates-Z04"] = {
+                    "A": cparams[0],
+                    "c_0": cparams[1],
+                    "b_0": cparams[2],
+                    "b_1": cparams[3],
+                    "a_1": cparams[4],
+                    "m_1": cparams[5],
+                    "b_3": cparams[6],
+                    "a_3": cparams[7],
+                    "m_3": cparams[8],
+                }
+        self.parameters["Radiation field"] = {"RF": params[-1]}
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the ln(prob) given the model parameters
+
+        Parameters
+        ----------
+        params : array of floats
+            parameters of the Zubko model
+        obsdata : ObsData object
+            observed data for fitting
+        dustmodel : DustModel object
+            must be passed explicitly as the fitters
+            require a static method (is this true?)
+
+        Returns
+        -------
+        lnprob : float
+            natural log of the probability the input parameters
+            describe the data
+        """
+        # priors
+        k1 = 0
+        lnp_bound = 0.0
+        for k, component in enumerate(dustmodel.components):
+            # get the parameters for the current component
+            k2 = k1 + dustmodel.n_params[k]
+            cparams = params[k1:k2]
+            k1 += dustmodel.n_params[k]
+
+            # keep the normalization always positive
+            if cparams[0] < 0:
+                lnp_bound = -1e20
+            if cparams[4] < 0.0:
+                lnp_bound = -1e20
+
+        if lnp_bound < 0.0:
+            return lnp_bound
+        else:
+            dustmodel.set_size_dist(params)
+            return dustmodel.lnprob_generic(obsdata) + lnp_bound
+
+
+# ================================================================
+
+
+class HD23DustModel(DustModel):
+    """
+    Dust model that uses the Hensley & Draine (2023) size distributions.
+
+    Same kewyords and attributes as the parent DustModel class.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sizedisttype = "HD23"
+
+        # set the number of size distribution parametres
+        if self.n_components > 0:
+            self.n_params = []
+            for component in self.components:
+                if component.name == "Carbonaceous-HD23":
+                    self.n_params.append(2)
+                    self.parameters["Carbonaceous-HD23"] = {
+                        "B_1": 7.52e-7,
+                        "B_2": 8.09e-10,
+                    }
+                elif component.name == "AstroDust-HD23":
+                    self.n_params.append(9)
+                    self.parameters["AstroDust-HD23"] = {
+                        "B_ad": 3.31e-10,
+                        "a_0": 63.8,
+                        "sigma_ad": 0.353,
+                        "A_0": 2.97e-5,
+                        "A_1": -3.40,
+                        "A_2": -0.807,
+                        "A_3": 0.157,
+                        "A_4": 7.96e-3,
+                        "A_5": -1.68e-3,
+                    }
+                else:
+                    raise ValueError(
+                        "%s grain material note supported for this size distribution"
+                        % component.name
+                    )
+            self.n_params.append(1)
+            self.parameters["Radiation field"] = {"RF": 1}
+
+
+    def compute_size_dist(self, x, params):
+        """
+        Compute the size distribution for the input sizes.
+
+        Parameters
+        ----------
+        x : floats
+            grain sizes
+        params : floats
+            Size distribution parameters
+
+        Returns
+        -------
+        floats
+            Size distribution as a function of x
+        """
+        # input grain sizes are in cm, needed in angstrom
+        a = x * 1e8
+        sigma = 0.4
+
+        if len(params) == 2:
+            B_1, B_2 = params
+            B_ad = None
+            a_01 = 4.0
+            a_02 = 30
+
+        else:
+            B_ad, a_0, sigma_ad = params[:3]
+            A = params[3:]
+
+        if B_ad is None:
+            sizedist = (B_1 / (1e-8 * a)) * np.exp(
+                -np.power(np.log(a / a_01), 2) / (np.power(2 * sigma, 2))
+            ) + (B_2 / (1e-8 * a)) * np.exp(
+                -np.power(np.log(a / a_02), 2) / (np.power(2 * sigma, 2))
+            )
+
+        else:
+            sizedist = (B_ad / (1e-8 * a)) * np.exp(
+                -(np.power(np.log(a / a_0), 2)) / (2 * np.power(sigma_ad, 2))
+            )
+            exponent = 0
+            for i in range(5):
+                exponent += A[i + 1] * (np.power(np.log(a), (i + 1)))
+            sizedist += (A[0] / (1e-8 * a)) * np.exp(exponent)
+
+        return sizedist
+
+    def set_size_dist_parameters(self, params):
+        """
+        Set the size distribution parameters in the object dictonary.
+
+        Parameters
+        ----------
+        params : floats
+            Size distribution parameters
+        """
+        k1 = 0
+        for k, component in enumerate(self.components):
+            k2 = k1 + self.n_params[k]
+            cparams = params[k1:k2]
+            k1 += self.n_params[k]
+            if component.name == "Carbonaceous-HD23":
+                self.parameters["Carbonaceous-HD23"] = {
+                    "B_1": cparams[0],
+                    "B_2": cparams[1],
+                }
+            elif component.name == "AstroDust-HD23":
+                self.parameters["AstroDust-HD23"] = {
+                    "B_ad": cparams[0],
+                    "a_0": cparams[1],
+                    "sigma_ad": cparams[2],
+                    "A_0": cparams[3],
+                    "A_1": cparams[4],
+                    "A_2": cparams[5],
+                    "A_3": cparams[6],
+                    "A_4": cparams[7],
+                    "A_5": cparams[8],
+                }
+        self.parameters["Radiation field"] = {"RF": params[-1]}
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the ln(prob) given the model parameters
+
+        Parameters
+        ----------
+        params : array of floats
+            parameters of the Zubko model
+        obsdata : ObsData object
+            observed data for fitting
+        dustmodel : DustModel object
+            must be passed explicitly as the fitters
+            require a static method (is this true?)
+
+        Returns
+        -------
+        lnprob : float
+            natural log of the probability the input parameters
+            describe the data
+        """
+        # priors
+        k1 = 0
+        lnp_bound = 0.0
+        for k, component in enumerate(dustmodel.components):
+            # get the parameters for the current component
+            k2 = k1 + dustmodel.n_params[k]
+            cparams = params[k1:k2]
+            k1 += dustmodel.n_params[k]
+
+            if len(cparams) == 2:
+                # keep the normalization always positive
+                if cparams[0] < 0.0:
+                    lnp_bound = -1e20
+                if cparams[1] < 0.0:
+                    lnp_bound = -1e20
+
+            else:
+                if cparams[0] < 0.0:
+                    lnp_bound = -1e20
+                if cparams[3] < 0.0:
+                    lnp_bound = -1e20
+                if cparams[2] < 0.25:
+                    lnp_bound = -1e20
+                if cparams[2] > 0.8:
+                    lnp_bound = -1e20
+
+        if lnp_bound < 0.0:
+            return lnp_bound
+        else:
+            dustmodel.set_size_dist(params)
+            return dustmodel.lnprob_generic(obsdata) + lnp_bound
+
+
+# ================================================================
+
+
+class ThemisDustModel(DustModel):
+    """
+    Dust model that uses the Themis 2.0 (2024) size distributions.
+
+    Same kewyords and attributes as the parent DustModel class.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sizedisttype = "Themis"
+
+        # set the number of size distribution parametres
+        if self.n_components > 0:
+            self.n_params = []
+            for component in self.components:
+                if component.name == "a-C-Themis":
+                    self.n_params.append(5)
+                    self.parameters["a-C-Themis"] = {
+                        "A": 1.32e-3,
+                        "alpha": -5,
+                        "a_C": 50,
+                        "a_t": 10,
+                        "gamma": 1,
+                    }
+                elif component.name == "a-C:H-Themis":
+                    self.n_params.append(3)
+                    self.parameters["a-C:H-Themis"] = {
+                        "A": 8e-4,
+                        "a_0": 6.2,
+                        "sigma": 1.32,
+                    }
+                elif component.name == "aSil-2-Themis":
+                    self.n_params.append(3)
+                    self.parameters["aSil-2-Themis"] = {
+                        "A": 3.27e-3,
+                        "a_0": 0.92,
+                        "sigma": 1.22,
+                    }
+                else:
+                    raise ValueError(
+                        "%s grain material note supported for this size distribution"
+                        % component.name
+                    )
+            self.n_params.append(1)
+            self.parameters["Radiation field"] = {"RF": 1}
+
+                
+    def compute_size_dist(self, x, params):
+        """
+        Compute the size distribution for the input sizes.
+
+        Parameters
+        ----------
+        x : floats
+            grain sizes
+        params : floats
+            Size distribution parameters
+
+        Returns
+        -------
+        floats
+            Size distribution as a function of x
+        """
+        # input grain sizes are in cm, needed in micron
+        a = x * 1e4
+
+        if len(params) == 5:
+            A, alpha, a_C, a_t, gamma = params
+            sigma = None
+
+        else:
+            A, a_0, sigma = params
+
+        if sigma is not None:
+            sizedist = (A * 1e6) * np.exp(-np.power(np.log(a / a_0), 2) / (2 * np.power(sigma, 2)))
+
+        else:
+            small_indices = a <= a_t
+            large_indices = a > a_t
+            small = (A * 1e6) * np.power(a[small_indices], alpha)
+            large = (A * 1e6) * np.exp(-np.power((a[large_indices] - a_t) / a_C, gamma))
+
+            sizedist = np.concatenate((small, large))
+
+        return sizedist
+    
+    def set_size_dist_parameters(self, params):
+        """
+        Set the size distribution parameters in the object dictonary.
+
+        Parameters
+        ----------
+        params : floats
+            Size distribution parameters
+        """
+        k1 = 0
+        for k, component in enumerate(self.components):
+            k2 = k1 + self.n_params[k]
+            cparams = params[k1:k2]
+            k1 += self.n_params[k]
+            if component.name == "a-C-Themis":
+                self.parameters["a-C-Themis"] = {
+                     "A": cparams[0],
+                    "alpha": cparams[1],
+                    "a_C": cparams[2],
+                    "a_t": cparams[3],
+                    "gamma": cparams[4],
+                }
+            elif component.name == "a-C:H-Themis":
+                self.parameters["a-C:H-Themis"] = {
+                    "A": cparams[0],
+                    "a_0": cparams[1],
+                    "sigma": cparams[2],
+                }
+            elif component.name == "aSil-2-Themis":
+                self.parameters["aSil-2-Themis"] = {
+                    "A": cparams[0],
+                    "a_0": cparams[1],
+                    "sigma": cparams[2],
+                }
+        self.parameters["Radiation field"] = {"RF": params[-1]}
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the ln(prob) given the model parameters
+
+        Parameters
+        ----------
+        params : array of floats
+            parameters of the Themis model
+        obsdata : ObsData object
+            observed data for fitting
+        dustmodel : DustModel object
+            must be passed explicitly as the fitters
+            require a static method (is this true?)
+
+        Returns
+        -------
+        lnprob : float
+            natural log of the probability the input parameters
+            describe the data
+        """
+        # priors
+        k1 = 0
+        lnp_bound = 0.0
+        for k, component in enumerate(dustmodel.components):
+            # get the parameters for the current component
+            k2 = k1 + dustmodel.n_params[k]
+            cparams = params[k1:k2]
+            k1 += dustmodel.n_params[k]
+            
+            # keep the normalization always positive
+            if cparams[0] < 0.0:
+                lnp_bound = -1e20
+
+        if lnp_bound < 0.0:
+            return lnp_bound
+        else:
+            dustmodel.set_size_dist(params)
+            return dustmodel.lnprob_generic(obsdata) + lnp_bound

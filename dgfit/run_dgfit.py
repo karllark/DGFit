@@ -10,7 +10,7 @@ import emcee
 from multiprocessing import Pool
 import corner
 
-from dgfit.dustmodel import DustModel, MRNDustModel, WDDustModel
+from dgfit.dustmodel import DustModel, MRNDustModel, WDDustModel, Z04DustModel, HD23DustModel, ThemisDustModel
 from dgfit.obsdata import ObsData
 
 
@@ -23,7 +23,7 @@ def DGFit_cmdparser():
     parser.add_argument(
         "--sizedisttype",
         default="WD",
-        choices=["bins", "MRN", "WD"],
+        choices=["bins", "MRN", "WD", "Z04", "HD23", "Themis"],
         help="Size distribution type",
     )
     parser.add_argument(
@@ -32,6 +32,27 @@ def DGFit_cmdparser():
         default="all",
         choices=["extinction", "iremission", "abundance", "albedo", "g", "all"],
         help="Which observations to fit",
+    )
+
+    parser.add_argument(
+        "--composition",
+        nargs="+",
+        default=["astro-silicates", "astro-carbonaceous"],
+        choices=[
+            "astro-silicates",
+            "astro-carbonaceous",
+            "astro-PAH",
+            "astro-carbonaceous",
+            "PAH-Z04",
+            "Graphite-Z04",
+            "Silicates-Z04",
+            "Carbonaceous-HD23",
+            "AstroDust-HD23",
+            "a-C-Themis",
+            "a-C:H-Themis",
+            "aSil-2-Themis",
+        ],
+        help="Which grains to use",
     )
 
     parser.add_argument(
@@ -129,6 +150,15 @@ def set_obs_for_fitting(obsdata, fitobs):
     return fitobs_list
 
 
+def set_grains_for_fitting(names):
+
+    grain_list = []
+    for grain in names:
+        grain_list.append(grain)
+
+    return grain_list
+
+
 def main():
     parser = DGFit_cmdparser()
 
@@ -164,7 +194,7 @@ def main():
     fitobs_list = set_obs_for_fitting(obsdata, args.fitobs)
 
     # get the dust model on the full wavelength grid
-    compnames = ["astro-silicates", "astro-carbonaceous"]
+    compnames = set_grains_for_fitting(args.composition)
     with importlib_resources.as_file(ref) as data_path:
         dustmodel_full = DustModel(
             componentnames=compnames,
@@ -172,7 +202,8 @@ def main():
             every_nth=args.everynth,
         )
 
-    print(f"# of grain sizes = {len(dustmodel_full.components[0].sizes)}")
+    for i, comp in enumerate(compnames):
+        print(f"# of grain sizes for {comp} = {len(dustmodel_full.components[i].sizes)}")
 
     sizedisttype = args.sizedisttype
     pnames = []
@@ -223,6 +254,138 @@ def main():
                     cparams["beta_g"],
                     cparams["a_cg"],
                     cparams["b_C"] / obsdata.avnhi,
+                ]
+            pnames += cparams.keys()
+
+        cparams = dustmodel.parameters["Radiation field"]
+        p0 += [cparams["RF"]]
+        pnames += cparams.keys()
+
+        # need to set dust model size distribution
+        dustmodel.set_size_dist(p0)
+
+    elif sizedisttype == "Z04":
+        dustmodel = Z04DustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+
+        # initial guesses at parameters
+        p0 = []
+        for component in dustmodel.components:
+            if component.name == "PAH-Z04":
+                cparams = dustmodel.parameters["PAH-Z04"]
+                p0 += [
+                    cparams["A"] / obsdata.avnhi,
+                    cparams["c_0"],
+                    cparams["b_0"],
+                    cparams["b_1"],
+                    cparams["a_1"],
+                    cparams["m_1"],
+                    cparams["b_3"],
+                    cparams["a_3"],
+                    cparams["m_3"],
+                ]
+
+            elif component.name == "Graphite-Z04":
+                cparams = dustmodel.parameters["Graphite-Z04"]
+                p0 += [
+                    cparams["A"] / obsdata.avnhi,
+                    cparams["c_0"],
+                    cparams["b_0"],
+                    cparams["b_1"],
+                    cparams["a_1"],
+                    cparams["m_1"],
+                    cparams["b_3"],
+                    cparams["a_3"],
+                    cparams["m_3"],
+                    cparams["b_4"],
+                    cparams["a_4"],
+                    cparams["m_4"],
+                ]
+
+            elif component.name == "Silicates-Z04":
+                cparams = dustmodel.parameters["Silicates-Z04"]
+                p0 += [
+                    cparams["A"] / obsdata.avnhi,
+                    cparams["c_0"],
+                    cparams["b_0"],
+                    cparams["b_1"],
+                    cparams["a_1"],
+                    cparams["m_1"],
+                    cparams["b_3"],
+                    cparams["a_3"],
+                    cparams["m_3"],
+                ]
+            pnames += cparams.keys()
+        
+        cparams = dustmodel.parameters["Radiation field"]
+        p0 += [cparams["RF"]]
+        pnames += cparams.keys()
+
+        # need to set dust model size distribution
+        dustmodel.set_size_dist(p0)
+
+    elif sizedisttype == "HD23":
+        dustmodel = HD23DustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+
+        # initial guesses at parameters
+        p0 = []
+        for component in dustmodel.components:
+            if component.name == "Carbonaceous-HD23":
+                cparams = dustmodel.parameters["Carbonaceous-HD23"]
+                p0 += [
+                    cparams["B_1"] / obsdata.avnhi,
+                    cparams["B_2"] / obsdata.avnhi,
+                ]
+
+            elif component.name == "AstroDust-HD23":
+                cparams = dustmodel.parameters["AstroDust-HD23"]
+                p0 += [
+                    cparams["B_ad"] / obsdata.avnhi,
+                    cparams["a_0"],
+                    cparams["sigma_ad"],
+                    cparams["A_0"] / obsdata.avnhi,
+                    cparams["A_1"],
+                    cparams["A_2"],
+                    cparams["A_3"],
+                    cparams["A_4"],
+                    cparams["A_5"],
+                ]
+            pnames += cparams.keys()
+
+        cparams = dustmodel.parameters["Radiation field"]
+        p0 += [cparams["RF"]]
+        pnames += cparams.keys()
+
+        # need to set dust model size distribution
+        dustmodel.set_size_dist(p0)
+
+    elif sizedisttype == "Themis":
+        dustmodel = ThemisDustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+
+        # initial guesses at parameters
+        p0 = []
+        for component in dustmodel.components:
+            if component.name == "a-C-Themis":
+                cparams = dustmodel.parameters["a-C-Themis"]
+                p0 += [
+                    cparams[0] / obsdata.avnhi,
+                    cparams[1],
+                    cparams[2],
+                    cparams[3],
+                    cparams[4],
+                ]
+            elif component.name == "a-C:H-Themis":
+                cparams = dustmodel.parameters["a-C:H-Themis"] 
+                p0 += [
+                    cparams[0] / obsdata.avnhi,
+                    cparams[1],
+                    cparams[2],
+                ]
+            elif component.name == "aSil-2-Themis":
+                cparams = dustmodel.parameters["aSil-2-Themis"]
+                p0 += [
+                    cparams[0] / obsdata.avnhi,
+                    cparams[1],
+                    cparams[2],
                 ]
             pnames += cparams.keys()
 
