@@ -157,7 +157,7 @@ def plot_dgfit_extinction(
         # linetypes = ['--', ':', '-.']
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
-                
+
             if np.sum(hdu.data["EXT" + str(i + 1)]) == 0:
                 continue
 
@@ -192,7 +192,7 @@ def plot_dgfit_emission(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
-                
+
             if np.sum(hdu.data["EMIS" + str(i + 1)]) == 0:
                 continue
 
@@ -235,7 +235,7 @@ def plot_dgfit_albedo(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
-                
+
             if np.sum(hdu.data["ALBEDO" + str(i + 1)]) == 0:
                 continue
 
@@ -273,10 +273,10 @@ def plot_dgfit_g(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
-                
+
             if np.sum(hdu.data["G" + str(i + 1)]) == 0:
                 continue
-            
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["G" + str(i + 1)],

@@ -903,7 +903,6 @@ class MRNDustModel(DustModel):
             return dustmodel.lnprob_generic(obsdata) + lnp_bound
 
 
-
 # ================================================================
 
 
@@ -1195,12 +1194,12 @@ class Z04DustModel(DustModel):
 
         if len(params) == 9:
             A, c_0, b_0, b_1, a_1, m_1, b_3, a_3, m_3 = params
-            #b_2 = a_2 = m_2 = b_4 = a_4 = m_4 = 0
+            # b_2 = a_2 = m_2 = b_4 = a_4 = m_4 = 0
             term5 = 0
 
         else:
             A, c_0, b_0, b_1, a_1, m_1, b_3, a_3, m_3, b_4, a_4, m_4 = params
-            #b_2 = a_2 = m_2 = 0
+            # b_2 = a_2 = m_2 = 0
             term5 = b_4 * np.power(np.abs(a - a_4), m_4)
 
         term1 = b_0 * np.log10(a)
@@ -1355,7 +1354,6 @@ class HD23DustModel(DustModel):
                     )
             self.n_params.append(1)
             self.parameters["Radiation field"] = {"RF": 1}
-
 
     def compute_size_dist(self, x, params):
         """
@@ -1541,7 +1539,6 @@ class ThemisDustModel(DustModel):
             self.n_params.append(1)
             self.parameters["Radiation field"] = {"RF": 1}
 
-                
     def compute_size_dist(self, x, params):
         """
         Compute the size distribution for the input sizes.
@@ -1569,7 +1566,9 @@ class ThemisDustModel(DustModel):
             A, a_0, sigma = params
 
         if sigma is not None:
-            sizedist = (A * 1e6) * np.exp(-np.power(np.log(a / a_0), 2) / (2 * np.power(sigma, 2)))
+            sizedist = (A * 1e6) * np.exp(
+                -np.power(np.log(a / a_0), 2) / (2 * np.power(sigma, 2))
+            )
 
         else:
             small_indices = a <= a_t
@@ -1580,7 +1579,7 @@ class ThemisDustModel(DustModel):
             sizedist = np.concatenate((small, large))
 
         return sizedist
-    
+
     def set_size_dist_parameters(self, params):
         """
         Set the size distribution parameters in the object dictonary.
@@ -1597,7 +1596,7 @@ class ThemisDustModel(DustModel):
             k1 += self.n_params[k]
             if component.name == "a-C-Themis":
                 self.parameters["a-C-Themis"] = {
-                     "A": cparams[0],
+                    "A": cparams[0],
                     "alpha": cparams[1],
                     "a_C": cparams[2],
                     "a_t": cparams[3],
@@ -1646,7 +1645,7 @@ class ThemisDustModel(DustModel):
             k2 = k1 + dustmodel.n_params[k]
             cparams = params[k1:k2]
             k1 += dustmodel.n_params[k]
-            
+
             # keep the normalization always positive
             if cparams[0] < 0.0:
                 lnp_bound = -1e20
