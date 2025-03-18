@@ -85,7 +85,7 @@ To make this plot, use
     DG = DustGrains()
     DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/", every_nth=1)
 
-    plot(DG, 10, 'astro-silicates')
+    plot(DG, 10, 'astro-silicates', 1)
 
 The default wavelength for these plots is 0.1 micron. 
 To choose another wavelength (with the wavelength given in micron), use

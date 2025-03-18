@@ -60,10 +60,10 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
-    plot(DG, args.wave, args.composition, args.obsdata, args.png, args.eps, args.pdf)
+    plot(DG, args.wave, args.composition, args.obsdata, args.ISRF, args.png, args.eps, args.pdf)
 
 
-def plot(DG, wave, composition, obsdata="none", png=False, eps=False, pdf=False):
+def plot(DG, wave, composition, ISRF, obsdata="none", png=False, eps=False, pdf=False):
 
     # setup the plots
     fontsize = 12
@@ -80,12 +80,12 @@ def plot(DG, wave, composition, obsdata="none", png=False, eps=False, pdf=False)
 
     ws_indxs = np.argsort(DG.wavelengths)
     waves = DG.wavelengths[ws_indxs]
-    interpolated_emission = DG.interpol_emission(args.ISRF)
+    interpolated_emission = DG.interpol_emission(ISRF)
     for i in range(DG.n_sizes):
 
         # get the values at specified lambda and V
         al = np.interp([wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
-        em = np.interp(wave, waves, DG.emission[i, ws_indxs])
+        em = np.interp(wave, waves, interpolated_emission[i, ws_indxs])
         absext = DG.cabs[i, ws_indxs] / DG.cext[i, ws_indxs]
         scaext = DG.csca[i, ws_indxs] / DG.cext[i, ws_indxs]
         cabs = np.interp(wave, waves, absext)
