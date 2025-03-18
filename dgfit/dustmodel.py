@@ -453,12 +453,20 @@ class DustModel(object):
         -------
         array of floats
             concatenated set of initial walker positions
-        """
+        """  
         self.ndim = len(p0)
         self.nwalkers = nwalkers
-        # Initial ball should be in log space
+        # some parameters are negative, so need to be handled
+        psigns = np.sign(p0)
         p = [
-            10 ** (np.log10(p0) + 1.0 * np.random.uniform(-1, 1.0, self.ndim))
+            psigns
+            * (
+                10
+                ** (
+                    np.log10(np.absolute(p0))
+                    + 0.1 * np.random.uniform(-1, 1.0, self.ndim)
+                )
+            )
             for k in range(self.nwalkers)
         ]
 
@@ -725,41 +733,6 @@ class DustModel(object):
 
         # save the best fit size distributions
         self.save_results(oname, obsdata)
-
-    def initial_walkers(self, p0, nwalkers):
-        """
-        Setup the walkers based on the initial parameters p0
-        Specific to MCMC fitters (e.g., emcee).
-
-        Parameters
-        ----------
-        p0 : floats
-            Initial values of the parameters
-        nwalkers : int
-            Number of walkers to initialize
-
-        Returns
-        -------
-        array of floats
-            concatenated set of initial walker positions
-        """
-        self.ndim = len(p0)
-        self.nwalkers = nwalkers
-        # some parameters are negative, so need to be handled
-        psigns = np.sign(p0)
-        p = [
-            psigns
-            * (
-                10
-                ** (
-                    np.log10(np.absolute(p0))
-                    + 0.1 * np.random.uniform(-1, 1.0, self.ndim)
-                )
-            )
-            for k in range(self.nwalkers)
-        ]
-
-        return p
 
 
 # ================================================================
