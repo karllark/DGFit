@@ -177,7 +177,12 @@ def main():
     unc = data_unc / data
     unc *= 100
     ax2.errorbar(
-        hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color="black", capsize=3,
+        hdu.data["WAVE"],
+        residuals,
+        yerr=unc,
+        fmt="o",
+        color="black",
+        capsize=3,
     )
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
     ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)

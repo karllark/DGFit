@@ -70,7 +70,7 @@ class DustGrains(object):
             exit()
 
         # set useful quantities for each composition
-        if componentname in  ["astro-silicates", "Silicates-Z04"]:  # from WD01
+        if componentname in ["astro-silicates", "Silicates-Z04"]:  # from WD01
             self.density = 3.5  # g/cm^3
             self.atomic_composition = "MgFeSiO4"
             self.atomic_comp_names = ["Mg", "Fe", "Si", "O"]
@@ -92,15 +92,15 @@ class DustGrains(object):
             self.atomic_comp_number = np.array([1])
             self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
 
-        elif componentname in ["Carbonaceous-HD23"]: # Draine et al 2021 
-            self.density = 2.2 # g/cm^3
+        elif componentname in ["Carbonaceous-HD23"]:  # Draine et al 2021
+            self.density = 2.2  # g/cm^3
             self.atomic_composition = "C"
             self.atomic_comp_names = ["C"]
             self.atomic_comp_number = np.array([1])
             self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
 
         elif componentname in ["AstroDust-HD23"]:
-            self.density = 2.74 # g/cm^3
+            self.density = 2.74  # g/cm^3
             self.atomic_composition = "MgFeSiO"
             self.atomic_comp_names = ["Mg", "Fe", "Si", "O"]
             self.atomic_comp_number = np.array([1.3, 0.3, 1, 3.6])
@@ -476,10 +476,10 @@ class DustGrains(object):
 
             a = []
             for i, value in enumerate(_effscat_a_cext):
-               if value == 0:
-                   a.append(0)
-               else:
-                   a.append(_effscat_a_csca[i] / value)
+                if value == 0:
+                    a.append(0)
+                else:
+                    a.append(_effscat_a_csca[i] / value)
 
             results["albedo"] = np.array(a)
             results["scat_a_cext"] = _effscat_a_cext
@@ -518,11 +518,11 @@ class DustGrains(object):
 
             g = []
             for i, value in enumerate(_effscat_g_csca):
-               if value == 0:
-                   g.append(0)
-               else:
-                   g.append(_effg[i] / value)
-            
+                if value == 0:
+                    g.append(0)
+                else:
+                    g.append(_effg[i] / value)
+
             results["g"] = np.array(g)
             results["scat_g_csca"] = _effscat_g_csca
 

@@ -10,7 +10,14 @@ import emcee
 from multiprocessing import Pool
 import corner
 
-from dgfit.dustmodel import DustModel, MRNDustModel, WDDustModel, Z04DustModel, HD23DustModel, ThemisDustModel
+from dgfit.dustmodel import (
+    DustModel,
+    MRNDustModel,
+    WDDustModel,
+    Z04DustModel,
+    HD23DustModel,
+    ThemisDustModel,
+)
 from dgfit.obsdata import ObsData
 
 
@@ -203,7 +210,9 @@ def main():
         )
 
     for i, comp in enumerate(compnames):
-        print(f"# of grain sizes for {comp} = {len(dustmodel_full.components[i].sizes)}")
+        print(
+            f"# of grain sizes for {comp} = {len(dustmodel_full.components[i].sizes)}"
+        )
 
     sizedisttype = args.sizedisttype
     pnames = []
@@ -315,7 +324,7 @@ def main():
                     cparams["m_3"],
                 ]
             pnames += cparams.keys()
-        
+
         cparams = dustmodel.parameters["Radiation field"]
         p0 += [cparams["RF"]]
         pnames += cparams.keys()
@@ -374,7 +383,7 @@ def main():
                     cparams[4],
                 ]
             elif component.name == "a-C:H-Themis":
-                cparams = dustmodel.parameters["a-C:H-Themis"] 
+                cparams = dustmodel.parameters["a-C:H-Themis"]
                 p0 += [
                     cparams[0] / obsdata.avnhi,
                     cparams[1],
