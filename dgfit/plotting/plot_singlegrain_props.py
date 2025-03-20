@@ -60,6 +60,11 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
+    plot(DG, args.wave, args.composition, args.obsdata, args.ISRF, args.png, args.eps, args.pdf)
+
+
+def plot(DG, wave, composition, ISRF, obsdata="none", png=False, eps=False, pdf=False):
+
     # setup the plots
     fontsize = 12
     font = {"size": fontsize}
@@ -75,31 +80,31 @@ def main():
 
     ws_indxs = np.argsort(DG.wavelengths)
     waves = DG.wavelengths[ws_indxs]
-    interpolated_emission = DG.interpol_emission(args.ISRF)
+    interpolated_emission = DG.interpol_emission(ISRF)
     for i in range(DG.n_sizes):
 
         # get the values at specified lambda and V
-        al = np.interp([args.wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
-        em = np.interp(args.wave, waves, interpolated_emission[i, ws_indxs])
+        al = np.interp([wave, 0.55, 0.45], waves, DG.cext[i, ws_indxs])
+        em = np.interp(wave, waves, interpolated_emission[i, ws_indxs])
         absext = DG.cabs[i, ws_indxs] / DG.cext[i, ws_indxs]
         scaext = DG.csca[i, ws_indxs] / DG.cext[i, ws_indxs]
-        cabs = np.interp(args.wave, waves, absext)
-        csca = np.interp(args.wave, waves, scaext)
+        cabs = np.interp(wave, waves, absext)
+        csca = np.interp(wave, waves, scaext)
         ax[0][0].plot(DG.sizes[i] * 1e4, al[0] / al[1], "o", color="b")
         ax[0][1].plot(DG.sizes[i] * 1e4, em, "o", color="b")
         ax[1][0].plot(DG.sizes[i] * 1e4, cabs, "o", color="b")
         ax[1][1].plot(DG.sizes[i] * 1e4, csca, "o", color="b")
 
     ax[0][0].set_xlabel(r"$a$ [$\mu m$]")
-    ax[0][0].set_ylabel(f"A({args.wave})/A(V)")
+    ax[0][0].set_ylabel(f"A({wave})/A(V)")
     ax[0][0].set_xscale("log")
     ax[0][0].set_yscale("log")
 
     ax[0][1].set_xlabel(r"$a$ [$\mu m$]")
-    if args.obsdata != "none":
-        ax[0][1].set_ylabel(f"S({args.wave})/A(V)")
+    if obsdata != "none":
+        ax[0][1].set_ylabel(f"S({wave})/A(V)")
     else:
-        ax[0][1].set_ylabel(f"S({args.wave})/N(HI)")
+        ax[0][1].set_ylabel(f"S({wave})/N(HI)")
     ax[0][1].set_xscale("log")
     ax[0][1].set_yscale("log")
 
@@ -111,17 +116,17 @@ def main():
     ax[1][1].set_ylabel(r"$C_{sca}/C_{ext}$")
     ax[1][1].set_xscale("log")
 
-    ax[0][0].set_title(args.composition)
+    ax[0][0].set_title(composition)
 
     plt.tight_layout()
 
     # show or save
-    basename = "DustGrains_diag_%s" % (args.composition)
-    if args.png:
+    basename = "DustGrains_diag_%s" % (composition)
+    if png:
         fig.savefig(basename + ".png")
-    elif args.eps:
+    elif eps:
         fig.savefig(basename + ".eps")
-    elif args.pdf:
+    elif pdf:
         fig.savefig(basename + ".pdf")
     else:
         plt.show()

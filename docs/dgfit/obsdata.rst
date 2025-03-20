@@ -34,6 +34,8 @@ All examples are for the Milky Way Diffuse Average (R(V) = 3.1).
 avnhi
 -----
 
+This file is always needed to run DGFit.
+
 ::
 
     # from Gordon et al. (2009)
