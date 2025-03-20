@@ -139,8 +139,8 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             ax[0, 1].legend(loc=2)
 
     ax[0, 0].set_xlabel(r"$\lambda [\mu m]$")
+    ax[0, 0].set_yscale("log")
     ax[0, 0].set_xscale("log")
-    ax[0, 0].set_xlim(0.085, 3.0)
     ax[0, 0].legend()
 
     ax[1, 0].set_xticks(aindxs + (0.75 * width))
@@ -171,7 +171,6 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
         ax[0, 2].set_xlabel(r"$\lambda [\mu m]$")
         ax[0, 2].set_ylabel(r"$a$")
         ax[0, 2].set_xscale("log")
-        ax[0, 2].set_xlim(0.085, 3.0)
         ax[0, 2].set_ylim(0.0, 1.0)
         ax[0, 2].legend()
 
@@ -186,7 +185,6 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
         ax[1, 2].set_xlabel(r"$\lambda [\mu m]$")
         ax[1, 2].set_ylabel(r"$g$")
         ax[1, 2].set_xscale("log")
-        ax[1, 2].set_xlim(0.085, 3.0)
         ax[1, 2].set_ylim(0.0, 1.0)
         ax[1, 2].legend()
 

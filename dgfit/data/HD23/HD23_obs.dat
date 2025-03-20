@@ -1,0 +1,7 @@
+# type filename
+avnhi   files/Lenz17_avnhi.dat
+ext     files/HD23_ext.dat
+abund   files/HD21_abundances.dat
+ir_emis files/HD23_ir_emission.dat
+scat_a  files/Gordon04_albedo.dat
+scat_g  files/Gordon04_g.dat

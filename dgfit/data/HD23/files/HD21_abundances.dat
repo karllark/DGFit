@@ -1,0 +1,11 @@
+# atom  abund  abund_unc  total_abund  total_abund_unc
+C    126    56      324    150
+O    249    94      682    300
+Mg   45.8   4.9     52.9   5.8
+Si   38.0   3.1     44.6   4.5
+Fe   42.8   4.0     43.7   4.1
+# abundances from Hensley & Draine (2021)
+#
+# Units are # atoms per 10^6 H atoms
+#
+#
