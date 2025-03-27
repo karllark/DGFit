@@ -1,0 +1,7 @@
+# type filename
+avnhi   files/Draine89_avnhi.dat
+ext     files/F99_ext.dat
+abund   files/Zubko04_FG_abundances.dat
+ir_emis files/Zubko04_ir_emission.dat
+scat_a  files/Gordon04_albedo.dat
+scat_g  files/Gordon04_g.dat
