@@ -152,9 +152,7 @@ def main():
         "--multa4", action="store_true", help="multiply the size distribution by a**4"
     )
     parser.add_argument(
-        "--mass", 
-        action="store_true",
-        help="Show the mass distribution"
+        "--mass", action="store_true", help="Show the mass distribution"
     )
     parser.add_argument("--smc", help="use an SMC sightline", action="store_true")
     parser.add_argument(
@@ -179,12 +177,19 @@ def main():
 
     hdulist = fits.open(args.filename)
     if not args.startonly:
-        plot(ax, hdulist, fontsize=fontsize, multa4=args.multa4, mass=args.mass, plegend=True)
+        plot(
+            ax,
+            hdulist,
+            fontsize=fontsize,
+            multa4=args.multa4,
+            mass=args.mass,
+            plegend=True,
+        )
 
     if args.start or args.startonly:
-        legend=False
+        legend = False
         if args.startonly:
-            legend=True
+            legend = True
         if "best_fin" in args.filename:
             repstr = "best_fin"
         elif "fin" in args.filename:

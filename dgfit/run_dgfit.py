@@ -377,7 +377,7 @@ def main():
                     cparams["a_1"],
                     cparams["m_1"],
                 ]
-            
+
             elif component.name == "Silicates2-Z04":
                 cparams = dustmodel.parameters["Silicates2-Z04"]
                 p0 += [

@@ -1127,7 +1127,7 @@ class Z04DustModel(DustModel):
                         "m_3": 12.3253,
                         "b_4": 1.481e3,
                         "a_4": 0.474035,
-                        "m_4": 12.0995
+                        "m_4": 12.0995,
                     }
                 elif component.name == "ACH2-Z04":
                     self.n_params.append(6)
