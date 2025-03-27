@@ -201,9 +201,9 @@ def main():
         ax1.set_ylim([0.0, 1.0])
 
     residuals = (hdu.data[data_name] - data) / data
-    #residuals *= 100
+    # residuals *= 100
     unc = data_unc / data
-    #unc *= 100
+    # unc *= 100
     ax2.errorbar(
         data_waves,
         residuals,

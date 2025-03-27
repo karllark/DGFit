@@ -73,7 +73,12 @@ class DustGrains(object):
             exit()
 
         # set useful quantities for each composition
-        if componentname in ["astro-silicates", "Silicates-Z04", "Silicates1-Z04", "Silicates2-Z04"]:  # from WD01
+        if componentname in [
+            "astro-silicates",
+            "Silicates-Z04",
+            "Silicates1-Z04",
+            "Silicates2-Z04",
+        ]:  # from WD01
             self.density = 3.5  # g/cm^3
             self.atomic_composition = "MgFeSiO4"
             self.atomic_comp_names = ["Mg", "Fe", "Si", "O"]
