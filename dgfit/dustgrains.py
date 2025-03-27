@@ -61,6 +61,9 @@ class DustGrains(object):
             "PAH-Z04",
             "Graphite-Z04",
             "Silicates-Z04",
+            "ACH2-Z04",
+            "Silicates1-Z04",
+            "Silicates2-Z04",
             "Carbonaceous-HD23",
             "AstroDust-HD23",
         ]
@@ -70,7 +73,7 @@ class DustGrains(object):
             exit()
 
         # set useful quantities for each composition
-        if componentname in ["astro-silicates", "Silicates-Z04"]:  # from WD01
+        if componentname in ["astro-silicates", "Silicates-Z04", "Silicates1-Z04", "Silicates2-Z04"]:  # from WD01
             self.density = 3.5  # g/cm^3
             self.atomic_composition = "MgFeSiO4"
             self.atomic_comp_names = ["Mg", "Fe", "Si", "O"]
@@ -80,6 +83,13 @@ class DustGrains(object):
             )  # in grams
         elif componentname in ["astro-carbonaceous", "PAH-Z04"]:  # from WD01
             self.density = 2.24  # g/cm^3
+            self.atomic_composition = "C"
+            self.atomic_comp_names = ["C"]
+            self.atomic_comp_number = np.array([1])
+            self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
+
+        elif componentname in ["ACH2-Z04"]:  # from Zubko 1996
+            self.density = 1.81  # g/cm^3
             self.atomic_composition = "C"
             self.atomic_comp_names = ["C"]
             self.atomic_comp_number = np.array([1])

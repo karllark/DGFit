@@ -44,7 +44,7 @@ def get_krange(x, logaxis=False, in_range=[0]):
 def plot_dgfit_sizedist(
     ax,
     hdulist,
-    colors=["b", "g", "c"],
+    colors=["b", "g", "c", "r"],
     fontsize=12,
     multa4=True,
     plegend=True,
@@ -57,6 +57,7 @@ def plot_dgfit_sizedist(
         plot_uncs = False
 
     yrange = [0]
+    all_yvals = []
     for i in range(hdulist[0].header["NCOMPS"]):
         hdu = hdulist[i + 1]
 
@@ -84,6 +85,7 @@ def plot_dgfit_sizedist(
             yrange = get_krange(yvals + yvals_punc, logaxis=True, in_range=yrange)
 
         gindxs = yvals > 0
+        all_yvals.append(np.max(yvals))
 
         ax.plot(
             xvals[gindxs],
@@ -106,10 +108,11 @@ def plot_dgfit_sizedist(
     else:
         ylabel = r"$N_d(a)/A(V)$"
 
+    ymax = max(all_yvals) * 100
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlim(get_krange(xvals, logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim(1e-15, ymax)
     ax.set_xlabel(r"a $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     if plegend:
@@ -140,6 +143,7 @@ def plot_dgfit_abundances(
         )
 
     ax.set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
+    ax.set_ylim(0)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
 
@@ -172,15 +176,14 @@ def plot_dgfit_extinction(
 
     if obsdata.obs_filenames["ext"] is not None:
         ax.plot(obsdata.ext_waves, obsdata.ext_alav, "k-", label="Observed")
-        yrange = get_krange(obsdata.ext_alav, logaxis=True, in_range=yrange)
+        yrange_obs = get_krange(obsdata.ext_alav, logaxis=True)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$A(\lambda)/A(V)$", fontsize=fontsize)
-
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim(yrange_obs)
 
 
 # plot the emission spectra (total and components)
@@ -213,7 +216,7 @@ def plot_dgfit_emission(
             fmt="ko",
             label="Observed",
         )
-        yrange = get_krange(obsdata.ir_emission_av, logaxis=True, in_range=yrange)
+        yrange_obs = get_krange(obsdata.ir_emission_av, logaxis=True)
 
     ISRF_value = hdu.header["ISRF"]
     ax.set_title(f"ISRF = {ISRF_value:.2f}")
@@ -221,9 +224,8 @@ def plot_dgfit_emission(
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$", fontsize=fontsize)
-
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim(yrange_obs)
 
 
 # plot the dust scattering albedo
