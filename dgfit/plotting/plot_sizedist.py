@@ -6,8 +6,6 @@ import matplotlib
 
 from astropy.io import fits
 
-from dgfit.obsdata import ObsData
-
 
 def get_krange(x, logaxis=False, in_range=[0]):
     prange = np.array([0.0, 0.0])
