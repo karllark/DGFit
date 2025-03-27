@@ -1,7 +1,6 @@
 import math
 import numpy as np
 from scipy.special import erf
-import warnings
 
 from astropy.io import fits
 
