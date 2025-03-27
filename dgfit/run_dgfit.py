@@ -53,6 +53,9 @@ def DGFit_cmdparser():
             "PAH-Z04",
             "Graphite-Z04",
             "Silicates-Z04",
+            "ACH2-Z04",
+            "Silicates1-Z04",
+            "Silicates2-Z04",
             "Carbonaceous-HD23",
             "AstroDust-HD23",
             "a-C-Themis",
@@ -60,6 +63,12 @@ def DGFit_cmdparser():
             "aSil-2-Themis",
         ],
         help="Which grains to use",
+    )
+
+    parser.add_argument(
+        "--no_variable_ISRF",
+        action="store_false",
+        help="disable the variable radiation field",
     )
 
     parser.add_argument(
@@ -207,6 +216,8 @@ def main():
             componentnames=compnames,
             path=str(data_path) + "/indiv_grain/",
             every_nth=args.everynth,
+            limit_abundances=args.limit_abund,
+            variable_ISRF=args.no_variable_ISRF,
         )
 
     for i, comp in enumerate(compnames):
@@ -215,10 +226,16 @@ def main():
         )
 
     sizedisttype = args.sizedisttype
+    ISRF = args.no_variable_ISRF
     pnames = []
     if sizedisttype == "MRN":
         # define the fitting model
-        dustmodel = MRNDustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+        dustmodel = MRNDustModel(
+            dustmodel=dustmodel_full,
+            obsdata=obsdata,
+            limit_abundances=args.limit_abund,
+            variable_ISRF=ISRF,
+        )
 
         # initial guesses at parameters
         #    starting range is 0.001 to 1 micron
@@ -233,15 +250,22 @@ def main():
             ]
             pnames += cparams.keys()
 
-        cparams = dustmodel.parameters["Radiation field"]
-        p0 += [cparams["RF"]]
+        if ISRF:
+            cparams = dustmodel.parameters["Radiation field"]
+            p0 += [cparams["RF"]]
+
         pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == "WD":
-        dustmodel = WDDustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+        dustmodel = WDDustModel(
+            dustmodel=dustmodel_full,
+            obsdata=obsdata,
+            limit_abundances=args.limit_abund,
+            variable_ISRF=ISRF,
+        )
 
         # initial guesses at parameters
         p0 = []
@@ -266,15 +290,22 @@ def main():
                 ]
             pnames += cparams.keys()
 
-        cparams = dustmodel.parameters["Radiation field"]
-        p0 += [cparams["RF"]]
+        if ISRF:
+            cparams = dustmodel.parameters["Radiation field"]
+            p0 += [cparams["RF"]]
+
         pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == "Z04":
-        dustmodel = Z04DustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+        dustmodel = Z04DustModel(
+            dustmodel=dustmodel_full,
+            obsdata=obsdata,
+            limit_abundances=args.limit_abund,
+            variable_ISRF=ISRF,
+        )
 
         # initial guesses at parameters
         p0 = []
@@ -286,9 +317,7 @@ def main():
                     cparams["c_0"],
                     cparams["b_0"],
                     cparams["b_1"],
-                    cparams["a_1"],
                     cparams["m_1"],
-                    cparams["b_3"],
                     cparams["a_3"],
                     cparams["m_3"],
                 ]
@@ -322,18 +351,65 @@ def main():
                     cparams["b_3"],
                     cparams["a_3"],
                     cparams["m_3"],
+                    cparams["b_4"],
+                    cparams["a_4"],
+                    cparams["m_4"],
                 ]
+
+            elif component.name == "ACH2-Z04":
+                cparams = dustmodel.parameters["ACH2-Z04"]
+                p0 += [
+                    cparams["A"] / obsdata.avnhi,
+                    cparams["c_0"],
+                    cparams["b_0"],
+                    cparams["b_1"],
+                    cparams["a_1"],
+                    cparams["m_1"],
+                ]
+
+            elif component.name == "Silicates1-Z04":
+                cparams = dustmodel.parameters["Silicates1-Z04"]
+                p0 += [
+                    cparams["A"] / obsdata.avnhi,
+                    cparams["c_0"],
+                    cparams["b_0"],
+                    cparams["b_1"],
+                    cparams["a_1"],
+                    cparams["m_1"],
+                ]
+            
+            elif component.name == "Silicates2-Z04":
+                cparams = dustmodel.parameters["Silicates2-Z04"]
+                p0 += [
+                    cparams["A"] / obsdata.avnhi,
+                    cparams["c_0"],
+                    cparams["b_0"],
+                    cparams["b_1"],
+                    cparams["a_1"],
+                    cparams["m_1"],
+                    cparams["b_2"],
+                    cparams["a_2"],
+                    cparams["m_2"],
+                ]
+
             pnames += cparams.keys()
 
-        cparams = dustmodel.parameters["Radiation field"]
-        p0 += [cparams["RF"]]
+        if ISRF:
+            cparams = dustmodel.parameters["Radiation field"]
+            p0 += [cparams["RF"]]
+
         pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == "HD23":
-        dustmodel = HD23DustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+        dustmodel = HD23DustModel(
+            dustmodel=dustmodel_full,
+            obsdata=obsdata,
+            limit_abundances=args.limit_abund,
+            variable_ISRF=ISRF,
+        )
 
         # initial guesses at parameters
         p0 = []
@@ -360,15 +436,22 @@ def main():
                 ]
             pnames += cparams.keys()
 
-        cparams = dustmodel.parameters["Radiation field"]
-        p0 += [cparams["RF"]]
+        if ISRF:
+            cparams = dustmodel.parameters["Radiation field"]
+            p0 += [cparams["RF"]]
+
         pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == "Themis":
-        dustmodel = ThemisDustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+        dustmodel = ThemisDustModel(
+            dustmodel=dustmodel_full,
+            obsdata=obsdata,
+            limit_abundances=args.limit_abund,
+            variable_ISRF=ISRF,
+        )
 
         # initial guesses at parameters
         p0 = []
@@ -398,15 +481,19 @@ def main():
                 ]
             pnames += cparams.keys()
 
-        cparams = dustmodel.parameters["Radiation field"]
-        p0 += [cparams["RF"]]
+        if ISRF:
+            cparams = dustmodel.parameters["Radiation field"]
+            p0 += [cparams["RF"]]
+
         pnames += cparams.keys()
 
         # need to set dust model size distribution
         dustmodel.set_size_dist(p0)
 
     elif sizedisttype == "bins":
-        dustmodel = DustModel(dustmodel=dustmodel_full, obsdata=obsdata)
+        dustmodel = DustModel(
+            dustmodel=dustmodel_full, obsdata=obsdata, limit_abundances=args.limit_abund
+        )
 
         # replace the default size distribution with one from a file
         if args.read is not None:
