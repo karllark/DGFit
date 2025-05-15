@@ -23,8 +23,17 @@ def main():
             "astro-silicates",
             "astro-carbonaceous",
             "astro-graphite",
-            "astro-PAH-ionized",
-            "astro-PAH-neutral",
+            "PAH-Z04",
+            "Graphite-Z04",
+            "Silicates-Z04",
+            "ACH2-Z04",
+            "Silicates1-Z04",
+            "Silicates2-Z04",
+            "Carbonaceous-HD23",
+            "AstroDust-HD23",
+            "a-C-Themis",
+            "a-C:H-Themis",
+            "aSil-2-Themis",
         ],
         default="astro-silicates",
         help="Grain composition",
@@ -67,13 +76,12 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
     font = {"size": fontsize}
 
     matplotlib.rc("font", **font)
-
     matplotlib.rc("lines", linewidth=2)
     matplotlib.rc("axes", linewidth=2)
     matplotlib.rc("xtick.major", width=2)
     matplotlib.rc("ytick.major", width=2)
 
-    fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15, 10))
+    fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(20, 10))
 
     ws_indxs = np.argsort(DG.wavelengths)
     ews_indxs = np.argsort(DG.wavelengths_emission)
@@ -138,6 +146,7 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax, fraction=0.05, pad=0.04, aspect=50)
     cbar.set_label(r"Grainsizes [$\mu m$]")
+    fig.subplots_adjust(wspace=0.25, right=0.85)
 
     # show or save
     basename = "DustGrains_diag_%s" % (composition)

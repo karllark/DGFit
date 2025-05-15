@@ -163,7 +163,7 @@ def main():
         ylogscale = False
         ylim = True
 
-    ax1.plot(data_waves, hdu.data[data_name], colors[0] + ltype, label="Total")
+    ax1.plot(data_waves, hdu.data[data_name], colors[0] + ltype, label="Model")
     yrange = get_krange(hdu.data[data_name])
     for i in range(len(hdu.data.names) - 2):
         ax1.plot(
@@ -195,15 +195,14 @@ def main():
 
     ax1.set_ylabel(ylabel, fontsize=fontsize)
     ax1.legend()
+    # ax1.set_title("Zubko et al. (2004)")
     ax1.set_xlim(get_krange(data_waves, logaxis=xlogscale))
     ax1.set_ylim(get_krange(data, logaxis=ylogscale))
     if ylim:
         ax1.set_ylim([0.0, 1.0])
 
     residuals = (hdu.data[data_name] - data) / data
-    # residuals *= 100
     unc = data_unc / data
-    # unc *= 100
     ax2.errorbar(
         data_waves,
         residuals,
@@ -213,8 +212,11 @@ def main():
         capsize=3,
     )
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
-    ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax2.set_ylabel("Residuals (%)", fontsize=fontsize)
+    if args.inverse_lambda:
+        ax2.set_xlabel(r"$1/\lambda \ [1/\mu m]$", fontsize=fontsize)
+    else:
+        ax2.set_xlabel(r"$\lambda \ [\mu m]$", fontsize=fontsize)
+    ax2.set_ylabel("Residuals\n (model - data)/data", fontsize=fontsize)
     ax2.set_ylim(-0.75, 0.75)
 
     pyplot.tight_layout()

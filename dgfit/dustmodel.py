@@ -6,7 +6,14 @@ from astropy.io import fits
 
 from dgfit.dustgrains import DustGrains
 
-__all__ = ["DustModel", "MRNDustModel", "WDDustModel"]
+__all__ = [
+    "DustModel",
+    "MRNDustModel",
+    "WDDustModel",
+    "Z04DustModel",
+    "ThemisDustModel",
+    "HD23DustModel",
+]
 
 
 class DustModel(object):
@@ -409,19 +416,46 @@ class DustModel(object):
         lnp_g = 0.0
         if obsdata.fit_scat_g:
             g = results["g"]
-            lnp_albedo = -0.5 * np.sum(
-                (((obsdata.scat_g - g) / (obsdata.scat_g_unc)) ** 2)
-            )
+            lnp_g = -0.5 * np.sum((((obsdata.scat_g - g) / (obsdata.scat_g_unc)) ** 2))
 
         # combine the lnps
         lnp = lnp_alav + lnp_dep + lnp_emission + lnp_albedo + lnp_g
 
         if math.isinf(lnp) | math.isnan(lnp):
-            print(lnp_alav, lnp_dep, lnp_emission, lnp_albedo, lnp_g)
-            print(lnp)
-            exit()
-        else:
-            return lnp
+            return -np.inf
+        return lnp
+
+    @staticmethod
+    def lnprob(params, obsdata, dustmodel):
+        """
+        Compute the full probability function including priors
+        Static function as it will be called form the fitter
+
+        Parameters
+        ----------
+        params : floats
+            Parameters of the size distribution function
+        obsdata : ObsData object
+            Observed data to be fit
+        dustmodel : DustModel object
+            Dust model information
+
+        Returns
+        -------
+        float
+            natural log of the probability
+        """
+        # prior
+        #    make sure the size distributions are all positve
+        lnp_bound = 0.0
+        for param in params:
+            if param < 0.0:
+                lnp_bound = -1e20
+
+        # update the size distributions
+        dustmodel.set_size_dist(params)
+
+        return dustmodel.lnprob_generic(obsdata) + lnp_bound
 
     def initial_walkers(self, p0, nwalkers):
         """
@@ -1436,9 +1470,9 @@ class HD23DustModel(DustModel):
 
         if B_ad is None:
             sizedist = (B_1 / (1e-8 * a)) * np.exp(
-                -np.power(np.log(a / a_01), 2) / (np.power(2 * sigma, 2))
+                -np.power(np.log(a / a_01), 2) / (2 * np.power(sigma, 2))
             ) + (B_2 / (1e-8 * a)) * np.exp(
-                -np.power(np.log(a / a_02), 2) / (np.power(2 * sigma, 2))
+                -np.power(np.log(a / a_02), 2) / (2 * np.power(sigma, 2))
             )
 
         else:
@@ -1561,7 +1595,7 @@ class ThemisDustModel(DustModel):
                 if component.name == "a-C-Themis":
                     self.n_params.append(5)
                     self.parameters["a-C-Themis"] = {
-                        "A": 1.32e-3,
+                        "A": 1,
                         "alpha": -5,
                         "a_C": 50,
                         "a_t": 10,
@@ -1570,14 +1604,14 @@ class ThemisDustModel(DustModel):
                 elif component.name == "a-C:H-Themis":
                     self.n_params.append(3)
                     self.parameters["a-C:H-Themis"] = {
-                        "A": 8e-4,
+                        "A": 4e-6,
                         "a_0": 6.2,
                         "sigma": 1.32,
                     }
                 elif component.name == "aSil-2-Themis":
                     self.n_params.append(3)
                     self.parameters["aSil-2-Themis"] = {
-                        "A": 3.27e-3,
+                        "A": 1.27e-2,
                         "a_0": 0.92,
                         "sigma": 1.22,
                     }
@@ -1606,8 +1640,8 @@ class ThemisDustModel(DustModel):
         floats
             Size distribution as a function of x
         """
-        # input grain sizes are in cm, needed in micron
-        a = x * 1e4
+        # input grain sizes are in cm, needed in nm
+        a = x * 1e7
 
         if len(params) == 5:
             A, alpha, a_C, a_t, gamma = params
@@ -1617,15 +1651,19 @@ class ThemisDustModel(DustModel):
             A, a_0, sigma = params
 
         if sigma is not None:
-            sizedist = (A * 1e6) * np.exp(
+            sizedist = (A / a) * np.exp(
                 -np.power(np.log(a / a_0), 2) / (2 * np.power(sigma, 2))
             )
 
         else:
             small_indices = a <= a_t
             large_indices = a > a_t
-            small = (A * 1e6) * np.power(a[small_indices], alpha)
-            large = (A * 1e6) * np.exp(-np.power((a[large_indices] - a_t) / a_C, gamma))
+            small = (A / (a[small_indices])) * np.power(a[small_indices], alpha)
+            large = (
+                (A / (a[large_indices]))
+                * np.power(a[large_indices], alpha)
+                * np.exp(-np.power((a[large_indices] - a_t) / a_C, gamma))
+            )
 
             sizedist = np.concatenate((small, large))
 
@@ -1701,6 +1739,16 @@ class ThemisDustModel(DustModel):
             # keep the normalization always positive
             if cparams[0] < 0.0:
                 lnp_bound = -1e20
+
+            if len(cparams) == 5:
+                if cparams[2] <= 0:
+                    lnp_bound = -1e20
+                if cparams[3] <= 0:
+                    lnp_bound = -1e20
+
+            elif len(cparams) == 3:
+                if cparams[1] <= 0:
+                    lnp_bound = -1e20
 
         if lnp_bound < 0.0:
             return lnp_bound

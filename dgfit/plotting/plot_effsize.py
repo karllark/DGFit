@@ -8,11 +8,8 @@ import importlib.resources as importlib_resources
 
 from dgfit.dustmodel import DustModel, WDDustModel
 
-# from dgfit.dustgrains import DustGrains
-
 
 def main():
-
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(

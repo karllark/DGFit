@@ -66,6 +66,9 @@ class DustGrains(object):
             "Silicates2-Z04",
             "Carbonaceous-HD23",
             "AstroDust-HD23",
+            "a-C-Themis",
+            "a-C:H-Themis",
+            "aSil-2-Themis",
         ]
         if componentname not in _allowed_components:
             print(componentname + " not one of the allowed grain components")
@@ -86,6 +89,30 @@ class DustGrains(object):
             self.atomic_comp_masses = (
                 np.array([24.305, 55.845, 28.0855, 15.994]) * 1.660e-24
             )  # in grams
+
+        elif componentname in ["aSil-2-Themis"]:  # from Demyk et al. 2022
+            self.density = 2.7  # g/cm^3
+            self.atomic_composition = "MgSiO4"
+            self.atomic_comp_names = ["Mg", "Si", "O"]
+            self.atomic_comp_number = np.array([1.7, 1, 3.7])
+            self.atomic_comp_masses = (
+                np.array([24.305, 28.0855, 15.994]) * 1.660e-24
+            )  # in grams
+
+        elif componentname in ["a-C-Themis"]:  # from Themis (2017)
+            self.density = 1.6  # g/cm^3
+            self.atomic_composition = "C"
+            self.atomic_comp_names = ["C"]
+            self.atomic_comp_number = np.array([1])
+            self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
+
+        elif componentname in ["a-C:H-Themis"]:  # from Themis (2017)
+            self.density = 1.3  # g/cm^3
+            self.atomic_composition = "C"
+            self.atomic_comp_names = ["C"]
+            self.atomic_comp_number = np.array([1])
+            self.atomic_comp_masses = np.array([12.0107]) * 1.660e-24  # in grams
+
         elif componentname in ["astro-carbonaceous", "PAH-Z04"]:  # from WD01
             self.density = 2.24  # g/cm^3
             self.atomic_composition = "C"

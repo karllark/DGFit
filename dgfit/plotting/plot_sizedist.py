@@ -42,6 +42,7 @@ def plot(
     ax,
     hdulist,
     colors=["b", "g", "c", "r"],
+    markers=["x", "o", "s", "*"],
     fontsize=12,
     multa4=False,
     mass=False,
@@ -96,6 +97,8 @@ def plot(
             xvals[gindxs],
             yvals[gindxs],
             colors[i] + ltype,
+            marker=markers[i],
+            markevery=3,
             label=hdu.header["EXTNAME"],
             alpha=alpha,
         )
@@ -111,7 +114,7 @@ def plot(
     if multa4:
         ylabel = r"$a^4 N_d(a)/A(V)$"
     elif mass:
-        ylabel = r"m(a)a"
+        ylabel = r"m(a)/A(V)"
     else:
         ylabel = r"$N_d(a)/A(V)$"
 
