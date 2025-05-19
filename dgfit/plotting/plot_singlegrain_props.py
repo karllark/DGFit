@@ -13,7 +13,7 @@ def main():
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--wave", default=0.1, type=float, help="lamda in A(lambda)/A(V)"
+        "--wave", default=0.1, type=float, help="lambda in A(lambda)/A(V)"
     )
     parser.add_argument(
         "-c",
@@ -21,9 +21,19 @@ def main():
         choices=[
             "astro-silicates",
             "astro-carbonaceous",
-            "astro-graphite",
-            "astro-PAH-ionized",
-            "astro-PAH-neutral",
+            "astro-PAH",
+            "astro-carbonaceous",
+            "PAH-Z04",
+            "Graphite-Z04",
+            "Silicates-Z04",
+            "ACH2-Z04",
+            "Silicates1-Z04",
+            "Silicates2-Z04",
+            "Carbonaceous-HD23",
+            "AstroDust-HD23",
+            "a-C-Themis",
+            "a-C:H-Themis",
+            "aSil-2-Themis",
         ],
         default="astro-silicates",
         help="Grain composition",
@@ -60,7 +70,7 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
-    plot(DG, args.wave, args.composition, args.obsdata, args.ISRF, args.png, args.eps, args.pdf)
+        plot(DG, args.wave, args.composition, args.obsdata, args.ISRF, args.png, args.eps, args.pdf)
 
 
 def plot(DG, wave, composition, ISRF, obsdata="none", png=False, eps=False, pdf=False):
@@ -70,7 +80,6 @@ def plot(DG, wave, composition, ISRF, obsdata="none", png=False, eps=False, pdf=
     font = {"size": fontsize}
 
     matplotlib.rc("font", **font)
-
     matplotlib.rc("lines", linewidth=2)
     matplotlib.rc("axes", linewidth=2)
     matplotlib.rc("xtick.major", width=2)

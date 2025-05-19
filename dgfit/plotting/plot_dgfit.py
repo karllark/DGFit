@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as pyplot
 import matplotlib
-
+from matplotlib.ticker import LogLocator
 from astropy.io import fits
 
 from dgfit.obsdata import ObsData
@@ -44,9 +44,9 @@ def get_krange(x, logaxis=False, in_range=[0]):
 def plot_dgfit_sizedist(
     ax,
     hdulist,
-    colors=["b", "g", "c"],
+    colors=["b", "g", "c", "r"],
     fontsize=12,
-    multa4=True,
+    mass=True,
     plegend=True,
     ltype="-",
     alpha=1.0,
@@ -57,22 +57,27 @@ def plot_dgfit_sizedist(
         plot_uncs = False
 
     yrange = [0]
+    all_yvals = []
     for i in range(hdulist[0].header["NCOMPS"]):
         hdu = hdulist[i + 1]
 
         xvals = hdu.data["SIZE"] * 1e4
         yvals = hdu.data["DIST"]
 
+        if np.sum(yvals) == 0:
+            print(f"Composition {i} is zero")
+            continue
+
         if plot_uncs:
             yvals_punc = hdu.data["DISTPUNC"]
             yvals_munc = hdu.data["DISTMUNC"]
 
-        if multa4:
-            xvals4 = hdu.data["SIZE"] ** 4
-            yvals = yvals * xvals4
+        if mass:
+            xvals3 = hdu.data["SIZE"] ** 3
+            yvals = yvals * xvals3
             if plot_uncs:
-                yvals_punc = yvals_punc * xvals4
-                yvals_munc = yvals_munc * xvals4
+                yvals_punc = yvals_punc * xvals3
+                yvals_munc = yvals_munc * xvals3
 
         yrange = get_krange(yvals, logaxis=True, in_range=yrange)
         if plot_uncs:
@@ -80,6 +85,7 @@ def plot_dgfit_sizedist(
             yrange = get_krange(yvals + yvals_punc, logaxis=True, in_range=yrange)
 
         gindxs = yvals > 0
+        all_yvals.append(np.max(yvals))
 
         ax.plot(
             xvals[gindxs],
@@ -97,15 +103,15 @@ def plot_dgfit_sizedist(
                 alpha=alpha,
             )
 
-    if multa4:
-        ylabel = r"$a^4 N_d(a)/A(V)$"
+    if mass:
+        ylabel = r"$m(a)/A(V)$"
     else:
         ylabel = r"$N_d(a)/A(V)$"
 
+    ymax = max(all_yvals) * 100
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(get_krange(xvals, logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim(1e-5, ymax)
     ax.set_xlabel(r"a $[\mu m]$", fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     if plegend:
@@ -136,6 +142,7 @@ def plot_dgfit_abundances(
         )
 
     ax.set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
+    ax.set_ylim(0)
     ax.set_xticks(aindxs + (0.75 * width))
     ax.set_xticklabels(atomnames)
 
@@ -153,6 +160,10 @@ def plot_dgfit_extinction(
         # linetypes = ['--', ':', '-.']
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+
+            if np.sum(hdu.data["EXT" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["EXT" + str(i + 1)],
@@ -164,15 +175,14 @@ def plot_dgfit_extinction(
 
     if obsdata.obs_filenames["ext"] is not None:
         ax.plot(obsdata.ext_waves, obsdata.ext_alav, "k-", label="Observed")
-        yrange = get_krange(obsdata.ext_alav, logaxis=True, in_range=yrange)
+        yrange_obs = get_krange(obsdata.ext_alav, logaxis=True)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$A(\lambda)/A(V)$", fontsize=fontsize)
-
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim(yrange_obs)
 
 
 # plot the emission spectra (total and components)
@@ -184,6 +194,10 @@ def plot_dgfit_emission(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+
+            if np.sum(hdu.data["EMIS" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["EMIS" + str(i + 1)],
@@ -194,14 +208,13 @@ def plot_dgfit_emission(
             )
 
     if obsdata.obs_filenames["ir_emis"] is not None:
-        ax.errorbar(
+        ax.plot(
             obsdata.ir_emission_waves,
             obsdata.ir_emission_av,
-            yerr=obsdata.ir_emission_av_unc,
-            fmt="ko",
+            "k-",
             label="Observed",
         )
-        yrange = get_krange(obsdata.ir_emission_av, logaxis=True, in_range=yrange)
+        yrange_obs = get_krange(obsdata.ir_emission_av, logaxis=True)
 
     ISRF_value = hdu.header["ISRF"]
     ax.set_title(f"ISRF = {ISRF_value:.2f}")
@@ -209,9 +222,8 @@ def plot_dgfit_emission(
     ax.set_yscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$", fontsize=fontsize)
-
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
-    ax.set_ylim(yrange)
+    ax.set_ylim(yrange_obs)
 
 
 # plot the dust scattering albedo
@@ -223,6 +235,10 @@ def plot_dgfit_albedo(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+
+            if np.sum(hdu.data["ALBEDO" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["ALBEDO" + str(i + 1)],
@@ -238,15 +254,13 @@ def plot_dgfit_albedo(
             fmt="ko",
             label="Observed",
         )
-    # yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$albedo$", fontsize=fontsize)
-
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim([0.0, 1.0])
-    # ax.set_ylim(yrange)
+    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
 
 
 # plot the dust scattering phase function asymmetry
@@ -258,6 +272,10 @@ def plot_dgfit_g(
     if comps:
         # linetypes = ["-", "-", "-", "-", "-"]
         for i in range(len(hdu.data.names) - 2):
+
+            if np.sum(hdu.data["G" + str(i + 1)]) == 0:
+                continue
+
             ax.plot(
                 hdu.data["WAVE"],
                 hdu.data["G" + str(i + 1)],
@@ -273,15 +291,13 @@ def plot_dgfit_g(
             fmt="ko",
             label="Observed",
         )
-    # yrange = get_krange(obsdata.scat_albedo, in_range=yrange)
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
     ax.set_ylabel(r"$g$", fontsize=fontsize)
-
     ax.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
     ax.set_ylim([0.0, 1.0])
-    # ax.set_ylim(yrange)
+    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
 
 
 def main():
@@ -316,7 +332,6 @@ def main():
     font = {"size": fontsize}
 
     matplotlib.rc("font", **font)
-
     matplotlib.rc("lines", linewidth=2)
     matplotlib.rc("axes", linewidth=2)
     matplotlib.rc("xtick.major", width=2)
@@ -341,7 +356,7 @@ def main():
         fontsize=fontsize,
         color="r",
         plegend=True,
-        plabel="Final",
+        plabel="Model",
     )
 
     # plot the resulting total and component extinction curves

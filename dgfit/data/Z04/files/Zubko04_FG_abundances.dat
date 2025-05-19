@@ -1,0 +1,11 @@
+# atom  abund  abund_unc  total_abund  total_abund_unc
+C    250    84      391    98
+O    126    157     545    100
+Mg   42.7   17.2    34.5   4.8
+Si   39.9   13.1    34.4   3.9
+Fe   27.9   7.7     28.1   5.4
+# abundances from Zubko (2004)
+#
+# Units are # atoms per 10^6 H atoms
+#
+#

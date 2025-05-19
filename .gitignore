@@ -62,3 +62,4 @@ distribute-*.tar.gz
 # custom
 *.fits
 *.png
+*.h5
