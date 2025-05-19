@@ -70,7 +70,16 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
-        plot(DG, args.wave, args.composition, args.obsdata, args.ISRF, args.png, args.eps, args.pdf)
+        plot(
+            DG,
+            args.wave,
+            args.composition,
+            args.obsdata,
+            args.ISRF,
+            args.png,
+            args.eps,
+            args.pdf,
+        )
 
 
 def plot(DG, wave, composition, ISRF, obsdata="none", png=False, eps=False, pdf=False):

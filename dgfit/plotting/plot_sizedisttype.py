@@ -1,5 +1,4 @@
 import argparse
-import numpy as np
 import matplotlib.pyplot as plt
 import importlib.resources as importlib_resources
 import math
