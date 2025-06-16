@@ -42,7 +42,7 @@ def main():
         help="transform to observed data grids, with the name of the observed data file as input",
     )
     parser.add_argument(
-        "--everynth", type=int, default=5, help="Use every nth grain size"
+        "--everynth", type=int, default=1, help="Use every nth grain size"
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")

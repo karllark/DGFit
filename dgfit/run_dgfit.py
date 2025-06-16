@@ -653,7 +653,7 @@ def main():
         p0,
         args=(obsdata, dustmodel),
         method="Nelder-Mead",
-        options={"maxiter": 50000, "maxfev": 50000, "disp": True},
+        options={"maxiter": 10000, "maxfev": 10000, "disp": True},
     )
     opt_params = soln.x
     dustmodel.set_size_dist_parameters(opt_params)

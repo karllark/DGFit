@@ -93,10 +93,10 @@ class DustGrains(object):
         elif componentname in ["aSil-2-Themis"]:  # from Demyk et al. 2022
             self.density = 2.7  # g/cm^3
             self.atomic_composition = "MgSiO4"
-            self.atomic_comp_names = ["Mg", "Si", "O"]
-            self.atomic_comp_number = np.array([1.7, 1, 3.7])
+            self.atomic_comp_names = ["Mg", "Si", "O", "C"]
+            self.atomic_comp_number = np.array([1.7, 1, 3.7, 1])
             self.atomic_comp_masses = (
-                np.array([24.305, 28.0855, 15.994]) * 1.660e-24
+                np.array([24.305, 28.0855, 15.994, 12.0107]) * 1.660e-24
             )  # in grams
 
         elif componentname in ["a-C-Themis"]:  # from Themis (2017)
@@ -456,21 +456,115 @@ class DustGrains(object):
         # compute the number of atoms/A(V)
         _natoms = np.empty(len(self.atomic_comp_names))
         for i in range(len(self.atomic_comp_names)):
-            _natoms[i] = np.sum(
-                deltas
-                * (
-                    (
-                        (self.sizes[0 : self.n_sizes - 1] ** 3)
-                        * self.size_dist[0 : self.n_sizes - 1]
-                        * self.col_den_constant[i]
+            if self.name in ["a-C:H-Themis", "aSil-2-Themis"]:          #correct for the mantles of Themis
+                if self.name == "a-C:H-Themis":
+                    mantle = 5 * 1e-7
+                    indices = np.where(self.sizes <= mantle)[0]
+                    best_index = indices[np.argmax(self.sizes[indices])] + 1
+                    _natoms[i] = np.sum(
+                        deltas[:best_index - 1]
+                        * (
+                            (
+                                (self.sizes[0 : best_index - 1] ** 3)
+                                * self.size_dist[0 : best_index - 1]
+                                * self.col_den_constant[i]
+                                * 1.6 / 1.3         # correcting for the densities
+                            )
+                            + (
+                                (self.sizes[1 : best_index] ** 3)
+                                * self.size_dist[1 : best_index]
+                                * self.col_den_constant[i]
+                                * 1.6 / 1.3
+                            )
+                        )
                     )
-                    + (
-                        (self.sizes[1 : self.n_sizes] ** 3)
-                        * self.size_dist[1 : self.n_sizes]
-                        * self.col_den_constant[i]
+                    _natoms[i] += np.sum(
+                        deltas[best_index:]
+                        * (
+                            (
+                            ((self.sizes[best_index : self.n_sizes - 1] ** 3) - ((self.sizes[best_index : self.n_sizes - 1] - mantle) ** 3))
+                            * self.size_dist[best_index : self.n_sizes - 1]
+                            * self.col_den_constant[i]
+                            * 1.6 / 1.3
+                        )
+                        + (
+                            ((self.sizes[best_index + 1 : self.n_sizes] ** 3) - ((self.sizes[best_index + 1 : self.n_sizes] - mantle) ** 3))
+                            * self.size_dist[best_index + 1 : self.n_sizes]
+                            * self.col_den_constant[i]
+                            * 1.6 / 1.3
+                        )
+                        )
+                    )
+                    _natoms[i] += np.sum(
+                        deltas[best_index:]
+                        * (
+                            (
+                            ((self.sizes[best_index : self.n_sizes - 1] - mantle) ** 3)
+                            * self.size_dist[best_index : self.n_sizes - 1]
+                            * self.col_den_constant[i]
+                        )
+                        + (
+                            ((self.sizes[best_index + 1 : self.n_sizes] - mantle) ** 3)
+                            * self.size_dist[best_index + 1 : self.n_sizes]
+                            * self.col_den_constant[i]
+                        )
+                        )
+                    )
+
+                else:
+                    mantle = 2.5 * 1e-7
+                    if i == 3:
+                        _natoms[i] = np.sum(
+                            deltas
+                            * (
+                                (
+                                    ((self.sizes[0 : self.n_sizes - 1] ** 3) - ((self.sizes[0 : self.n_sizes - 1] - mantle) ** 3))
+                                    * self.size_dist[0 : self.n_sizes - 1]
+                                    * self.col_den_constant[i]
+                                    * 1.6 / 2.7     #correcting for the densities
+                                )
+                                + (
+                                    ((self.sizes[1 : self.n_sizes] ** 3) - ((self.sizes[1 : self.n_sizes] - mantle) ** 3))
+                                    * self.size_dist[1 : self.n_sizes]
+                                    * self.col_den_constant[i]
+                                    * 1.6 / 2.7
+                                )
+                            )
+                        )
+
+                    else:
+                        _natoms[i] = np.sum(
+                            deltas
+                            * (
+                                (
+                                    ((self.sizes[0 : self.n_sizes - 1] - mantle) ** 3)
+                                    * self.size_dist[0 : self.n_sizes - 1]
+                                    * self.col_den_constant[i]
+                                )
+                                + (
+                                    ((self.sizes[1 : self.n_sizes] - mantle) ** 3)
+                                    * self.size_dist[1 : self.n_sizes]
+                                    * self.col_den_constant[i]
+                                )
+                            )
+                        )
+
+            else:
+                _natoms[i] = np.sum(
+                    deltas
+                    * (
+                        (
+                            (self.sizes[0 : self.n_sizes - 1] ** 3)
+                            * self.size_dist[0 : self.n_sizes - 1]
+                            * self.col_den_constant[i]
+                        )
+                        + (
+                            (self.sizes[1 : self.n_sizes] ** 3)
+                            * self.size_dist[1 : self.n_sizes]
+                            * self.col_den_constant[i]
+                        )
                     )
                 )
-            )
 
         results["natoms"] = dict(zip(self.atomic_comp_names, _natoms))
 

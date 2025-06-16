@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib.cm import ScalarMappable
 from matplotlib.cm import get_cmap
 from matplotlib.colors import LogNorm
+from matplotlib.ticker import LogLocator
 
 from dgfit.obsdata import ObsData
 from dgfit.dustgrains import DustGrains
@@ -47,6 +48,9 @@ def main():
     parser.add_argument(
         "--everynth", type=int, default=5, help="Use every nth grain size"
     )
+    parser.add_argument(
+        "--ISRF", default=1.0, type=float, help="Choose an ISRF strength"
+    )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--eps", help="save figure as an eps file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -67,10 +71,10 @@ def main():
         new_DG.from_object(DG, OD)
         DG = new_DG
 
-    plot(DG, args.composition, args.png, args.eps, args.pdf)
+    plot(DG, args.composition, args.ISRF, args.png, args.eps, args.pdf)
 
 
-def plot(DG, composition, png=False, eps=False, pdf=False):
+def plot(DG, composition, ISRF, png=False, eps=False, pdf=False):
     # setup the plots
     fontsize = 12
     font = {"size": fontsize}
@@ -89,7 +93,7 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
 
     num_segments = DG.n_sizes
     DG.sizes *= 10**4
-    cmap = get_cmap("hsv", num_segments)
+    cmap = get_cmap("jet", num_segments)
     norm = LogNorm(vmin=min(DG.sizes), vmax=max(DG.sizes))
     colors = [cmap(i) for i in range(num_segments)]
 
@@ -123,15 +127,19 @@ def plot(DG, composition, png=False, eps=False, pdf=False):
         ax[1, 0].set_xlabel(r"$\lambda$ [$\mu m$]")
         ax[1, 0].set_ylabel("albedo")
         ax[1, 0].set_xscale("log")
+        ax[1, 0].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
 
         ax[1, 1].plot(DG.wavelengths_scat_g, DG.scat_g[i, :], "o", color=pcolor)
         ax[1, 1].set_xlabel(r"$\lambda$ [$\mu m$]")
         ax[1, 1].set_ylabel("g")
         ax[1, 1].set_xscale("log")
+        ax[1, 1].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
+
+        emission = DG.interpol_emission(ISRF)
 
         ax[1, 2].plot(
             DG.wavelengths_emission[ews_indxs],
-            DG.emission[1, i, ews_indxs],
+            emission[i, ews_indxs],
             color=pcolor,
         )
         ax[1, 2].set_xlabel(r"$\lambda$ [$\mu m$]")

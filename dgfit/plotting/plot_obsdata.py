@@ -6,6 +6,7 @@ import importlib.resources as importlib_resources
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.ticker import LogLocator
 
 from astropy.table import Table
 
@@ -60,15 +61,15 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
 
     if units == "AV":
         ax[0, 0].errorbar(
-            OD.ext_waves, OD.ext_alav, yerr=OD.ext_alav_unc, fmt="o", label="Extinction"
+            OD.ext_waves, OD.ext_alav, yerr=OD.ext_alav_unc, fmt="-", label="Extinction", color="blue"
         )
         ax[0, 0].set_ylabel(r"$A(\lambda)/A(V)$")
 
         ax[1, 0].bar(
-            aindxs + 0.25 * width,
+            aindxs + 0.75 * width,
             [OD.total_abundance_av[x][0] for x in atomnames],
             width,
-            color="g",
+            color="black",
             alpha=0.25,
             label="gas+dust",
         )
@@ -78,6 +79,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=[OD.abundance_av[x][1] for x in atomnames],
             fmt="o",
             label="dust",
+            color="blue"
         )
         ax[1, 0].set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
 
@@ -86,8 +88,9 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
                 OD.ir_emission_waves,
                 OD.ir_emission_av,
                 yerr=OD.ir_emission_av_unc,
-                fmt="o",
+                fmt="x",
                 label="Emission",
+                color="blue"
             )
             ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
             ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$")
@@ -103,11 +106,12 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=OD.ext_alnhi_unc,
             fmt="o",
             label="Extinction",
+            color="blue"
         )
         ax[0, 0].set_ylabel(r"$A(\lambda)/N(HI)$")
 
         ax[1, 0].bar(
-            aindxs + 0.25 * width,
+            aindxs + 0.75 * width,
             [OD.total_abundance[x][0] for x in atomnames],
             width,
             color="g",
@@ -120,6 +124,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=[OD.abundance[x][1] for x in atomnames],
             fmt="o",
             label="dust",
+            color="blue"
         )
         ax[1, 0].set_ylabel(r"$N(X)/[10^6N(HI)]$", fontsize=fontsize)
 
@@ -130,6 +135,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
                 yerr=OD.ir_emission_unc,
                 fmt="o",
                 label="Emission",
+                color="blue"
             )
             ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
             ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$")
@@ -151,7 +157,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
         ref = importlib_resources.files("dgfit") / ISRF
         with importlib_resources.as_file(ref) as data_path:
             t = Table.read(str(data_path), format="ascii.commented_header")
-        ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF")
+        ax[1, 1].plot(t["wave"], t["ISRF"], "-", label="ISRF", color="blue")
         ax[1, 1].set_xlabel(r"$\lambda [\mu m]$")
         ax[1, 1].set_ylabel(r"ISRF [$ergs$ $cm^{-3}$ $s^{-1}$ $sr^{-1}$]")
         ax[1, 1].set_xscale("log")
@@ -167,11 +173,13 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=OD.scat_albedo_unc,
             fmt="o",
             label="albedo",
+            color="blue"
         )
         ax[0, 2].set_xlabel(r"$\lambda [\mu m]$")
         ax[0, 2].set_ylabel(r"$a$")
         ax[0, 2].set_xscale("log")
         ax[0, 2].set_ylim(0.0, 1.0)
+        ax[0, 2].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
         ax[0, 2].legend()
 
     if OD.fit_scat_g:
@@ -181,11 +189,13 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=OD.scat_g_unc,
             fmt="o",
             label=r"$g = < \mathrm{cos} (\theta) >$",
+            color="blue"
         )
         ax[1, 2].set_xlabel(r"$\lambda [\mu m]$")
         ax[1, 2].set_ylabel(r"$g$")
         ax[1, 2].set_xscale("log")
         ax[1, 2].set_ylim(0.0, 1.0)
+        ax[1, 2].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
         ax[1, 2].legend()
 
     plt.tight_layout()

@@ -366,6 +366,7 @@ class DustModel(object):
             if np.sum(bandvals) > 0:
                 weights[bandvals] *= 1000
             lnp_alav = -0.5 * np.sum(((obsdata.ext_alav - dust_alav) * weights) ** 2)
+            lnp_alav /= obsdata.ext_npts
 
         # compute the ln(prob) for the depletions
         lnp_dep = 0.0
@@ -392,6 +393,7 @@ class DustModel(object):
                             / (obsdata.abundance_av[atomname][1])
                         ) ** 2
             lnp_dep *= -0.5
+            lnp_dep /= obsdata.abundance_npts
 
         # compute the ln(prob) for IR emission
         lnp_emission = 0.0
@@ -403,6 +405,7 @@ class DustModel(object):
                     ** 2
                 )
             )
+            lnp_emission /= obsdata.ir_emission_npts
 
         # compute the ln(prob) for the dust albedo
         lnp_albedo = 0.0
@@ -411,12 +414,14 @@ class DustModel(object):
             lnp_albedo = -0.5 * np.sum(
                 (((obsdata.scat_albedo - albedo) / (obsdata.scat_albedo_unc)) ** 2)
             )
+            lnp_albedo /= obsdata.scat_a_npts
 
         # compute the ln(prob) for the dust g
         lnp_g = 0.0
         if obsdata.fit_scat_g:
             g = results["g"]
             lnp_g = -0.5 * np.sum((((obsdata.scat_g - g) / (obsdata.scat_g_unc)) ** 2))
+            lnp_g /= obsdata.scat_g_npts
 
         # combine the lnps
         lnp = lnp_alav + lnp_dep + lnp_emission + lnp_albedo + lnp_g

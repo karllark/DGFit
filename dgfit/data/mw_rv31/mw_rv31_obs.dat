@@ -1,6 +1,6 @@
 # type filename
 avnhi   files/MW_diffuse_Gordon09_avnhi.dat
-ext     files/MW_diffuse_Gordon23_ext_3.dat
+ext     files/MW_diffuse_Gordon23_ext.dat
 abund   files/MW_diffuse_Jenkins09_abundances.dat
 ir_emis files/MW_diffuse_Compiegne11_ir_emission.dat
 scat_a  files/MW_diffuse_DGL_Gordon04_albedo.dat
