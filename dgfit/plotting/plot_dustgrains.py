@@ -127,13 +127,17 @@ def plot(DG, composition, ISRF, png=False, eps=False, pdf=False):
         ax[1, 0].set_xlabel(r"$\lambda$ [$\mu m$]")
         ax[1, 0].set_ylabel("albedo")
         ax[1, 0].set_xscale("log")
-        ax[1, 0].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
+        ax[1, 0].xaxis.set_minor_locator(
+            LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10)
+        )
 
         ax[1, 1].plot(DG.wavelengths_scat_g, DG.scat_g[i, :], "o", color=pcolor)
         ax[1, 1].set_xlabel(r"$\lambda$ [$\mu m$]")
         ax[1, 1].set_ylabel("g")
         ax[1, 1].set_xscale("log")
-        ax[1, 1].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
+        ax[1, 1].xaxis.set_minor_locator(
+            LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10)
+        )
 
         emission = DG.interpol_emission(ISRF)
 

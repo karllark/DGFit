@@ -61,7 +61,12 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
 
     if units == "AV":
         ax[0, 0].errorbar(
-            OD.ext_waves, OD.ext_alav, yerr=OD.ext_alav_unc, fmt="-", label="Extinction", color="blue"
+            OD.ext_waves,
+            OD.ext_alav,
+            yerr=OD.ext_alav_unc,
+            fmt="-",
+            label="Extinction",
+            color="blue",
         )
         ax[0, 0].set_ylabel(r"$A(\lambda)/A(V)$")
 
@@ -79,7 +84,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=[OD.abundance_av[x][1] for x in atomnames],
             fmt="o",
             label="dust",
-            color="blue"
+            color="blue",
         )
         ax[1, 0].set_ylabel(r"$N(X)/A(V)$", fontsize=fontsize)
 
@@ -90,7 +95,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
                 yerr=OD.ir_emission_av_unc,
                 fmt="x",
                 label="Emission",
-                color="blue"
+                color="blue",
             )
             ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
             ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$")
@@ -106,7 +111,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=OD.ext_alnhi_unc,
             fmt="o",
             label="Extinction",
-            color="blue"
+            color="blue",
         )
         ax[0, 0].set_ylabel(r"$A(\lambda)/N(HI)$")
 
@@ -124,7 +129,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=[OD.abundance[x][1] for x in atomnames],
             fmt="o",
             label="dust",
-            color="blue"
+            color="blue",
         )
         ax[1, 0].set_ylabel(r"$N(X)/[10^6N(HI)]$", fontsize=fontsize)
 
@@ -135,7 +140,7 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
                 yerr=OD.ir_emission_unc,
                 fmt="o",
                 label="Emission",
-                color="blue"
+                color="blue",
             )
             ax[0, 1].set_xlabel(r"$\lambda [\mu m]$")
             ax[0, 1].set_ylabel(r"$S$ $[MJy$ $sr^{-1}$ $N(HI)^{-1}]$")
@@ -173,13 +178,15 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=OD.scat_albedo_unc,
             fmt="o",
             label="albedo",
-            color="blue"
+            color="blue",
         )
         ax[0, 2].set_xlabel(r"$\lambda [\mu m]$")
         ax[0, 2].set_ylabel(r"$a$")
         ax[0, 2].set_xscale("log")
         ax[0, 2].set_ylim(0.0, 1.0)
-        ax[0, 2].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
+        ax[0, 2].xaxis.set_minor_locator(
+            LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10)
+        )
         ax[0, 2].legend()
 
     if OD.fit_scat_g:
@@ -189,13 +196,15 @@ def plot(OD, ISRF="none", units="AV", png=False, eps=False, pdf=False):
             yerr=OD.scat_g_unc,
             fmt="o",
             label=r"$g = < \mathrm{cos} (\theta) >$",
-            color="blue"
+            color="blue",
         )
         ax[1, 2].set_xlabel(r"$\lambda [\mu m]$")
         ax[1, 2].set_ylabel(r"$g$")
         ax[1, 2].set_xscale("log")
         ax[1, 2].set_ylim(0.0, 1.0)
-        ax[1, 2].xaxis.set_minor_locator(LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10))
+        ax[1, 2].xaxis.set_minor_locator(
+            LogLocator(base=10.0, subs=[2.0, 4.0], numticks=10)
+        )
         ax[1, 2].legend()
 
     plt.tight_layout()

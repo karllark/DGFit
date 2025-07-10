@@ -69,7 +69,7 @@ def main():
         new_DG = DustGrains()
         new_DG.from_object(DG, OD)
         DG = new_DG
-    
+
     else:
         OD = "none"
 
