@@ -71,6 +71,9 @@ def main():
         "--no_ylogscale", action="store_true", help="don't put the yaxis in logscale"
     )
     parser.add_argument(
+        "--add_fitted_line", action="store_true", help="plot the fitted line to the data, only available for albedo and g"
+    )
+    parser.add_argument(
         "-p", "--png", help="save figure as a png file", action="store_true"
     )
     parser.add_argument(
@@ -116,6 +119,7 @@ def main():
 
     # get the observed data
     OD = ObsData(args.obsfile)
+    rechte = []
 
     if args.dustproperty == "emission":
         waves = OD.ir_emission_waves
@@ -151,7 +155,21 @@ def main():
         data_name = args.dustproperty.upper()
         ylabel = "Albedo"
         ylogscale = False
+        xlogscale = False
         ylim = True
+        for wave in data_waves:
+            b = (1.0027468894049667 * wave) + 0.2950590005599959
+            rechte.append(b)
+        c = [0.484, 0.550, 0.595, 0.614, 0.615, 0.606, 0.597, 0.497]        #include the Drude profile
+        rechte[11] = 1 - c[1]
+        rechte[12] = 1 - c[2]
+        rechte[13] = 1 - c[3]
+        rechte[14] = 1 - c[4]
+        rechte[16] = 1 - c[5]
+        rechte[17] = 1 - c[6]
+        rechte[19] = 1 - c[7]
+        rechte[15] = (rechte[14] + rechte[16])/2
+        rechte[18] = (rechte[17] + rechte[19])/2
 
     elif args.dustproperty == "g":
         waves = OD.scat_g_waves
@@ -160,17 +178,23 @@ def main():
         data_unc = OD.scat_g_unc
         data_name = args.dustproperty.upper()
         ylabel = "g"
+        xlogscale = False
         ylogscale = False
         ylim = True
+        for wave in data_waves:
+            b = (0.08768592371741601 * wave) + 0.6176183611711199
+            rechte.append(b)
 
     ax1.plot(data_waves, hdu.data[data_name], colors[0] + ltype, label="Model")
     yrange = get_krange(hdu.data[data_name])
+    markers = ["^", "o", "x", "h", "v"]
     for i in range(len(hdu.data.names) - 2):
         ax1.plot(
             data_waves,
             hdu.data[data_name + str(i + 1)],
             colors[i + 1] + ltype,
             label=comps[i],
+            marker=markers[i]
         )
         yrange = get_krange(hdu.data[data_name + str(i + 1)], in_range=yrange)
 
@@ -182,6 +206,14 @@ def main():
         label="Observed",
         capsize=3,
     )
+
+    if args.add_fitted_line:
+        ax1.plot(
+                data_waves,
+                rechte,
+                "darkgrey",
+                label="Fit"
+            )
 
     if ylogscale:
         ax1.set_yscale("log")
