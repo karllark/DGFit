@@ -22,7 +22,7 @@ To plot the extinction coefficients, albedo, scattering phase function and emiss
     DG = DustGrains()
     DG.from_files("astro-silicates", "../../dgfit/data/indiv_grain/")
 
-    plot(DG, 'astro-silicates')
+    plot(DG, 'astro-silicates', 1)
 
 To see other dustgrains (<possible> = astro-silicates, astro-carbonaceous, astro-graphite, astro-PAH-ionized and astro-PAH-neutral), use
 

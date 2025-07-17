@@ -63,6 +63,19 @@ def main():
         "--start", help="include the starting model", action="store_true"
     )
     parser.add_argument(
+        "--inverse_lambda",
+        action="store_true",
+        help="put the extinction plot in units 1/lambda",
+    )
+    parser.add_argument(
+        "--no_ylogscale", action="store_true", help="don't put the yaxis in logscale"
+    )
+    parser.add_argument(
+        "--add_fitted_line",
+        action="store_true",
+        help="plot the fitted line to the data, only available for albedo and g",
+    )
+    parser.add_argument(
         "-p", "--png", help="save figure as a png file", action="store_true"
     )
     parser.add_argument(
@@ -90,7 +103,7 @@ def main():
     )
     ax1 = ax[0]
     ax2 = ax[1]
-    colors = ["r", "b", "g"]
+    colors = ["r", "b", "g", "c"]
     ltype = "-"
 
     # open the DGFit results
@@ -103,53 +116,96 @@ def main():
 
     hdu = hdulist[args.dustproperty.upper()]
 
+    xlogscale = True
+    ylogscale = True
+
     # get the observed data
     OD = ObsData(args.obsfile)
+    rechte = []
 
     if args.dustproperty == "emission":
         waves = OD.ir_emission_waves
+        data_waves = hdu.data["WAVE"]
         data = OD.ir_emission_av
         data_unc = OD.ir_emission_av_unc
         data_name = "EMIS"
         ylabel = r"$S$ $[MJy$ $sr^{-1}$ $A(V)^{-1}]$"
-        logscale = True
+        if args.no_ylogscale:
+            ylogscale = False
         ylim = False
 
     elif args.dustproperty == "extinction":
         waves = OD.ext_waves
+        data_waves = hdu.data["WAVE"]
+        if args.inverse_lambda:
+            waves = 1 / waves
+            data_waves = 1 / data_waves
+            xlogscale = False
         data = OD.ext_alav
         data_unc = OD.ext_alav_unc
         data_name = "EXT"
         ylabel = r"$A(\lambda)/A(V)$"
-        logscale = True
+        if args.no_ylogscale:
+            ylogscale = False
         ylim = False
 
     elif args.dustproperty == "albedo":
         waves = OD.scat_a_waves
+        data_waves = hdu.data["WAVE"]
         data = OD.scat_albedo
         data_unc = OD.scat_albedo_unc
         data_name = args.dustproperty.upper()
         ylabel = "Albedo"
-        logscale = False
+        ylogscale = False
+        xlogscale = False
         ylim = True
+        for wave in data_waves:
+            b = (1.0027468894049667 * wave) + 0.2950590005599959
+            rechte.append(b)
+        c = [
+            0.484,
+            0.550,
+            0.595,
+            0.614,
+            0.615,
+            0.606,
+            0.597,
+            0.497,
+        ]  # include the Drude profile
+        rechte[11] = 1 - c[1]
+        rechte[12] = 1 - c[2]
+        rechte[13] = 1 - c[3]
+        rechte[14] = 1 - c[4]
+        rechte[16] = 1 - c[5]
+        rechte[17] = 1 - c[6]
+        rechte[19] = 1 - c[7]
+        rechte[15] = (rechte[14] + rechte[16]) / 2
+        rechte[18] = (rechte[17] + rechte[19]) / 2
 
     elif args.dustproperty == "g":
         waves = OD.scat_g_waves
+        data_waves = hdu.data["WAVE"]
         data = OD.scat_g
         data_unc = OD.scat_g_unc
         data_name = args.dustproperty.upper()
         ylabel = "g"
-        logscale = False
+        xlogscale = False
+        ylogscale = False
         ylim = True
+        for wave in data_waves:
+            b = (0.08768592371741601 * wave) + 0.6176183611711199
+            rechte.append(b)
 
-    ax1.plot(hdu.data["WAVE"], hdu.data[data_name], colors[0] + ltype, label="Total")
+    ax1.plot(data_waves, hdu.data[data_name], colors[0] + ltype, label="Model")
     yrange = get_krange(hdu.data[data_name])
+    markers = ["^", "o", "x", "h", "v"]
     for i in range(len(hdu.data.names) - 2):
         ax1.plot(
-            hdu.data["WAVE"],
+            data_waves,
             hdu.data[data_name + str(i + 1)],
             colors[i + 1] + ltype,
             label=comps[i],
+            marker=markers[i],
         )
         yrange = get_krange(hdu.data[data_name + str(i + 1)], in_range=yrange)
 
@@ -159,27 +215,47 @@ def main():
         data_unc,
         fmt="ko",
         label="Observed",
-        capsize=4,
+        capsize=3,
     )
 
-    if logscale:
+    if args.add_fitted_line:
+        ax1.plot(data_waves, rechte, "darkgrey", label="Fit")
+
+    if ylogscale:
         ax1.set_yscale("log")
-    ax1.set_xscale("log")
-    ax1.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
+    if xlogscale:
+        ax1.set_xscale("log")
+
+    if args.inverse_lambda:
+        ax1.set_xlabel(r"$1/\lambda \ [1/\mu m]$", fontsize=fontsize)
+    else:
+        ax1.set_xlabel(r"$\lambda \ [\mu m]$", fontsize=fontsize)
+
     ax1.set_ylabel(ylabel, fontsize=fontsize)
     ax1.legend()
-    ax1.set_xlim(get_krange(hdu.data["WAVE"], logaxis=True))
+    # ax1.set_title("Zubko et al. (2004)")
+    ax1.set_xlim(get_krange(data_waves, logaxis=xlogscale))
+    ax1.set_ylim(get_krange(data, logaxis=ylogscale))
     if ylim:
         ax1.set_ylim([0.0, 1.0])
 
     residuals = (hdu.data[data_name] - data) / data
     unc = data_unc / data
     ax2.errorbar(
-        hdu.data["WAVE"], residuals, yerr=unc, fmt="o", color="black", capsize=4
+        data_waves,
+        residuals,
+        yerr=unc,
+        fmt="o",
+        color="black",
+        capsize=3,
     )
     ax2.axhline(0, color="red", linestyle="--", linewidth=1)
-    ax2.set_xlabel(r"$\lambda [\mu m]$", fontsize=fontsize)
-    ax2.set_ylabel("Residuals (%)", fontsize=fontsize)
+    if args.inverse_lambda:
+        ax2.set_xlabel(r"$1/\lambda \ [1/\mu m]$", fontsize=fontsize)
+    else:
+        ax2.set_xlabel(r"$\lambda \ [\mu m]$", fontsize=fontsize)
+    ax2.set_ylabel("Residuals\n (model - data)/data", fontsize=fontsize)
+    ax2.set_ylim(-0.75, 0.75)
 
     pyplot.tight_layout()
 

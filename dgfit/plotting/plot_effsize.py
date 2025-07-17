@@ -8,11 +8,8 @@ import importlib.resources as importlib_resources
 
 from dgfit.dustmodel import DustModel, WDDustModel
 
-# from dgfit.dustgrains import DustGrains
-
 
 def main():
-
     # commandline parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -220,8 +217,6 @@ def plot(dustmodel, png=False, pdf=False, eps=False):
     basename = "effsize"
     if png:
         fig.savefig(basename + ".png")
-    elif eps:
-        fig.savefig(basename + ".eps")
     elif pdf:
         fig.savefig(basename + ".pdf")
     else:

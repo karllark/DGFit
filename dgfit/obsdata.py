@@ -139,6 +139,8 @@ class ObsData(object):
         else:
             self.scat_a_waves = np.logspace(np.log10(0.1), np.log10(5.0), 100)
             self.scat_g_waves = np.logspace(np.log10(0.1), np.log10(5.0), 100)
+        self.scat_a_npts = len(self.scat_albedo)
+        self.scat_g_npts = len(self.scat_g)
 
         # normalization from N(HI) to A(V) for emission and abundance data
         if self.obs_filenames["avnhi"] is not None:
@@ -157,6 +159,7 @@ class ObsData(object):
             self.ir_emission_av_unc = self.ir_emission_av * np.sqrt(
                 np.square(rel_ir_emission_unc) + np.square(avnhi_rel_unc)
             )
+            self.ir_emission_npts = len(self.ir_emission_av)
 
             # abundance conversion
             self.abundance_av = {}
@@ -189,7 +192,7 @@ class ObsData(object):
                 self.ext_alav_unc / self.ext_alav
             ) + np.square(avnhi_rel_unc)
             self.ext_alnhi_unc = self.ext_alnhi * np.sqrt(self.ext_alnhi_unc)
-            self.ext_alnhi_npts = len(self.ext_alnhi)
+            self.ext_npts = len(self.ext_alnhi)
 
     def parse_obsfile(self, obs_filename):
         """
